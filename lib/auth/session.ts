@@ -1,0 +1,63 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { session as sessionTable, user as userTable } from "@/lib/db/schema";
+import { and, eq, gt } from "drizzle-orm";
+
+export async function getServerSession() {
+  const headerStore = await headers();
+  return auth.api.getSession({
+    headers: headerStore,
+  });
+}
+
+export async function requireUser() {
+  const session = await getServerSession();
+  if (!session?.user) {
+    redirect("/login");
+  }
+  return session.user;
+}
+
+export async function requireApiUser(requestHeaders: Headers) {
+  const session = await auth.api.getSession({
+    headers: requestHeaders,
+  });
+
+  if (!session?.user) {
+    return null;
+  }
+
+  if (session.user.banned) {
+    return null;
+  }
+
+  return session.user;
+}
+
+export async function revokeUserSessions(userId: string) {
+  return db.delete(sessionTable).where(eq(sessionTable.userId, userId));
+}
+
+export async function getActiveSessionsForUser(userId: string) {
+  return db
+    .select()
+    .from(sessionTable)
+    .where(
+      and(
+        eq(sessionTable.userId, userId),
+        gt(sessionTable.expiresAt, new Date())
+      )
+    );
+}
+
+export async function getCurrentUserRecord(userId: string) {
+  const rows = await db
+    .select()
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
