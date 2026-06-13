@@ -80,7 +80,6 @@ export async function createTransactionFromSchedule(
   const transaction = await createTransaction(
     {
       trackerId: schedule.trackerId,
-      accountName: "Hauptkonto",
       date: schedule.nextDueDate,
       amount: schedule.amountCents / 100,
       direction: schedule.direction,

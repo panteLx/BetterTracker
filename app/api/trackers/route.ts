@@ -1,10 +1,11 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { categories, trackerMembers, trackers } from "@/lib/db/schema";
+import { trackerMembers, trackers } from "@/lib/db/schema";
 import { requireAuthenticatedApi } from "@/lib/auth/guards";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
 import { badRequest, created, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
+import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { slugify } from "@/lib/utils";
 
 export async function GET(request: Request) {
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
         name: body.name.trim(),
         slug,
         description: body.description?.trim() || null,
-        color: body.color || "#0f766e",
+        color: body.color || DEFAULT_TRACKER_COLOR,
         currency: body.currency || "EUR",
       })
       .returning();
@@ -83,58 +84,6 @@ export async function POST(request: Request) {
       userId: authResult.user!.id,
       permission: "owner",
     });
-
-    await db.insert(categories).values([
-      {
-        trackerId: tracker.id,
-        name: "Lebensmittel",
-        type: "expense",
-        color: "#475569",
-        sortOrder: 0,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Kaffee",
-        type: "expense",
-        color: "#92400e",
-        sortOrder: 1,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Abo",
-        type: "expense",
-        color: "#7c3aed",
-        sortOrder: 2,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Haushalt",
-        type: "expense",
-        color: "#2563eb",
-        sortOrder: 3,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Freizeit",
-        type: "expense",
-        color: "#db2777",
-        sortOrder: 4,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Einnahmen",
-        type: "income",
-        color: "#059669",
-        sortOrder: 5,
-      },
-      {
-        trackerId: tracker.id,
-        name: "Rueckerstattung",
-        type: "income",
-        color: "#16a34a",
-        sortOrder: 6,
-      },
-    ]);
 
     await logAuditEvent({
       actorUserId: authResult.user!.id,

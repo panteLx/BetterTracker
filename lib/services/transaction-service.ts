@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { categories, payees, transactions } from "@/lib/db/schema";
+import { categories, payees, trackers, transactions } from "@/lib/db/schema";
 import { parseAmountToCents } from "@/lib/utils";
 import { transactionInputSchema, transactionQuerySchema } from "@/lib/validators/transaction";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
@@ -67,6 +67,17 @@ export async function createTransaction(input: unknown, actorUserId: string) {
 
   let resolvedPayeeId = parsed.payeeId ?? null;
   const trimmedCustomPayeeName = parsed.customPayeeName?.trim();
+  let resolvedAccountName = parsed.accountName?.trim() || "";
+
+  if (!resolvedAccountName) {
+    const [tracker] = await db
+      .select({ name: trackers.name })
+      .from(trackers)
+      .where(eq(trackers.id, parsed.trackerId))
+      .limit(1);
+
+    resolvedAccountName = tracker?.name || "Tracker";
+  }
 
   if (!resolvedPayeeId && trimmedCustomPayeeName) {
     const [existingPayee] = await db
@@ -99,7 +110,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     .insert(transactions)
     .values({
       trackerId: parsed.trackerId,
-      accountName: parsed.accountName,
+      accountName: resolvedAccountName,
       date: parsed.date,
       amountCents,
       direction: parsed.direction,
@@ -137,7 +148,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     fields: [
       { name: "Datum", value: parsed.date, inline: true },
       { name: "Betrag", value: `${amountCents / 100} EUR`, inline: true },
-      { name: "Konto", value: parsed.accountName, inline: true },
+      { name: "Konto", value: resolvedAccountName, inline: true },
     ],
   });
 
