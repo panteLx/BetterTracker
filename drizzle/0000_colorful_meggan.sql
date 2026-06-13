@@ -154,7 +154,7 @@ CREATE UNIQUE INDEX `trackers_slug_idx` ON `trackers` (`slug`);--> statement-bre
 CREATE TABLE `transactions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`tracker_id` text NOT NULL,
-	`account_name` text DEFAULT 'Hauptkonto' NOT NULL,
+	`account_name` text DEFAULT '' NOT NULL,
 	`date` text NOT NULL,
 	`amount_cents` integer NOT NULL,
 	`direction` text NOT NULL,

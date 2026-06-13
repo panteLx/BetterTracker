@@ -1120,7 +1120,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'Hauptkonto'"
+          "default": "''"
         },
         "date": {
           "name": "date",

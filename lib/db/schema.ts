@@ -215,7 +215,7 @@ export const transactions = sqliteTable(
     trackerId: text("tracker_id")
       .notNull()
       .references(() => trackers.id, { onDelete: "cascade" }),
-    accountName: text("account_name").notNull().default("Hauptkonto"),
+    accountName: text("account_name").notNull().default(""),
     date: text("date").notNull(),
     amountCents: integer("amount_cents").notNull(),
     direction: text("direction", { enum: ["expense", "income"] }).notNull(),

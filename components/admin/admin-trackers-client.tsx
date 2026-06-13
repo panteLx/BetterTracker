@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { fetchJson } from "@/lib/client-fetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,7 +73,7 @@ export function AdminTrackersClient() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="color">Farbe</Label>
-              <Input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} />
+              <TrackerColorPicker id="color" value={color} onChange={setColor} />
             </div>
             <Button className="w-full">Tracker erstellen</Button>
           </form>

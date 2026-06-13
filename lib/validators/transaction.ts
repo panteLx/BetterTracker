@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const transactionInputSchema = z.object({
   trackerId: z.string().min(1),
-  accountName: z.string().trim().min(1).default("Hauptkonto"),
+  accountName: z.string().trim().min(1).optional().nullable(),
   date: z.string().date(),
   amount: z.union([z.string(), z.number()]),
   direction: z.enum(["expense", "income"]),

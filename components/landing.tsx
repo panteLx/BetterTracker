@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, CreditCard, Shield, TimerReset } from "lucide-react";
+import {
+  ArrowRight,
+  CreditCard,
+  PiggyBank,
+  Shield,
+  TimerReset,
+} from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,15 +18,17 @@ export function LandingPage() {
         <section className="grid gap-8 rounded-[2rem] border border-border/50 bg-card/80 p-8 shadow-lg lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <div className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-primary">
-              Self-hosted Expense Tracker
+              Dein gemeinsamer Ausgaben-Tracker
             </div>
             <div className="space-y-4">
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-                Expenses, Schedules und Admin-Flows direkt in einer Next.js App.
+                Behalte Haushaltsgeld, Urlaubskasse und gemeinsame Ausgaben an
+                einem Ort im Blick.
               </h1>
               <p className="max-w-2xl text-base text-muted-foreground">
-                BetterTracker ersetzt den früheren ActualBudget-Zwischenschritt und
-                speichert alles direkt mit Drizzle in SQLite.
+                BetterTracker hilft dir beim Erfassen von Einnahmen und
+                Ausgaben, bei wiederkehrenden Zahlungen und beim Aufteilen in
+                eigene Tracker fuer Alltag, Reisen oder Projekte.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -41,33 +49,48 @@ export function LandingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  Direktes Ledger
+                  Schnelle Buchungen
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Konfigurierbare Tracker statt starrer Coffee/Money-Integrationen.
+                Neue Ausgaben und Einnahmen sind in wenigen Sekunden erfasst und
+                sofort in der Uebersicht sichtbar.
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <TimerReset className="h-5 w-5 text-primary" />
-                  Schedules mit Create-Flow
+                  Wiederkehrende Zahlungen
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Wiederkehrende Verpflichtungen erzeugen auf Knopfdruck echte Transaktionen.
+                Miete, Abos oder Gehalt lassen sich als wiederkehrende Eintraege
+                vorbereiten.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <PiggyBank className="h-5 w-5 text-primary" />
+                  Mehrere Bereiche
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Lege separate Tracker fuer Haushalt, Urlaub, WG oder
+                Nebenkosten an und halte alles sauber getrennt.
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Shield className="h-5 w-5 text-primary" />
-                  Rollen und Audit
+                  Gemeinsam nutzbar
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Multi-User, Better Auth, Admin-Settings, Audit Logs und Discord-Webhooks.
+                Mehrere Nutzer koennen mitarbeiten, waehrend Admins den Zugriff
+                zentral verwalten.
               </CardContent>
             </Card>
           </div>
