@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminSettingsClient } from "@/components/admin/admin-settings-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { requireUser } from "@/lib/auth/session";
@@ -13,8 +14,9 @@ export default async function AdminSettingsPage() {
     <PageContainer
       user={user}
       title="Admin Settings"
-      description="Locale, Zeitzone, Registrierung und Discord-Integrationen verwalten."
+      description="Locale, Zeitzone, Registrierung und Discord-Defaults fuer Tracker verwalten."
     >
+      <AdminNav />
       <AdminSettingsClient />
     </PageContainer>
   );

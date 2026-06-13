@@ -5,9 +5,9 @@ import { env } from "@/lib/env";
 
 export const DEFAULT_SETTINGS = {
   debugEnabled: false,
-  discordWebhookUrl: env.discordWebhookUrl,
-  discordDebugEnabled: env.discordDebug,
-  discordPingRoleId: env.discordPingRoleId,
+  discordWebhookUrl: "",
+  discordDebugEnabled: false,
+  discordPingRoleId: "",
   defaultLocale: env.defaultLocale,
   defaultTimezone: env.timezone,
   serverIpDisplay: "",

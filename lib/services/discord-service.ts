@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
-import { notificationEvents } from "@/lib/db/schema";
-import { getSetting } from "@/lib/services/admin-settings-service";
+import { notificationEvents, trackers } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/audit-log";
 import { eq } from "drizzle-orm";
 
 type NotifyInput = {
   type: "transaction_created" | "schedule_attention" | "admin_test";
+  trackerId: string;
   title: string;
   description: string;
   fields?: Array<{ name: string; value: string; inline?: boolean }>;
@@ -15,9 +15,19 @@ type NotifyInput = {
 };
 
 export async function sendDiscordNotification(input: NotifyInput) {
-  const webhookUrl = await getSetting<string>("discordWebhookUrl");
-  const debugEnabled = await getSetting<boolean>("discordDebugEnabled");
-  const pingRoleId = await getSetting<string>("discordPingRoleId");
+  const [tracker] = await db
+    .select({
+      webhookUrl: trackers.discordWebhookUrl,
+      debugEnabled: trackers.discordDebugEnabled,
+      pingRoleId: trackers.discordPingRoleId,
+    })
+    .from(trackers)
+    .where(eq(trackers.id, input.trackerId))
+    .limit(1);
+
+  const webhookUrl = tracker?.webhookUrl || "";
+  const debugEnabled = tracker?.debugEnabled ?? false;
+  const pingRoleId = tracker?.pingRoleId || "";
 
   const basePayload = {
     embeds: [
@@ -55,6 +65,16 @@ export async function sendDiscordNotification(input: NotifyInput) {
         errorMessage: "Discord webhook URL is not configured",
       })
       .where(eq(notificationEvents.id, event.id));
+
+    await logAuditEvent({
+      actorUserId: input.createdByUserId ?? null,
+      action: "discord_notification_failed",
+      resourceType: "notification_event",
+      resourceId: event.id,
+      severity: "warning",
+      metadata: { reason: "missing_webhook", trackerId: input.trackerId },
+    });
+
     return { ok: false };
   }
 
@@ -83,7 +103,7 @@ export async function sendDiscordNotification(input: NotifyInput) {
         resourceType: "notification_event",
         resourceId: event.id,
         severity: "warning",
-        metadata: { status: response.status },
+        metadata: { status: response.status, trackerId: input.trackerId },
       });
     }
 
@@ -104,7 +124,7 @@ export async function sendDiscordNotification(input: NotifyInput) {
       resourceType: "notification_event",
       resourceId: event.id,
       severity: "error",
-      metadata: { message },
+      metadata: { message, trackerId: input.trackerId },
     });
     return { ok: false };
   }

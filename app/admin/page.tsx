@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { PageContainer } from "@/components/layout/page-container";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
@@ -17,6 +18,7 @@ export default async function AdminPage() {
       title="Admin"
       description="Systemweite Kennzahlen und Einstieg in Benutzer-, Tracker- und Settings-Verwaltung."
     >
+      <AdminNav />
       <AdminOverview />
     </PageContainer>
   );

@@ -89,6 +89,11 @@ export const trackers = sqliteTable(
     description: text("description"),
     color: text("color").notNull().default("#0f766e"),
     currency: text("currency").notNull().default("EUR"),
+    discordWebhookUrl: text("discord_webhook_url").notNull().default(""),
+    discordDebugEnabled: integer("discord_debug_enabled", { mode: "boolean" })
+      .default(false)
+      .notNull(),
+    discordPingRoleId: text("discord_ping_role_id").notNull().default(""),
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     ...timestamps,

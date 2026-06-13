@@ -21,15 +21,24 @@ export async function PATCH(
       description?: string | null;
       color?: string;
       currency?: string;
+      discordWebhookUrl?: string;
+      discordDebugEnabled?: boolean;
+      discordPingRoleId?: string;
       isActive?: boolean;
     }>(request);
 
     const updateValues = {
       name: body.name?.trim(),
       slug: body.name ? slugify(body.name) : undefined,
-      description: body.description?.trim() || null,
+      description:
+        body.description === undefined ? undefined : body.description?.trim() || null,
       color: body.color,
       currency: body.currency,
+      discordWebhookUrl:
+        body.discordWebhookUrl === undefined ? undefined : body.discordWebhookUrl.trim(),
+      discordDebugEnabled: body.discordDebugEnabled,
+      discordPingRoleId:
+        body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),
       isActive: body.isActive,
       updatedAt: new Date(),
     };

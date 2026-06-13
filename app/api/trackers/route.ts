@@ -5,6 +5,7 @@ import { requireAuthenticatedApi } from "@/lib/auth/guards";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
 import { badRequest, created, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
+import { getSettings } from "@/lib/services/admin-settings-service";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { slugify } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ export async function GET(request: Request) {
               description: trackers.description,
               color: trackers.color,
               currency: trackers.currency,
+              discordWebhookUrl: trackers.discordWebhookUrl,
+              discordDebugEnabled: trackers.discordDebugEnabled,
+              discordPingRoleId: trackers.discordPingRoleId,
               isActive: trackers.isActive,
               sortOrder: trackers.sortOrder,
               permission: trackerMembers.permission,
@@ -39,6 +43,9 @@ export async function GET(request: Request) {
               description: trackers.description,
               color: trackers.color,
               currency: trackers.currency,
+              discordWebhookUrl: trackers.discordWebhookUrl,
+              discordDebugEnabled: trackers.discordDebugEnabled,
+              discordPingRoleId: trackers.discordPingRoleId,
               isActive: trackers.isActive,
               sortOrder: trackers.sortOrder,
             })
@@ -67,6 +74,7 @@ export async function POST(request: Request) {
       return badRequest("Tracker name is required");
     }
 
+    const settings = await getSettings();
     const slug = slugify(body.name);
     const [tracker] = await db
       .insert(trackers)
@@ -76,6 +84,9 @@ export async function POST(request: Request) {
         description: body.description?.trim() || null,
         color: body.color || DEFAULT_TRACKER_COLOR,
         currency: body.currency || "EUR",
+        discordWebhookUrl: settings.discordWebhookUrl,
+        discordDebugEnabled: settings.discordDebugEnabled,
+        discordPingRoleId: settings.discordPingRoleId,
       })
       .returning();
 
