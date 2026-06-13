@@ -24,7 +24,7 @@ export function AppHeader({ user }: HeaderProps) {
               BetterTracker
             </Link>
             <p className="text-xs text-muted-foreground">
-              Finanzen direkt in Next.js und Drizzle
+              Finanzen im Griff behalten
             </p>
           </div>
         </div>

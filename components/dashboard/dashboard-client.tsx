@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight, Landmark, Plus, Tags } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Landmark,
+  Plus,
+  Tags,
+} from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
@@ -65,7 +71,9 @@ type TransactionResponse = {
 };
 
 function sortByName<T extends { name: string }>(items: T[]) {
-  return [...items].sort((left, right) => left.name.localeCompare(right.name, "de"));
+  return [...items].sort((left, right) =>
+    left.name.localeCompare(right.name, "de"),
+  );
 }
 
 function sortTrackers(items: Tracker[]) {
@@ -103,42 +111,56 @@ export function DashboardClient() {
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
   });
 
-  const activeTrackerId = selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
-  const tracker = trackersQuery.data?.items.find((item) => item.id === activeTrackerId);
+  const activeTrackerId =
+    selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
+  const tracker = trackersQuery.data?.items.find(
+    (item) => item.id === activeTrackerId,
+  );
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", activeTrackerId],
     queryFn: () =>
-      fetchJson<{ items: Category[] }>(`/api/categories?trackerId=${activeTrackerId}`),
+      fetchJson<{ items: Category[] }>(
+        `/api/categories?trackerId=${activeTrackerId}`,
+      ),
     enabled: Boolean(activeTrackerId),
   });
 
   const payeesQuery = useQuery({
     queryKey: ["payees", activeTrackerId],
-    queryFn: () => fetchJson<{ items: Payee[] }>(`/api/payees?trackerId=${activeTrackerId}`),
+    queryFn: () =>
+      fetchJson<{ items: Payee[] }>(`/api/payees?trackerId=${activeTrackerId}`),
     enabled: Boolean(activeTrackerId),
   });
 
   const transactionsQuery = useQuery({
     queryKey: ["transactions", activeTrackerId],
-    queryFn: () => fetchJson<TransactionResponse>(`/api/transactions?trackerId=${activeTrackerId}`),
+    queryFn: () =>
+      fetchJson<TransactionResponse>(
+        `/api/transactions?trackerId=${activeTrackerId}`,
+      ),
     enabled: Boolean(activeTrackerId),
   });
 
   const filteredCategories = useMemo(
     () =>
       (categoriesQuery.data?.items || []).filter(
-        (item) => item.type === direction || item.type === "transfer"
+        (item) => item.type === direction || item.type === "transfer",
       ),
-    [categoriesQuery.data?.items, direction]
+    [categoriesQuery.data?.items, direction],
   );
 
-  const totals = transactionsQuery.data?.totals ?? { incomeCents: 0, expenseCents: 0 };
+  const totals = transactionsQuery.data?.totals ?? {
+    incomeCents: 0,
+    expenseCents: 0,
+  };
   const transactionCount = transactionsQuery.data?.items.length ?? 0;
   const trackerBalance = totals.incomeCents - totals.expenseCents;
   const latestTransaction = transactionsQuery.data?.items[0];
   const recentTransactions = (transactionsQuery.data?.items || []).slice(0, 6);
-  const effectiveCategoryId = filteredCategories.some((item) => item.id === categoryId)
+  const effectiveCategoryId = filteredCategories.some(
+    (item) => item.id === categoryId,
+  )
     ? categoryId
     : EMPTY_SELECT_VALUE;
 
@@ -153,11 +175,15 @@ export function DashboardClient() {
       setAmount("");
       setNotes("");
       setCustomPayeeName("");
-      queryClient.invalidateQueries({ queryKey: ["transactions", activeTrackerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["transactions", activeTrackerId],
+      });
       queryClient.invalidateQueries({ queryKey: ["payees", activeTrackerId] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Speichern fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
     },
   });
 
@@ -172,7 +198,7 @@ export function DashboardClient() {
         ["payees", activeTrackerId],
         (current) => ({
           items: sortByName([...(current?.items || []), item]),
-        })
+        }),
       );
       toast.success("Payee angelegt");
       setPayeeId(item.id);
@@ -181,12 +207,20 @@ export function DashboardClient() {
       setShowNewPayee(false);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Payee konnte nicht angelegt werden");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Payee konnte nicht angelegt werden",
+      );
     },
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: (payload: { trackerId: string; name: string; type: Category["type"] }) =>
+    mutationFn: (payload: {
+      trackerId: string;
+      name: string;
+      type: Category["type"];
+    }) =>
       fetchJson<{ item: Category }>("/api/categories", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -196,7 +230,7 @@ export function DashboardClient() {
         ["categories", activeTrackerId],
         (current) => ({
           items: sortByName([...(current?.items || []), item]),
-        })
+        }),
       );
       toast.success("Kategorie angelegt");
       setCategoryId(item.id);
@@ -205,7 +239,9 @@ export function DashboardClient() {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Kategorie konnte nicht angelegt werden"
+        error instanceof Error
+          ? error.message
+          : "Kategorie konnte nicht angelegt werden",
       );
     },
   });
@@ -217,9 +253,12 @@ export function DashboardClient() {
         body: JSON.stringify(payload),
       }),
     onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Tracker[] } | undefined>(["trackers"], (current) => ({
-        items: sortTrackers([...(current?.items || []), item]),
-      }));
+      queryClient.setQueryData<{ items: Tracker[] } | undefined>(
+        ["trackers"],
+        (current) => ({
+          items: sortTrackers([...(current?.items || []), item]),
+        }),
+      );
       toast.success("Tracker angelegt");
       setSelectedTracker(item.id);
       setNewTrackerName("");
@@ -232,7 +271,11 @@ export function DashboardClient() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tracker konnte nicht angelegt werden");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Tracker konnte nicht angelegt werden",
+      );
     },
   });
 
@@ -260,7 +303,8 @@ export function DashboardClient() {
       date,
       amount,
       direction,
-      categoryId: effectiveCategoryId === EMPTY_SELECT_VALUE ? null : effectiveCategoryId,
+      categoryId:
+        effectiveCategoryId === EMPTY_SELECT_VALUE ? null : effectiveCategoryId,
       payeeId: payeeId === EMPTY_SELECT_VALUE ? null : payeeId,
       customPayeeName: customPayeeName.trim() || null,
       notes: notes.trim() || null,
@@ -359,20 +403,12 @@ export function DashboardClient() {
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                {tracker ? (
-                  <Badge variant="secondary" className="rounded-full px-3 py-1">
-                    {tracker.name}
-                  </Badge>
-                ) : null}
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[11px] uppercase">
-                  {direction === "expense" ? "Ausgabe" : "Einnahme"}
-                </Badge>
-              </div>
-              <CardTitle className="text-2xl tracking-tight">Buchungen</CardTitle>
+              <CardTitle className="text-2xl tracking-tight">
+                Buchungen
+              </CardTitle>
               <CardDescription className="max-w-2xl">
-                Transaktionen fuer den aktiven Tracker erfassen und die letzten Eintraege direkt
-                daneben pruefen.
+                Transaktionen fuer den aktiven Tracker erfassen und die letzten
+                Eintraege direkt daneben pruefen.
               </CardDescription>
             </div>
 
@@ -389,7 +425,7 @@ export function DashboardClient() {
                       "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
                       isActive
                         ? "border-transparent bg-foreground text-background shadow-sm"
-                        : "border-border/70 bg-background/75 text-foreground hover:bg-accent"
+                        : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
                     )}
                   >
                     <span
@@ -410,7 +446,9 @@ export function DashboardClient() {
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     Tracker
                   </p>
-                  <p className="text-lg font-semibold">{tracker?.name || "Kein Tracker aktiv"}</p>
+                  <p className="text-lg font-semibold">
+                    {tracker?.name || "Kein Tracker aktiv"}
+                  </p>
                 </div>
                 <div
                   className="h-10 w-10 rounded-2xl border border-border/60 shadow-inner"
@@ -431,7 +469,9 @@ export function DashboardClient() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {latestTransaction
                       ? `${latestTransaction.date} - ${
-                          latestTransaction.direction === "expense" ? "Ausgabe" : "Einnahme"
+                          latestTransaction.direction === "expense"
+                            ? "Ausgabe"
+                            : "Einnahme"
                         }`
                       : "Neue Eintraege erscheinen sofort hier."}
                   </p>
@@ -478,7 +518,7 @@ export function DashboardClient() {
                 key={item.label}
                 className={cn(
                   "rounded-[1.35rem] border border-border/60 bg-gradient-to-br p-4 shadow-sm",
-                  item.surface
+                  item.surface,
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -486,7 +526,9 @@ export function DashboardClient() {
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                       {item.label}
                     </p>
-                    <p className="text-2xl font-semibold tracking-tight">{item.value}</p>
+                    <p className="text-2xl font-semibold tracking-tight">
+                      {item.value}
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-border/60 bg-background/80 p-2.5">
                     <Icon className={cn("h-4 w-4", item.tone)} />
@@ -515,7 +557,7 @@ export function DashboardClient() {
                   "rounded-full px-4 py-2 text-sm font-medium transition",
                   direction === "expense"
                     ? "bg-rose-600 text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Ausgabe
@@ -527,7 +569,7 @@ export function DashboardClient() {
                   "rounded-full px-4 py-2 text-sm font-medium transition",
                   direction === "income"
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Einnahme
@@ -592,7 +634,9 @@ export function DashboardClient() {
                   <SelectValue placeholder="Kategorie waehlen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>Keine Kategorie</SelectItem>
+                  <SelectItem value={EMPTY_SELECT_VALUE}>
+                    Keine Kategorie
+                  </SelectItem>
                   {filteredCategories.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.name}
@@ -606,14 +650,18 @@ export function DashboardClient() {
                   <Input
                     value={newCategoryName}
                     onChange={(event) => setNewCategoryName(event.target.value)}
-                    placeholder={direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"}
+                    placeholder={
+                      direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"
+                    }
                   />
                   <Button
                     type="button"
                     onClick={handleCreateCategory}
                     disabled={createCategoryMutation.isPending}
                   >
-                    {createCategoryMutation.isPending ? "Speichert..." : "Anlegen"}
+                    {createCategoryMutation.isPending
+                      ? "Speichert..."
+                      : "Anlegen"}
                   </Button>
                   <Button
                     type="button"
@@ -728,9 +776,13 @@ export function DashboardClient() {
             <Button
               className="w-full rounded-2xl"
               size="lg"
-              disabled={createTransactionMutation.isPending || !activeTrackerId || !date}
+              disabled={
+                createTransactionMutation.isPending || !activeTrackerId || !date
+              }
             >
-              {createTransactionMutation.isPending ? "Speichere..." : "Eintrag speichern"}
+              {createTransactionMutation.isPending
+                ? "Speichere..."
+                : "Eintrag speichern"}
             </Button>
           </form>
         </div>
@@ -759,11 +811,19 @@ export function DashboardClient() {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
-                          variant={item.direction === "expense" ? "destructive" : "secondary"}
+                          variant={
+                            item.direction === "expense"
+                              ? "destructive"
+                              : "secondary"
+                          }
                         >
-                          {item.direction === "expense" ? "Ausgabe" : "Einnahme"}
+                          {item.direction === "expense"
+                            ? "Ausgabe"
+                            : "Einnahme"}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">{item.date}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.date}
+                        </span>
                       </div>
                       <p className="font-medium">
                         {item.payeeName || item.customPayeeName || "Ohne Payee"}
@@ -776,11 +836,16 @@ export function DashboardClient() {
                     <div
                       className={cn(
                         "text-lg font-semibold tracking-tight",
-                        item.direction === "expense" ? "text-rose-600" : "text-emerald-600"
+                        item.direction === "expense"
+                          ? "text-rose-600"
+                          : "text-emerald-600",
                       )}
                     >
                       {item.direction === "expense" ? "-" : "+"}
-                      {formatCurrency(item.amountCents, tracker?.currency || "EUR")}
+                      {formatCurrency(
+                        item.amountCents,
+                        tracker?.currency || "EUR",
+                      )}
                     </div>
                   </div>
                 ))
@@ -795,7 +860,8 @@ export function DashboardClient() {
           <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-primary/10 via-background/92 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
             <p className="text-sm font-semibold">Neuer Tracker</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Eigene Bereiche wie Haushalt, Urlaub oder Business direkt hier anlegen.
+              Eigene Bereiche wie Haushalt, Urlaub oder Business direkt hier
+              anlegen.
             </p>
 
             <form onSubmit={handleCreateTracker} className="mt-4 space-y-3">
@@ -811,8 +877,13 @@ export function DashboardClient() {
                   onChange={(event) => setNewTrackerColor(event.target.value)}
                   className="h-10 w-full"
                 />
-                <Button type="submit" disabled={createTrackerMutation.isPending}>
-                  {createTrackerMutation.isPending ? "Speichert..." : "Tracker anlegen"}
+                <Button
+                  type="submit"
+                  disabled={createTrackerMutation.isPending}
+                >
+                  {createTrackerMutation.isPending
+                    ? "Speichert..."
+                    : "Tracker anlegen"}
                 </Button>
               </div>
             </form>
