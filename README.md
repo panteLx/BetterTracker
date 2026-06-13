@@ -14,7 +14,7 @@ Its a single local application that handles authentication, transaction entry, r
 - Recurring schedules with manual transaction creation
 - Admin area for users, trackers, logs, settings, and system stats
 - Audit logging for mutations
-- Optional Discord webhook notifications
+- Optional Discord webhook notifications per tracker
 - SQLite persistence through Drizzle ORM
 
 ## Tech Stack
@@ -87,16 +87,13 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ALLOW_USER_REGISTRATION=true
 DEFAULT_LOCALE=de-DE
 TZ=Europe/Berlin
-DISCORD_WEBHOOK_URL=
-DISCORD_DEBUG=false
-DISCORD_PING_ROLE_ID=
 ```
 
 Notes:
 
 - `DATABASE_URL` points to the local SQLite database.
 - `BETTER_AUTH_ALLOWED_HOSTS` and `BETTER_AUTH_TRUSTED_ORIGINS` are important if you access the app through LAN IPs in development.
-- `DISCORD_WEBHOOK_URL` is optional.
+- Discord webhook settings are configured in the UI, either per tracker or as admin defaults that can be applied to all trackers.
 
 ## Available Scripts
 

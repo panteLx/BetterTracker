@@ -140,6 +140,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
 
   await sendDiscordNotification({
     type: "transaction_created",
+    trackerId: parsed.trackerId,
     title: "Neue Transaktion",
     description: `Eine ${parsed.direction === "expense" ? "Ausgabe" : "Einnahme"} wurde erfasst.`,
     createdByUserId: actorUserId,

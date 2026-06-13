@@ -24,7 +24,4 @@ export const env = {
   allowUserRegistration: process.env.ALLOW_USER_REGISTRATION !== "false",
   defaultLocale: process.env.DEFAULT_LOCALE || "de-DE",
   timezone: process.env.TZ || "Europe/Berlin",
-  discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL || "",
-  discordDebug: process.env.DISCORD_DEBUG === "true",
-  discordPingRoleId: process.env.DISCORD_PING_ROLE_ID || "",
 };

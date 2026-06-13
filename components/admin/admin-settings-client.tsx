@@ -45,14 +45,22 @@ export function AdminSettingsClient() {
     },
   });
 
-  const testDiscordMutation = useMutation({
-    mutationFn: () =>
-      fetchJson("/api/admin/notifications/test-discord", {
+  const applyDiscordDefaultsMutation = useMutation({
+    mutationFn: (payload: Pick<
+      Settings,
+      "discordWebhookUrl" | "discordDebugEnabled" | "discordPingRoleId"
+    >) =>
+      fetchJson<{ updatedCount: number }>("/api/admin/settings/discord/apply-to-trackers", {
         method: "POST",
+        body: JSON.stringify(payload),
       }),
-    onSuccess: () => toast.success("Testbenachrichtigung gesendet"),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Test fehlgeschlagen"),
+    onSuccess: (data) => {
+      toast.success(`${data.updatedCount} Tracker aktualisiert`);
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Uebernahme fehlgeschlagen");
+    },
   });
 
   const form = draft || settingsQuery.data?.settings || null;
@@ -89,7 +97,7 @@ export function AdminSettingsClient() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="discordWebhookUrl">Discord Webhook URL</Label>
+            <Label htmlFor="discordWebhookUrl">Discord-Default Webhook URL</Label>
             <Input
               id="discordWebhookUrl"
               value={form.discordWebhookUrl}
@@ -97,7 +105,7 @@ export function AdminSettingsClient() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="discordPingRoleId">Discord Ping Role ID</Label>
+            <Label htmlFor="discordPingRoleId">Discord-Default Ping Role ID</Label>
             <Input
               id="discordPingRoleId"
               value={form.discordPingRoleId}
@@ -116,8 +124,10 @@ export function AdminSettingsClient() {
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
             <div>
-              <p className="font-medium">Discord Debug</p>
-              <p className="text-sm text-muted-foreground">Zusätzliche Discord-Debugdaten senden</p>
+              <p className="font-medium">Discord-Default Debug</p>
+              <p className="text-sm text-muted-foreground">
+                Neue Tracker uebernehmen diesen Discord-Debug-Standardwert
+              </p>
             </div>
             <Switch
               checked={form.discordDebugEnabled}
@@ -127,24 +137,38 @@ export function AdminSettingsClient() {
           <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
             <div>
               <p className="font-medium">Registrierung erlaubt</p>
-              <p className="text-sm text-muted-foreground">Neue Benutzer dürfen sich registrieren</p>
+              <p className="text-sm text-muted-foreground">Neue Benutzer duerfen sich registrieren</p>
             </div>
             <Switch
               checked={form.registrationEnabled}
               onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
             />
           </div>
-          <div className="md:col-span-2 flex flex-wrap gap-3">
-            <Button type="submit" disabled={patchMutation.isPending}>
-              Settings speichern
-            </Button>
+          <div className="rounded-2xl border border-border/60 p-4 md:col-span-2">
+            <p className="font-medium">Discord-Defaults auf alle Tracker anwenden</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Uebertraegt Webhook, Ping Role ID und Discord-Debug aus dieser Seite in jeden
+              vorhandenen Tracker.
+            </p>
             <Button
               type="button"
               variant="outline"
-              onClick={() => testDiscordMutation.mutate()}
-              disabled={testDiscordMutation.isPending}
+              className="mt-4"
+              onClick={() =>
+                applyDiscordDefaultsMutation.mutate({
+                  discordWebhookUrl: form.discordWebhookUrl,
+                  discordDebugEnabled: form.discordDebugEnabled,
+                  discordPingRoleId: form.discordPingRoleId,
+                })
+              }
+              disabled={applyDiscordDefaultsMutation.isPending}
             >
-              Discord testen
+              Auf alle Tracker uebernehmen
+            </Button>
+          </div>
+          <div className="md:col-span-2 flex flex-wrap gap-3">
+            <Button type="submit" disabled={patchMutation.isPending}>
+              Settings speichern
             </Button>
           </div>
         </form>
