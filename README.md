@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BetterTracker
+
+BetterTracker is a self-hosted expense tracker built with Next.js, Tailwind CSS, shadcn/ui, Better Auth, Drizzle, and SQLite.
+
+Its a single local application that handles authentication, transaction entry, recurring schedules, admin settings, audit logs, and Discord notifications directly in the app.
+
+## Features
+
+- Multi-user authentication with Better Auth
+- Role-based access for `user`, `admin`, and `superadmin`
+- Multiple trackers such as `Coffee`, `Money`, or custom tracker spaces
+- Transaction entry with categories, payees, notes, and recent activity
+- Inline creation of trackers, categories, and payees from the main flow
+- Recurring schedules with manual transaction creation
+- Admin area for users, trackers, logs, settings, and system stats
+- Audit logging for mutations
+- Optional Discord webhook notifications
+- SQLite persistence through Drizzle ORM
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- shadcn/ui
+- Better Auth
+- Drizzle ORM
+- better-sqlite3
+- TanStack Query
+
+## Requirements
+
+- Node.js 20 or newer
+- npm
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Update the values in `.env`.
+
+At minimum, set a strong `BETTER_AUTH_SECRET`.
+
+4. Run the database migration:
+
+```bash
+npm run db:migrate
+```
+
+5. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+6. Open the app:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The first registered account becomes `superadmin`.
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+The project ships with the following example variables:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+DATABASE_URL=file:./data/sqlite.db
+NODE_ENV=development
+BETTER_AUTH_SECRET=replace-with-a-long-random-string
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.100.13
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://192.168.100.13:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ALLOW_USER_REGISTRATION=true
+DEFAULT_LOCALE=de-DE
+TZ=Europe/Berlin
+DISCORD_WEBHOOK_URL=
+DISCORD_DEBUG=false
+DISCORD_PING_ROLE_ID=
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Notes:
 
-## Deploy on Vercel
+- `DATABASE_URL` points to the local SQLite database.
+- `BETTER_AUTH_ALLOWED_HOSTS` and `BETTER_AUTH_TRUSTED_ORIGINS` are important if you access the app through LAN IPs in development.
+- `DISCORD_WEBHOOK_URL` is optional.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Available Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run db:generate
+npm run db:migrate
+```
+
+## Database
+
+- Schema definitions live in `lib/db/schema.ts`
+- Drizzle config lives in `drizzle.config.ts`
+- Migrations are written to `drizzle/`
+- The default local database file is `data/sqlite.db`
+
+## Application Areas
+
+- `/` transaction entry and recent transactions
+- `/transactions` filterable transaction history
+- `/schedules` recurring schedules
+- `/profile` current user overview
+- `/admin` admin overview
+- `/admin/users` user management
+- `/admin/trackers` tracker management
+- `/admin/logs` audit logs
+- `/admin/settings` application settings
+
+## Development Notes
+
+- The app uses the Next.js App Router.
+- API endpoints are implemented with route handlers under `app/api`.
+- The default locale is German-first, but the README and codebase structure are English-friendly.
+- SQLite is the default target for local and self-hosted deployments.
+
+## Production Build
+
+To create a production build:
+
+```bash
+npm run build
+npm run start
+```
+
+## License
+
+This repository currently does not define a separate license file.
