@@ -16,6 +16,18 @@ export function formatCurrency(
   }).format(amountCents / 100);
 }
 
+export function formatDateTime(
+  value: string | number | Date,
+  locale = "de-DE",
+  timezone = "Europe/Berlin"
+) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: timezone,
+  }).format(new Date(value));
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()

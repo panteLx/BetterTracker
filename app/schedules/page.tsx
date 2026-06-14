@@ -1,6 +1,7 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { SchedulesClient } from "@/components/schedules/schedules-client";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
+import { env } from "@/lib/env";
 import { requireUser } from "@/lib/auth/session";
 
 export default async function SchedulesPage() {
@@ -11,9 +12,9 @@ export default async function SchedulesPage() {
     <PageContainer
       user={user}
       title="Schedules"
-      description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion übernehmen."
+      description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion uebernehmen."
     >
-      <SchedulesClient />
+      <SchedulesClient locale={env.defaultLocale} />
     </PageContainer>
   );
 }

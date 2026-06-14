@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type Tracker = { id: string; name: string; currency: string };
+type Tracker = { id: string; name: string; currency: string; isActive: boolean };
 type Transaction = {
   id: string;
   date: string;
@@ -23,17 +23,23 @@ type Transaction = {
   notes?: string | null;
 };
 
-export function TransactionsClient() {
+type TransactionsClientProps = {
+  locale: string;
+};
+
+export function TransactionsClient({ locale }: TransactionsClientProps) {
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState("all");
+
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
   });
 
   const activeTrackerId = selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
+  const tracker = trackersQuery.data?.items.find((item) => item.id === activeTrackerId);
 
   const transactionsQuery = useQuery({
     queryKey: ["transactions", activeTrackerId, query, direction],
@@ -55,16 +61,15 @@ export function TransactionsClient() {
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Transaktion gelöscht");
+      toast.success("Transaktion geloescht");
       queryClient.invalidateQueries({ queryKey: ["transactions", activeTrackerId] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen");
+      toast.error(error instanceof Error ? error.message : "Loeschen fehlgeschlagen");
     },
   });
 
-  const currency =
-    trackersQuery.data?.items.find((item) => item.id === activeTrackerId)?.currency || "EUR";
+  const currency = tracker?.currency || "EUR";
   const totals = transactionsQuery.data?.totals ?? { incomeCents: 0, expenseCents: 0 };
 
   return (
@@ -107,16 +112,20 @@ export function TransactionsClient() {
         <CardContent className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl bg-muted/50 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Einnahmen</p>
-            <p className="mt-2 text-2xl font-semibold">{formatCurrency(totals.incomeCents, currency)}</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {formatCurrency(totals.incomeCents, currency, locale)}
+            </p>
           </div>
           <div className="rounded-2xl bg-muted/50 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Ausgaben</p>
-            <p className="mt-2 text-2xl font-semibold">{formatCurrency(totals.expenseCents, currency)}</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {formatCurrency(totals.expenseCents, currency, locale)}
+            </p>
           </div>
           <div className="rounded-2xl bg-muted/50 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Saldo</p>
             <p className="mt-2 text-2xl font-semibold">
-              {formatCurrency(totals.incomeCents - totals.expenseCents, currency)}
+              {formatCurrency(totals.incomeCents - totals.expenseCents, currency, locale)}
             </p>
           </div>
         </CardContent>
@@ -147,21 +156,28 @@ export function TransactionsClient() {
                   <TableCell className="max-w-sm truncate">{item.notes || "-"}</TableCell>
                   <TableCell className="text-right font-medium">
                     {item.direction === "expense" ? "-" : "+"}
-                    {formatCurrency(item.amountCents, currency)}
+                    {formatCurrency(item.amountCents, currency, locale)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending || !tracker?.isActive}
                     >
-                      Löschen
+                      Loeschen
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          {tracker && !tracker.isActive ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Dieser Tracker ist archiviert. Transaktionen koennen nicht geaendert oder geloescht
+              werden.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </div>

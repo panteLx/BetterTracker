@@ -1,6 +1,7 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { TransactionsClient } from "@/components/transactions/transactions-client";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
+import { env } from "@/lib/env";
 import { requireUser } from "@/lib/auth/session";
 
 export default async function TransactionsPage() {
@@ -11,9 +12,9 @@ export default async function TransactionsPage() {
     <PageContainer
       user={user}
       title="Transaktionen"
-      description="Filterbare Historie mit Summen für Einnahmen, Ausgaben und Saldo."
+      description="Filterbare Historie mit Summen fuer Einnahmen, Ausgaben und Saldo."
     >
-      <TransactionsClient />
+      <TransactionsClient locale={env.defaultLocale} />
     </PageContainer>
   );
 }

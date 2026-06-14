@@ -10,10 +10,14 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function LandingPage() {
+type LandingPageProps = {
+  registrationEnabled: boolean;
+};
+
+export function LandingPage({ registrationEnabled }: LandingPageProps) {
   return (
     <div className="min-h-screen">
-      <AppHeader />
+      <AppHeader registrationEnabled={registrationEnabled} />
       <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6">
         <section className="grid gap-8 rounded-[2rem] border border-border/50 bg-card/80 p-8 shadow-lg lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
@@ -32,12 +36,14 @@ export function LandingPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" asChild>
-                <Link href="/register">
-                  Jetzt starten
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              {registrationEnabled ? (
+                <Button size="lg" asChild>
+                  <Link href="/register">
+                    Jetzt starten
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : null}
               <Button size="lg" variant="outline" asChild>
                 <Link href="/login">Zum Login</Link>
               </Button>

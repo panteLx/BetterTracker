@@ -1,0 +1,1 @@
+ALTER TABLE `trackers` ADD `is_hidden` integer DEFAULT false NOT NULL;

@@ -5,6 +5,7 @@ import { parseAmountToCents } from "@/lib/utils";
 import { transactionInputSchema, transactionQuerySchema } from "@/lib/validators/transaction";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { sendDiscordNotification } from "@/lib/services/discord-service";
+import { getTrackerById } from "@/lib/trackers";
 
 export async function listTransactions(query: unknown) {
   const parsed = transactionQuerySchema.parse(query);
@@ -65,18 +66,26 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     throw new Error("Invalid transaction amount");
   }
 
+  const tracker = await getTrackerById(parsed.trackerId);
+  if (!tracker) {
+    throw new Error("Tracker not found");
+  }
+  if (!tracker.isActive) {
+    throw new Error("Tracker is archived and cannot be modified");
+  }
+
   let resolvedPayeeId = parsed.payeeId ?? null;
   const trimmedCustomPayeeName = parsed.customPayeeName?.trim();
   let resolvedAccountName = parsed.accountName?.trim() || "";
 
   if (!resolvedAccountName) {
-    const [tracker] = await db
+    const [trackerRow] = await db
       .select({ name: trackers.name })
       .from(trackers)
       .where(eq(trackers.id, parsed.trackerId))
       .limit(1);
 
-    resolvedAccountName = tracker?.name || "Tracker";
+    resolvedAccountName = trackerRow?.name || "Tracker";
   }
 
   if (!resolvedPayeeId && trimmedCustomPayeeName) {

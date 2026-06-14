@@ -15,6 +15,13 @@
       "when": 1781385560948,
       "tag": "0001_tracker_discord_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781438711738,
+      "tag": "0002_oval_lake",
+      "breakpoints": true
     }
   ]
 }

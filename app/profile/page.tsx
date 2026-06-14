@@ -1,7 +1,13 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
-import { requireUser, getActiveSessionsForUser, getCurrentUserRecord } from "@/lib/auth/session";
+import { env } from "@/lib/env";
+import {
+  requireUser,
+  getActiveSessionsForUser,
+  getCurrentUserRecord,
+} from "@/lib/auth/session";
+import { formatDateTime } from "@/lib/utils";
 
 export default async function ProfilePage() {
   const current = await requireUser();
@@ -15,7 +21,7 @@ export default async function ProfilePage() {
     <PageContainer
       user={current}
       title="Profil"
-      description="Persönliche Kontoinformationen und aktive Sessions."
+      description="Persoenliche Kontoinformationen und aktive Sessions."
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -45,9 +51,9 @@ export default async function ProfilePage() {
           <CardContent className="space-y-3">
             {sessions.map((session) => (
               <div key={session.id} className="rounded-2xl border border-border/60 p-4 text-sm">
-                <p className="font-medium">{session.userAgent || "Unbekanntes Gerät"}</p>
+                <p className="font-medium">{session.userAgent || "Unbekanntes Geraet"}</p>
                 <p className="text-muted-foreground">
-                  Läuft bis {new Date(session.expiresAt).toLocaleString("de-DE")}
+                  Laeuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
                 </p>
               </div>
             ))}

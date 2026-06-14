@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trackerMembers, trackers } from "@/lib/db/schema";
 import { requireAuthenticatedApi } from "@/lib/auth/guards";
@@ -12,6 +12,8 @@ import { slugify } from "@/lib/utils";
 export async function GET(request: Request) {
   const authResult = await requireAuthenticatedApi(request.headers);
   if (authResult.response) return authResult.response;
+  const { searchParams } = new URL(request.url);
+  const includeHidden = searchParams.get("includeHidden") === "1";
 
   try {
     const items =
@@ -28,29 +30,52 @@ export async function GET(request: Request) {
               discordDebugEnabled: trackers.discordDebugEnabled,
               discordPingRoleId: trackers.discordPingRoleId,
               isActive: trackers.isActive,
+              isHidden: trackers.isHidden,
               sortOrder: trackers.sortOrder,
               permission: trackerMembers.permission,
             })
             .from(trackers)
             .innerJoin(trackerMembers, eq(trackers.id, trackerMembers.trackerId))
-            .where(eq(trackerMembers.userId, authResult.user!.id))
+            .where(
+              and(eq(trackerMembers.userId, authResult.user!.id), eq(trackers.isHidden, false))
+            )
             .orderBy(asc(trackers.sortOrder), asc(trackers.name))
-        : await db
-            .select({
-              id: trackers.id,
-              name: trackers.name,
-              slug: trackers.slug,
-              description: trackers.description,
-              color: trackers.color,
-              currency: trackers.currency,
-              discordWebhookUrl: trackers.discordWebhookUrl,
-              discordDebugEnabled: trackers.discordDebugEnabled,
-              discordPingRoleId: trackers.discordPingRoleId,
-              isActive: trackers.isActive,
-              sortOrder: trackers.sortOrder,
-            })
-            .from(trackers)
-            .orderBy(asc(trackers.sortOrder), asc(trackers.name));
+        : includeHidden
+          ? await db
+              .select({
+                id: trackers.id,
+                name: trackers.name,
+                slug: trackers.slug,
+                description: trackers.description,
+                color: trackers.color,
+                currency: trackers.currency,
+                discordWebhookUrl: trackers.discordWebhookUrl,
+                discordDebugEnabled: trackers.discordDebugEnabled,
+                discordPingRoleId: trackers.discordPingRoleId,
+                isActive: trackers.isActive,
+                isHidden: trackers.isHidden,
+                sortOrder: trackers.sortOrder,
+              })
+              .from(trackers)
+              .orderBy(asc(trackers.sortOrder), asc(trackers.name))
+          : await db
+              .select({
+                id: trackers.id,
+                name: trackers.name,
+                slug: trackers.slug,
+                description: trackers.description,
+                color: trackers.color,
+                currency: trackers.currency,
+                discordWebhookUrl: trackers.discordWebhookUrl,
+                discordDebugEnabled: trackers.discordDebugEnabled,
+                discordPingRoleId: trackers.discordPingRoleId,
+                isActive: trackers.isActive,
+                isHidden: trackers.isHidden,
+                sortOrder: trackers.sortOrder,
+              })
+              .from(trackers)
+              .where(eq(trackers.isHidden, false))
+              .orderBy(asc(trackers.sortOrder), asc(trackers.name));
 
     return ok({ items });
   } catch (error) {
@@ -68,6 +93,9 @@ export async function POST(request: Request) {
       description?: string | null;
       color?: string;
       currency?: string;
+      discordWebhookUrl?: string;
+      discordDebugEnabled?: boolean;
+      discordPingRoleId?: string;
     }>(request);
 
     if (!body.name?.trim()) {
@@ -83,10 +111,10 @@ export async function POST(request: Request) {
         slug,
         description: body.description?.trim() || null,
         color: body.color || DEFAULT_TRACKER_COLOR,
-        currency: body.currency || "EUR",
-        discordWebhookUrl: settings.discordWebhookUrl,
-        discordDebugEnabled: settings.discordDebugEnabled,
-        discordPingRoleId: settings.discordPingRoleId,
+        currency: body.currency?.trim().toUpperCase() || "EUR",
+        discordWebhookUrl: body.discordWebhookUrl?.trim() || settings.discordWebhookUrl,
+        discordDebugEnabled: body.discordDebugEnabled ?? settings.discordDebugEnabled,
+        discordPingRoleId: body.discordPingRoleId?.trim() || settings.discordPingRoleId,
       })
       .returning();
 

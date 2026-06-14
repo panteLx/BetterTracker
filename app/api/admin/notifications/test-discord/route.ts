@@ -18,6 +18,13 @@ export async function POST(request: Request) {
       title: "BetterTracker Test",
       description: "Dies ist eine Testbenachrichtigung aus dem Adminbereich.",
       createdByUserId: access.user!.id,
+      includeDebug: true,
+      debugPayload: {
+        trackerId: body.trackerId,
+        createdByUserId: access.user!.id,
+        source: "admin_test",
+        triggeredAt: new Date().toISOString(),
+      },
     });
 
     return ok(result);

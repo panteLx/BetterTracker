@@ -11,12 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 type Settings = {
-  debugEnabled: boolean;
   discordWebhookUrl: string;
   discordDebugEnabled: boolean;
   discordPingRoleId: string;
-  defaultLocale: string;
-  defaultTimezone: string;
   registrationEnabled: boolean;
 };
 
@@ -68,34 +65,37 @@ export function AdminSettingsClient() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const currentForm = form;
-    if (!currentForm) return;
-    patchMutation.mutate(currentForm);
+    if (!form) return;
+    patchMutation.mutate(form);
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>System Settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="locale">Locale</Label>
-            <Input
-              id="locale"
-              value={form.defaultLocale}
-              onChange={(e) => setDraft({ ...form, defaultLocale: e.target.value })}
+    <form onSubmit={onSubmit} className="grid gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>System</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
+            <div>
+              <p className="font-medium">Registrierung erlaubt</p>
+              <p className="text-sm text-muted-foreground">
+                Neue Benutzer duerfen sich ueber die oeffentliche Registrierung anmelden.
+              </p>
+            </div>
+            <Switch
+              checked={form.registrationEnabled}
+              onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Input
-              id="timezone"
-              value={form.defaultTimezone}
-              onChange={(e) => setDraft({ ...form, defaultTimezone: e.target.value })}
-            />
-          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Discord</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="discordWebhookUrl">Discord-Default Webhook URL</Label>
             <Input
@@ -114,34 +114,14 @@ export function AdminSettingsClient() {
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
             <div>
-              <p className="font-medium">Debug Mode</p>
-              <p className="text-sm text-muted-foreground">Erweitertes Logging und Debug-Payloads</p>
-            </div>
-            <Switch
-              checked={form.debugEnabled}
-              onCheckedChange={(value) => setDraft({ ...form, debugEnabled: value })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-            <div>
               <p className="font-medium">Discord-Default Debug</p>
               <p className="text-sm text-muted-foreground">
-                Neue Tracker uebernehmen diesen Discord-Debug-Standardwert
+                Neue Tracker uebernehmen diesen Discord-Debug-Standardwert.
               </p>
             </div>
             <Switch
               checked={form.discordDebugEnabled}
               onCheckedChange={(value) => setDraft({ ...form, discordDebugEnabled: value })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-            <div>
-              <p className="font-medium">Registrierung erlaubt</p>
-              <p className="text-sm text-muted-foreground">Neue Benutzer duerfen sich registrieren</p>
-            </div>
-            <Switch
-              checked={form.registrationEnabled}
-              onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
             />
           </div>
           <div className="rounded-2xl border border-border/60 p-4 md:col-span-2">
@@ -166,13 +146,14 @@ export function AdminSettingsClient() {
               Auf alle Tracker uebernehmen
             </Button>
           </div>
-          <div className="md:col-span-2 flex flex-wrap gap-3">
-            <Button type="submit" disabled={patchMutation.isPending}>
-              Settings speichern
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" disabled={patchMutation.isPending}>
+          Settings speichern
+        </Button>
+      </div>
+    </form>
   );
 }

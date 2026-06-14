@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Tracker = { id: string; name: string; currency: string };
+type Tracker = { id: string; name: string; currency: string; isActive: boolean };
 type Schedule = {
   id: string;
   name: string;
@@ -25,7 +25,11 @@ type Schedule = {
   isActive: boolean;
 };
 
-export function SchedulesClient() {
+type SchedulesClientProps = {
+  locale: string;
+};
+
+export function SchedulesClient({ locale }: SchedulesClientProps) {
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [name, setName] = useState("");
@@ -41,6 +45,7 @@ export function SchedulesClient() {
   });
 
   const activeTrackerId = selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
+  const tracker = trackersQuery.data?.items.find((item) => item.id === activeTrackerId);
 
   const dueQuery = useQuery({
     queryKey: ["schedules", activeTrackerId, "due"],
@@ -110,8 +115,7 @@ export function SchedulesClient() {
     });
   }
 
-  const currency =
-    trackersQuery.data?.items.find((item) => item.id === activeTrackerId)?.currency || "EUR";
+  const currency = tracker?.currency || "EUR";
 
   function renderItems(items: Schedule[]) {
     return (
@@ -129,23 +133,27 @@ export function SchedulesClient() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                {item.nextDueDate} • {item.frequency} / {item.intervalValue}
+                {item.nextDueDate} | {item.frequency} / {item.intervalValue}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-lg font-semibold">
-                {formatCurrency(item.amountCents, currency)}
+                {formatCurrency(item.amountCents, currency, locale)}
               </div>
               {item.isActive ? (
-                <Button size="sm" onClick={() => createTransactionMutation.mutate(item.id)}>
-                  Als Transaktion übernehmen
+                <Button
+                  size="sm"
+                  onClick={() => createTransactionMutation.mutate(item.id)}
+                  disabled={createTransactionMutation.isPending || !tracker?.isActive}
+                >
+                  Als Transaktion uebernehmen
                 </Button>
               ) : null}
             </div>
           </div>
         ))}
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Keine Einträge in diesem Tab.</p>
+          <p className="text-sm text-muted-foreground">Keine Eintraege in diesem Tab.</p>
         ) : null}
       </div>
     );
@@ -163,7 +171,7 @@ export function SchedulesClient() {
               <Label>Tracker</Label>
               <Select value={activeTrackerId} onValueChange={setSelectedTracker}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tracker wählen" />
+                  <SelectValue placeholder="Tracker waehlen" />
                 </SelectTrigger>
                 <SelectContent>
                   {(trackersQuery.data?.items || []).map((item) => (
@@ -185,7 +193,10 @@ export function SchedulesClient() {
               </div>
               <div className="space-y-2">
                 <Label>Typ</Label>
-                <Select value={direction} onValueChange={(value) => setDirection(value as "expense" | "income")}>
+                <Select
+                  value={direction}
+                  onValueChange={(value) => setDirection(value as "expense" | "income")}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -199,24 +210,33 @@ export function SchedulesClient() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Frequenz</Label>
-                <Select value={frequency} onValueChange={(value) => setFrequency(value as "monthly" | "yearly" | "custom_days")}>
+                <Select
+                  value={frequency}
+                  onValueChange={(value) =>
+                    setFrequency(value as "monthly" | "yearly" | "custom_days")
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Monatlich</SelectItem>
-                    <SelectItem value="yearly">Jährlich</SelectItem>
+                    <SelectItem value="yearly">Jaehrlich</SelectItem>
                     <SelectItem value="custom_days">Custom Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="interval">Intervall</Label>
-                <Input id="interval" value={intervalValue} onChange={(e) => setIntervalValue(e.target.value)} />
+                <Input
+                  id="interval"
+                  value={intervalValue}
+                  onChange={(e) => setIntervalValue(e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nextDueDate">Nächstes Datum</Label>
+              <Label htmlFor="nextDueDate">Naechstes Datum</Label>
               <Input
                 id="nextDueDate"
                 type="date"
@@ -224,16 +244,21 @@ export function SchedulesClient() {
                 onChange={(e) => setNextDueDate(e.target.value)}
               />
             </div>
-            <Button className="w-full" disabled={createMutation.isPending}>
+            <Button className="w-full" disabled={createMutation.isPending || !tracker?.isActive}>
               {createMutation.isPending ? "Speichere..." : "Schedule anlegen"}
             </Button>
+            {tracker && !tracker.isActive ? (
+              <p className="text-sm text-muted-foreground">
+                Dieser Tracker ist archiviert. Schedules koennen nicht bearbeitet werden.
+              </p>
+            ) : null}
           </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Fälligkeiten</CardTitle>
+          <CardTitle>Faelligkeiten</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="due">
