@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
+import { canMutateTrackerResource } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
-import { requireTrackerWriteAccess } from "@/lib/auth/guards";
-import { notFound, ok, serverError } from "@/lib/http";
+import { requireTrackerReadAccess } from "@/lib/auth/guards";
+import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { parseAmountToCents } from "@/lib/utils";
 
@@ -18,8 +19,20 @@ export async function PATCH(
   const { id } = await context.params;
   const schedule = await getSchedule(id);
   if (!schedule) return notFound("Schedule not found");
-  const access = await requireTrackerWriteAccess(request.headers, schedule.trackerId);
+  const access = await requireTrackerReadAccess(request.headers, schedule.trackerId);
   if (access.response) return access.response;
+  if (
+    !canMutateTrackerResource(
+      access.trackerAccess!.permission,
+      access.user!.id,
+      schedule.createdByUserId
+    )
+  ) {
+    return forbidden();
+  }
+  if (!access.trackerAccess!.tracker.isActive) {
+    return conflict("Tracker is archived and cannot be modified");
+  }
 
   try {
     const body = await parseRequestJson<{
@@ -80,8 +93,20 @@ export async function DELETE(
   const { id } = await context.params;
   const schedule = await getSchedule(id);
   if (!schedule) return notFound("Schedule not found");
-  const access = await requireTrackerWriteAccess(request.headers, schedule.trackerId);
+  const access = await requireTrackerReadAccess(request.headers, schedule.trackerId);
   if (access.response) return access.response;
+  if (
+    !canMutateTrackerResource(
+      access.trackerAccess!.permission,
+      access.user!.id,
+      schedule.createdByUserId
+    )
+  ) {
+    return forbidden();
+  }
+  if (!access.trackerAccess!.tracker.isActive) {
+    return conflict("Tracker is archived and cannot be modified");
+  }
 
   try {
     await db.delete(schedules).where(eq(schedules.id, id));

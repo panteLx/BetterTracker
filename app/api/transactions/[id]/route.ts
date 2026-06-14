@@ -1,9 +1,10 @@
 import { and, eq } from "drizzle-orm";
+import { canMutateTrackerResource } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, transactions } from "@/lib/db/schema";
-import { requireTrackerWriteAccess } from "@/lib/auth/guards";
+import { requireTrackerReadAccess } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { notFound, ok, serverError } from "@/lib/http";
+import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { parseAmountToCents } from "@/lib/utils";
 
@@ -20,8 +21,20 @@ export async function PATCH(
   const existing = await getTransaction(id);
   if (!existing) return notFound("Transaction not found");
 
-  const access = await requireTrackerWriteAccess(request.headers, existing.trackerId);
+  const access = await requireTrackerReadAccess(request.headers, existing.trackerId);
   if (access.response) return access.response;
+  if (
+    !canMutateTrackerResource(
+      access.trackerAccess!.permission,
+      access.user!.id,
+      existing.createdByUserId
+    )
+  ) {
+    return forbidden();
+  }
+  if (!access.trackerAccess!.tracker.isActive) {
+    return conflict("Tracker is archived and cannot be modified");
+  }
 
   try {
     const body = await parseRequestJson<{
@@ -109,8 +122,20 @@ export async function DELETE(
   const { id } = await context.params;
   const existing = await getTransaction(id);
   if (!existing) return notFound("Transaction not found");
-  const access = await requireTrackerWriteAccess(request.headers, existing.trackerId);
+  const access = await requireTrackerReadAccess(request.headers, existing.trackerId);
   if (access.response) return access.response;
+  if (
+    !canMutateTrackerResource(
+      access.trackerAccess!.permission,
+      access.user!.id,
+      existing.createdByUserId
+    )
+  ) {
+    return forbidden();
+  }
+  if (!access.trackerAccess!.tracker.isActive) {
+    return conflict("Tracker is archived and cannot be modified");
+  }
 
   try {
     await db.delete(transactions).where(eq(transactions.id, id));

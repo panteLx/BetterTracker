@@ -17,7 +17,9 @@ export default async function AdminSettingsPage() {
       description="System- und Discord-Defaults zentral verwalten."
     >
       <AdminNav />
-      <AdminSettingsClient />
+      <AdminSettingsClient
+        currentRole={user.role === "superadmin" ? "superadmin" : "admin"}
+      />
     </PageContainer>
   );
 }

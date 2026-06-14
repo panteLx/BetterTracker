@@ -29,7 +29,7 @@ type Tracker = {
   discordPingRoleId: string;
   isActive: boolean;
   isHidden?: boolean;
-  permission?: "owner" | "write" | "read";
+  permission?: "owner" | "admin" | "write" | "read";
 };
 
 type Category = {
@@ -41,6 +41,22 @@ type Category = {
 type Payee = {
   id: string;
   name: string;
+};
+
+type TrackerMember = {
+  id: string;
+  userId: string;
+  permission: "owner" | "admin" | "write" | "read";
+  userName: string;
+  userEmail: string;
+  userRole: "user" | "admin" | "superadmin";
+};
+
+type TrackerMemberCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  role: "user" | "admin" | "superadmin";
 };
 
 type TrackerSettingsClientProps = {
@@ -67,6 +83,10 @@ export function TrackerSettingsClient({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState(initialTrackerId);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [newMemberPermission, setNewMemberPermission] = useState<
+    "admin" | "write" | "read"
+  >("write");
   const [draft, setDraft] = useState<{
     name?: string;
     color?: string;
@@ -101,6 +121,27 @@ export function TrackerSettingsClient({
     queryFn: () =>
       fetchJson<{ items: Payee[] }>(`/api/payees?trackerId=${activeTrackerId}`),
     enabled: Boolean(activeTrackerId),
+  });
+
+  const membersQuery = useQuery({
+    queryKey: ["tracker-members", activeTrackerId],
+    queryFn: () =>
+      fetchJson<{ items: TrackerMember[] }>(
+        `/api/trackers/${activeTrackerId}/members`,
+      ),
+    enabled: Boolean(activeTrackerId),
+  });
+
+  const candidateSearch = memberSearch.trim();
+  const candidatesQuery = useQuery({
+    queryKey: ["tracker-member-candidates", activeTrackerId, candidateSearch],
+    queryFn: () =>
+      fetchJson<{ items: TrackerMemberCandidate[] }>(
+        `/api/trackers/${activeTrackerId}/members/candidates?q=${encodeURIComponent(
+          candidateSearch,
+        )}`,
+      ),
+    enabled: Boolean(activeTrackerId && candidateSearch.length >= 2),
   });
 
   const trackerDraft = {
@@ -227,6 +268,72 @@ export function TrackerSettingsClient({
     },
   });
 
+  const addMemberMutation = useMutation({
+    mutationFn: (payload: { userId: string; permission: "admin" | "write" | "read" }) =>
+      fetchJson(`/api/trackers/${activeTrackerId}/members`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      toast.success("Freigabe hinzugefuegt");
+      setMemberSearch("");
+      queryClient.invalidateQueries({
+        queryKey: ["tracker-members", activeTrackerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Freigabe konnte nicht erstellt werden",
+      );
+    },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: ({
+      memberId,
+      permission,
+    }: {
+      memberId: string;
+      permission: "admin" | "write" | "read";
+    }) =>
+      fetchJson(`/api/trackers/${activeTrackerId}/members/${memberId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ permission }),
+      }),
+    onSuccess: () => {
+      toast.success("Freigabe aktualisiert");
+      queryClient.invalidateQueries({
+        queryKey: ["tracker-members", activeTrackerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Freigabe konnte nicht aktualisiert werden",
+      );
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (memberId: string) =>
+      fetchJson(`/api/trackers/${activeTrackerId}/members/${memberId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      toast.success("Freigabe entfernt");
+      queryClient.invalidateQueries({
+        queryKey: ["tracker-members", activeTrackerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Freigabe konnte nicht entfernt werden",
+      );
+    },
+  });
+
   function handleTrackerChange(nextTrackerId: string) {
     setSelectedTracker(nextTrackerId);
     setDraft({});
@@ -273,6 +380,21 @@ export function TrackerSettingsClient({
     }
 
     deletePayeeMutation.mutate(id);
+  }
+
+  function handleAddMember(userId: string) {
+    addMemberMutation.mutate({
+      userId,
+      permission: newMemberPermission,
+    });
+  }
+
+  function handleRemoveMember(memberId: string, label: string) {
+    if (!window.confirm(`Freigabe fuer "${label}" wirklich entfernen?`)) {
+      return;
+    }
+
+    removeMemberMutation.mutate(memberId);
   }
 
   if (!trackersQuery.isLoading && !tracker) {
@@ -482,6 +604,141 @@ export function TrackerSettingsClient({
           </Card>
 
           <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Freigaben</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-3 rounded-2xl border border-border/60 p-4">
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+                    <Input
+                      value={memberSearch}
+                      onChange={(event) => setMemberSearch(event.target.value)}
+                      placeholder="Benutzer per Name oder E-Mail suchen"
+                    />
+                    <Select
+                      value={newMemberPermission}
+                      onValueChange={(value) =>
+                        setNewMemberPermission(value as "admin" | "write" | "read")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="read">Read</SelectItem>
+                        <SelectItem value="write">Write</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {candidateSearch.length >= 2 ? (
+                    <div className="grid gap-2">
+                      {(candidatesQuery.data?.items || []).map((candidate) => (
+                        <div
+                          key={candidate.id}
+                          className="flex flex-col gap-3 rounded-2xl border border-border/60 p-3 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div>
+                            <p className="font-medium">{candidate.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {candidate.email} | {candidate.role}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => handleAddMember(candidate.id)}
+                            disabled={addMemberMutation.isPending}
+                          >
+                            Freigeben
+                          </Button>
+                        </div>
+                      ))}
+                      {candidateSearch.length >= 2 &&
+                      (candidatesQuery.data?.items || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Keine passenden registrierten Benutzer gefunden.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Gib mindestens zwei Zeichen ein, um bestehende Benutzer zu suchen.
+                    </p>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Benutzer</TableHead>
+                        <TableHead>Rolle</TableHead>
+                        <TableHead className="text-right">Aktion</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(membersQuery.data?.items || []).map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{member.userName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {member.userEmail} | {member.userRole}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {member.permission === "owner" ? (
+                              <span className="text-sm font-medium">Owner</span>
+                            ) : (
+                              <Select
+                                value={member.permission}
+                                onValueChange={(value) =>
+                                  updateMemberMutation.mutate({
+                                    memberId: member.id,
+                                    permission: value as "admin" | "write" | "read",
+                                  })
+                                }
+                              >
+                                <SelectTrigger className="w-40">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="read">Read</SelectItem>
+                                  <SelectItem value="write">Write</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {member.permission === "owner" ? (
+                              <span className="text-sm text-muted-foreground">
+                                Nicht entfernbar
+                              </span>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveMember(member.id, member.userEmail)
+                                }
+                                disabled={removeMemberMutation.isPending}
+                              >
+                                Entfernen
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Kategorien</CardTitle>

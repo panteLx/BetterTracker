@@ -17,7 +17,7 @@ type Settings = {
   registrationEnabled: boolean;
 };
 
-export function AdminSettingsClient() {
+export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "superadmin" }) {
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-settings"],
@@ -66,7 +66,15 @@ export function AdminSettingsClient() {
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form) return;
-    patchMutation.mutate(form);
+    const payload =
+      currentRole === "superadmin"
+        ? form
+        : {
+            discordWebhookUrl: form.discordWebhookUrl,
+            discordDebugEnabled: form.discordDebugEnabled,
+            discordPingRoleId: form.discordPingRoleId,
+          };
+    patchMutation.mutate(payload);
   }
 
   return (
@@ -76,18 +84,24 @@ export function AdminSettingsClient() {
           <CardTitle>System</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-            <div>
-              <p className="font-medium">Registrierung erlaubt</p>
-              <p className="text-sm text-muted-foreground">
-                Neue Benutzer duerfen sich ueber die oeffentliche Registrierung anmelden.
-              </p>
+          {currentRole === "superadmin" ? (
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
+              <div>
+                <p className="font-medium">Registrierung erlaubt</p>
+                <p className="text-sm text-muted-foreground">
+                  Neue Benutzer duerfen sich ueber die oeffentliche Registrierung anmelden.
+                </p>
+              </div>
+              <Switch
+                checked={form.registrationEnabled}
+                onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
+              />
             </div>
-            <Switch
-              checked={form.registrationEnabled}
-              onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
-            />
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-border/60 p-4 text-sm text-muted-foreground">
+              Nur Superadmins duerfen die Registrierungssettings der Anwendung aendern.
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 import { createTransaction, listTransactions } from "@/lib/services/transaction-service";
 import { badRequest, created, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-import { requireTrackerReadAccess, requireTrackerWriteAccess } from "@/lib/auth/guards";
+import { requireTrackerContentCreateAccess, requireTrackerReadAccess } from "@/lib/auth/guards";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       payeeId: searchParams.get("payeeId") || undefined,
       direction: searchParams.get("direction") || undefined,
       q: searchParams.get("q") || undefined,
-    });
+    }, access.user!.id, access.trackerAccess!.permission);
 
     return ok(data);
   } catch (error) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const trackerId = typeof body.trackerId === "string" ? body.trackerId : null;
   if (!trackerId) return badRequest("trackerId is required");
 
-  const access = await requireTrackerWriteAccess(request.headers, trackerId);
+  const access = await requireTrackerContentCreateAccess(request.headers, trackerId);
   if (access.response) return access.response;
 
   try {

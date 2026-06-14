@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
-import { requireTrackerWriteAccess } from "@/lib/auth/guards";
+import { requireTrackerReferenceManageAccess } from "@/lib/auth/guards";
 import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
@@ -18,7 +18,7 @@ export async function PATCH(
   const category = await getCategory(id);
   if (!category) return notFound("Category not found");
 
-  const access = await requireTrackerWriteAccess(request.headers, category.trackerId);
+  const access = await requireTrackerReferenceManageAccess(request.headers, category.trackerId);
   if (access.response) return access.response;
 
   try {
@@ -54,7 +54,7 @@ export async function DELETE(
   const { id } = await context.params;
   const category = await getCategory(id);
   if (!category) return notFound("Category not found");
-  const access = await requireTrackerWriteAccess(request.headers, category.trackerId);
+  const access = await requireTrackerReferenceManageAccess(request.headers, category.trackerId);
   if (access.response) return access.response;
 
   try {

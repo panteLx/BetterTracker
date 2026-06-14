@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions } from "@/lib/db/schema";
 import { parseAmountToCents } from "@/lib/utils";
@@ -7,7 +8,11 @@ import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { sendDiscordNotification } from "@/lib/services/discord-service";
 import { getTrackerById } from "@/lib/trackers";
 
-export async function listTransactions(query: unknown) {
+export async function listTransactions(
+  query: unknown,
+  actorUserId: string,
+  permission: TrackerPermission
+) {
   const parsed = transactionQuerySchema.parse(query);
   const filters = [eq(transactions.trackerId, parsed.trackerId)];
 
@@ -37,8 +42,11 @@ export async function listTransactions(query: unknown) {
       date: transactions.date,
       amountCents: transactions.amountCents,
       direction: transactions.direction,
+      categoryId: transactions.categoryId,
+      payeeId: transactions.payeeId,
       notes: transactions.notes,
       source: transactions.source,
+      createdByUserId: transactions.createdByUserId,
       categoryName: categories.name,
       payeeName: payees.name,
       customPayeeName: transactions.customPayeeName,
@@ -49,6 +57,12 @@ export async function listTransactions(query: unknown) {
     .leftJoin(payees, eq(payees.id, transactions.payeeId))
     .where(and(...filters))
     .orderBy(desc(transactions.date), desc(transactions.createdAt));
+
+  const items = rows.map((row) => ({
+    ...row,
+    canEdit: canMutateTrackerResource(permission, actorUserId, row.createdByUserId),
+    canDelete: canMutateTrackerResource(permission, actorUserId, row.createdByUserId),
+  }));
 
   const totals = await db
     .select({
@@ -61,7 +75,7 @@ export async function listTransactions(query: unknown) {
     .where(and(...filters));
 
   return {
-    items: rows,
+    items,
     totals: totals[0] ?? { incomeCents: 0, expenseCents: 0 },
   };
 }

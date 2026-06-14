@@ -11,11 +11,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Tracker = { id: string; name: string; currency: string; isActive: boolean };
+type Tracker = {
+  id: string;
+  name: string;
+  currency: string;
+  isActive: boolean;
+  permission?: "owner" | "admin" | "write" | "read";
+};
+
 type Schedule = {
   id: string;
+  trackerId: string;
   name: string;
   amountCents: number;
   direction: "expense" | "income";
@@ -23,13 +32,37 @@ type Schedule = {
   intervalValue: number;
   nextDueDate: string;
   isActive: boolean;
+  autoCreateDisabled: boolean;
+  createdByUserId: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  canCreateTransaction: boolean;
+};
+
+type EditScheduleState = {
+  name: string;
+  amount: string;
+  direction: "expense" | "income";
+  frequency: "monthly" | "yearly" | "custom_days";
+  intervalValue: string;
+  nextDueDate: string;
+  isActive: boolean;
+  autoCreateDisabled: boolean;
 };
 
 type SchedulesClientProps = {
   locale: string;
+  currentUserId: string;
 };
 
-export function SchedulesClient({ locale }: SchedulesClientProps) {
+function amountToInputValue(amountCents: number) {
+  return (amountCents / 100).toFixed(2).replace(".", ",");
+}
+
+export function SchedulesClient({
+  locale,
+  currentUserId,
+}: SchedulesClientProps) {
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [name, setName] = useState("");
@@ -38,6 +71,8 @@ export function SchedulesClient({ locale }: SchedulesClientProps) {
   const [frequency, setFrequency] = useState<"monthly" | "yearly" | "custom_days">("monthly");
   const [intervalValue, setIntervalValue] = useState("1");
   const [nextDueDate, setNextDueDate] = useState(toDateInputValue(new Date()));
+  const [editingScheduleId, setEditingScheduleId] = useState("");
+  const [editState, setEditState] = useState<EditScheduleState | null>(null);
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -87,6 +122,45 @@ export function SchedulesClient({ locale }: SchedulesClientProps) {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Record<string, unknown>;
+    }) =>
+      fetchJson(`/api/schedules/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      toast.success("Schedule aktualisiert");
+      setEditingScheduleId("");
+      setEditState(null);
+      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen",
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetchJson(`/api/schedules/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      toast.success("Schedule geloescht");
+      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Loeschen fehlgeschlagen");
+    },
+  });
+
   const createTransactionMutation = useMutation({
     mutationFn: (id: string) =>
       fetchJson(`/api/schedules/${id}/create-transaction`, {
@@ -115,43 +189,254 @@ export function SchedulesClient({ locale }: SchedulesClientProps) {
     });
   }
 
+  function startEdit(item: Schedule) {
+    setEditingScheduleId(item.id);
+    setEditState({
+      name: item.name,
+      amount: amountToInputValue(item.amountCents),
+      direction: item.direction,
+      frequency: item.frequency,
+      intervalValue: String(item.intervalValue),
+      nextDueDate: item.nextDueDate,
+      isActive: item.isActive,
+      autoCreateDisabled: item.autoCreateDisabled,
+    });
+  }
+
+  function cancelEdit() {
+    setEditingScheduleId("");
+    setEditState(null);
+  }
+
+  function submitEdit(id: string) {
+    if (!editState) {
+      return;
+    }
+
+    if (!editState.name.trim() || !editState.amount.trim() || !editState.nextDueDate) {
+      toast.error("Name, Betrag und naechstes Datum sind Pflichtfelder");
+      return;
+    }
+
+    updateMutation.mutate({
+      id,
+      payload: {
+        name: editState.name.trim(),
+        amount: editState.amount,
+        direction: editState.direction,
+        frequency: editState.frequency,
+        intervalValue: Number(editState.intervalValue),
+        nextDueDate: editState.nextDueDate,
+        isActive: editState.isActive,
+        autoCreateDisabled: editState.autoCreateDisabled,
+      },
+    });
+  }
+
   const currency = tracker?.currency || "EUR";
 
   function renderItems(items: Schedule[]) {
     return (
       <div className="grid gap-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 md:flex-row md:items-center md:justify-between"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium">{item.name}</h3>
-                <Badge variant={item.direction === "expense" ? "destructive" : "secondary"}>
-                  {item.direction === "expense" ? "Ausgabe" : "Einnahme"}
-                </Badge>
+        {items.map((item) => {
+          const isEditing = editingScheduleId === item.id;
+          const isOwnSchedule = item.createdByUserId === currentUserId;
+
+          return (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-border/60 p-4"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{item.name}</h3>
+                    <Badge variant={item.direction === "expense" ? "destructive" : "secondary"}>
+                      {item.direction === "expense" ? "Ausgabe" : "Einnahme"}
+                    </Badge>
+                    {!item.isActive ? <Badge variant="outline">Inaktiv</Badge> : null}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {item.nextDueDate} | {item.frequency} / {item.intervalValue}
+                  </p>
+                  {isOwnSchedule ? (
+                    <p className="text-xs text-muted-foreground">Von dir erstellt</p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="text-lg font-semibold">
+                    {formatCurrency(item.amountCents, currency, locale)}
+                  </div>
+                  {item.isActive ? (
+                    <Button
+                      size="sm"
+                      onClick={() => createTransactionMutation.mutate(item.id)}
+                      disabled={
+                        createTransactionMutation.isPending ||
+                        !tracker?.isActive ||
+                        !item.canCreateTransaction
+                      }
+                    >
+                      Als Transaktion uebernehmen
+                    </Button>
+                  ) : null}
+                  {item.canEdit ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEdit(item)}
+                      disabled={updateMutation.isPending || !tracker?.isActive}
+                    >
+                      Bearbeiten
+                    </Button>
+                  ) : null}
+                  {item.canDelete ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending || !tracker?.isActive}
+                    >
+                      Loeschen
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {item.nextDueDate} | {item.frequency} / {item.intervalValue}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-lg font-semibold">
-                {formatCurrency(item.amountCents, currency, locale)}
-              </div>
-              {item.isActive ? (
-                <Button
-                  size="sm"
-                  onClick={() => createTransactionMutation.mutate(item.id)}
-                  disabled={createTransactionMutation.isPending || !tracker?.isActive}
-                >
-                  Als Transaktion uebernehmen
-                </Button>
+
+              {isEditing && editState ? (
+                <div className="mt-4 grid gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      value={editState.name}
+                      onChange={(event) =>
+                        setEditState((current) =>
+                          current ? { ...current, name: event.target.value } : current,
+                        )
+                      }
+                      placeholder="Name"
+                    />
+                    <Input
+                      value={editState.amount}
+                      onChange={(event) =>
+                        setEditState((current) =>
+                          current ? { ...current, amount: event.target.value } : current,
+                        )
+                      }
+                      placeholder="12,50"
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Select
+                      value={editState.direction}
+                      onValueChange={(value) =>
+                        setEditState((current) =>
+                          current
+                            ? { ...current, direction: value as "expense" | "income" }
+                            : current,
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="expense">Ausgabe</SelectItem>
+                        <SelectItem value="income">Einnahme</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={editState.frequency}
+                      onValueChange={(value) =>
+                        setEditState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                frequency: value as "monthly" | "yearly" | "custom_days",
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monatlich</SelectItem>
+                        <SelectItem value="yearly">Jaehrlich</SelectItem>
+                        <SelectItem value="custom_days">Custom Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={editState.intervalValue}
+                      onChange={(event) =>
+                        setEditState((current) =>
+                          current
+                            ? { ...current, intervalValue: event.target.value }
+                            : current,
+                        )
+                      }
+                      placeholder="Intervall"
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      type="date"
+                      value={editState.nextDueDate}
+                      onChange={(event) =>
+                        setEditState((current) =>
+                          current
+                            ? { ...current, nextDueDate: event.target.value }
+                            : current,
+                        )
+                      }
+                    />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="flex items-center justify-between rounded-2xl border border-border/60 p-3">
+                        <div>
+                          <p className="text-sm font-medium">Aktiv</p>
+                        </div>
+                        <Switch
+                          checked={editState.isActive}
+                          onCheckedChange={(value) =>
+                            setEditState((current) =>
+                              current ? { ...current, isActive: value } : current,
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between rounded-2xl border border-border/60 p-3">
+                        <div>
+                          <p className="text-sm font-medium">Auto-Create aus</p>
+                        </div>
+                        <Switch
+                          checked={editState.autoCreateDisabled}
+                          onCheckedChange={(value) =>
+                            setEditState((current) =>
+                              current
+                                ? { ...current, autoCreateDisabled: value }
+                                : current,
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="outline" onClick={cancelEdit}>
+                      Abbrechen
+                    </Button>
+                    <Button
+                      onClick={() => submitEdit(item.id)}
+                      disabled={updateMutation.isPending}
+                    >
+                      {updateMutation.isPending ? "Speichert..." : "Speichern"}
+                    </Button>
+                  </div>
+                </div>
               ) : null}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">Keine Eintraege in diesem Tab.</p>
         ) : null}
