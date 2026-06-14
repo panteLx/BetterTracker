@@ -6,7 +6,7 @@ export const transactionInputSchema = z.object({
   date: z.string().date(),
   amount: z.union([z.string(), z.number()]),
   direction: z.enum(["expense", "income"]),
-  categoryId: z.string().optional().nullable(),
+  categoryId: z.string().trim().min(1, "Category is required"),
   payeeId: z.string().optional().nullable(),
   customPayeeName: z.string().trim().optional().nullable(),
   notes: z.string().trim().optional().nullable(),
@@ -19,6 +19,7 @@ export const transactionQuerySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   categoryId: z.string().optional(),
+  payeeId: z.string().optional(),
   direction: z.enum(["expense", "income"]).optional(),
   q: z.string().optional(),
 });
