@@ -14,7 +14,7 @@ export default async function TransactionsPage() {
       title="Transaktionen"
       description="Filterbare Historie mit Summen fuer Einnahmen, Ausgaben und Saldo."
     >
-      <TransactionsClient locale={env.defaultLocale} />
+      <TransactionsClient locale={env.defaultLocale} currentUserId={user.id} />
     </PageContainer>
   );
 }

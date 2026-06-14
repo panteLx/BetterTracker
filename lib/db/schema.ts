@@ -115,7 +115,7 @@ export const trackerMembers = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     permission: text("permission", {
-      enum: ["owner", "write", "read"],
+      enum: ["owner", "admin", "write", "read"],
     })
       .notNull()
       .default("read"),

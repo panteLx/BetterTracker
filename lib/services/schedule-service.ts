@@ -1,4 +1,5 @@
 import { asc, eq } from "drizzle-orm";
+import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
 import { parseAmountToCents } from "@/lib/utils";
@@ -8,21 +9,37 @@ import { createTransaction } from "@/lib/services/transaction-service";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { getTrackerById } from "@/lib/trackers";
 
-export async function listSchedules(trackerId: string, status?: string) {
+export async function listSchedules(
+  trackerId: string,
+  status: string | undefined,
+  actorUserId: string,
+  permission: TrackerPermission
+) {
   const base = await db
     .select()
     .from(schedules)
     .where(eq(schedules.trackerId, trackerId))
     .orderBy(asc(schedules.nextDueDate));
 
-  return base.filter((schedule) => {
+  return base
+    .filter((schedule) => {
     if (status === "inactive") return !schedule.isActive;
     if (!schedule.isActive) return false;
     const current = classifyScheduleStatus(schedule.nextDueDate);
     if (status === "due") return current === "due" || current === "overdue";
     if (status === "upcoming") return current === "upcoming";
     return true;
-  });
+    })
+    .map((schedule) => ({
+      ...schedule,
+      canEdit: canMutateTrackerResource(permission, actorUserId, schedule.createdByUserId),
+      canDelete: canMutateTrackerResource(permission, actorUserId, schedule.createdByUserId),
+      canCreateTransaction: canMutateTrackerResource(
+        permission,
+        actorUserId,
+        schedule.createdByUserId
+      ),
+    }));
 }
 
 export async function createSchedule(input: unknown, actorUserId: string) {

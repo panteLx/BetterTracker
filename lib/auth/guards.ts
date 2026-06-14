@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
-import { isAdminRole, isSuperAdminRole } from "@/lib/auth/permissions";
+import {
+  canCreateTrackerContent,
+  canManageTracker,
+  canManageTrackerMembers,
+  canManageTrackerReferenceData,
+  isAdminRole,
+  isSuperAdminRole,
+} from "@/lib/auth/permissions";
 import { requireApiUser } from "@/lib/auth/session";
-import { getTrackerById } from "@/lib/trackers";
+import { getTrackerAccessForUser } from "@/lib/auth/tracker-access";
+import { forbidden } from "@/lib/http";
 
-type TrackerWriteAccessOptions = {
-  allowArchived?: boolean;
+type TrackerAccessOptions = {
+  includeHidden?: boolean;
 };
 
 export async function requireAuthenticatedApi(headers: Headers) {
@@ -15,53 +23,46 @@ export async function requireAuthenticatedApi(headers: Headers) {
   return { user: sessionUser, response: null };
 }
 
-export async function requireTrackerReadAccess(headers: Headers, trackerId: string) {
+async function loadTrackerAccess(headers: Headers, trackerId: string, options?: TrackerAccessOptions) {
   const authResult = await requireAuthenticatedApi(headers);
   if (authResult.response || !authResult.user) {
     return authResult;
   }
 
-  const tracker = await getTrackerById(trackerId);
-  if (!tracker) {
+  const access = await getTrackerAccessForUser(trackerId, authResult.user.id, options);
+  if (!access) {
     return {
       user: null,
       response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
     };
   }
 
-  if (isAdminRole(authResult.user.role)) {
-    return authResult;
-  }
-
-  if (tracker.isHidden) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
-    };
-  }
-
-  return authResult;
+  return { user: authResult.user, trackerAccess: access, response: null };
 }
 
-export async function requireTrackerWriteAccess(
+export async function requireTrackerReadAccess(headers: Headers, trackerId: string) {
+  const result = await loadTrackerAccess(headers, trackerId);
+  if (result.response || !result.user || !result.trackerAccess) {
+    return result;
+  }
+
+  return result;
+}
+
+export async function requireTrackerContentCreateAccess(
   headers: Headers,
-  trackerId: string,
-  options?: TrackerWriteAccessOptions
+  trackerId: string
 ) {
-  const authResult = await requireAuthenticatedApi(headers);
-  if (authResult.response || !authResult.user) {
-    return authResult;
+  const result = await loadTrackerAccess(headers, trackerId);
+  if (result.response || !result.user || !result.trackerAccess) {
+    return result;
   }
 
-  const tracker = await getTrackerById(trackerId);
-  if (!tracker) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
-    };
+  if (!canCreateTrackerContent(result.trackerAccess.permission)) {
+    return { user: null, response: forbidden() };
   }
 
-  if (!tracker.isActive && !options?.allowArchived) {
+  if (!result.trackerAccess.tracker.isActive) {
     return {
       user: null,
       response: NextResponse.json(
@@ -71,18 +72,56 @@ export async function requireTrackerWriteAccess(
     };
   }
 
-  if (isAdminRole(authResult.user.role)) {
-    return authResult;
+  return result;
+}
+
+export async function requireTrackerManageAccess(headers: Headers, trackerId: string) {
+  const result = await loadTrackerAccess(headers, trackerId, { includeHidden: true });
+  if (result.response || !result.user || !result.trackerAccess) {
+    return result;
   }
 
-  if (tracker.isHidden) {
+  if (!canManageTracker(result.trackerAccess.permission)) {
+    return { user: null, response: forbidden() };
+  }
+
+  return result;
+}
+
+export async function requireTrackerMemberAccess(headers: Headers, trackerId: string) {
+  const result = await loadTrackerAccess(headers, trackerId, { includeHidden: true });
+  if (result.response || !result.user || !result.trackerAccess) {
+    return result;
+  }
+
+  if (!canManageTrackerMembers(result.trackerAccess.permission)) {
+    return { user: null, response: forbidden() };
+  }
+
+  return result;
+}
+
+export async function requireTrackerReferenceManageAccess(headers: Headers, trackerId: string) {
+  const result = await loadTrackerAccess(headers, trackerId);
+  if (result.response || !result.user || !result.trackerAccess) {
+    return result;
+  }
+
+  if (!canManageTrackerReferenceData(result.trackerAccess.permission)) {
+    return { user: null, response: forbidden() };
+  }
+
+  if (!result.trackerAccess.tracker.isActive) {
     return {
       user: null,
-      response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
+      response: NextResponse.json(
+        { error: "Tracker is archived and cannot be modified" },
+        { status: 409 }
+      ),
     };
   }
 
-  return authResult;
+  return result;
 }
 
 export async function requireAdmin(headers: Headers) {

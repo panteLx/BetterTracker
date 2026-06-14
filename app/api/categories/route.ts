@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
-import { requireTrackerReadAccess, requireTrackerWriteAccess } from "@/lib/auth/guards";
+import { requireTrackerContentCreateAccess, requireTrackerReadAccess } from "@/lib/auth/guards";
 import { badRequest, created, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     return badRequest("trackerId and name are required");
   }
 
-  const access = await requireTrackerWriteAccess(request.headers, body.trackerId);
+  const access = await requireTrackerContentCreateAccess(request.headers, body.trackerId);
   if (access.response) return access.response;
 
   try {

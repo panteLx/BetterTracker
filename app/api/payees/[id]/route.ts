@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { payees } from "@/lib/db/schema";
-import { requireTrackerWriteAccess } from "@/lib/auth/guards";
+import { requireTrackerReferenceManageAccess } from "@/lib/auth/guards";
 import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
@@ -17,7 +17,7 @@ export async function PATCH(
   const { id } = await context.params;
   const payee = await getPayee(id);
   if (!payee) return notFound("Payee not found");
-  const access = await requireTrackerWriteAccess(request.headers, payee.trackerId);
+  const access = await requireTrackerReferenceManageAccess(request.headers, payee.trackerId);
   if (access.response) return access.response;
 
   try {
@@ -51,7 +51,7 @@ export async function DELETE(
   const { id } = await context.params;
   const payee = await getPayee(id);
   if (!payee) return notFound("Payee not found");
-  const access = await requireTrackerWriteAccess(request.headers, payee.trackerId);
+  const access = await requireTrackerReferenceManageAccess(request.headers, payee.trackerId);
   if (access.response) return access.response;
 
   try {

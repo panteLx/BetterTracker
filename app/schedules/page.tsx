@@ -14,7 +14,7 @@ export default async function SchedulesPage() {
       title="Schedules"
       description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion uebernehmen."
     >
-      <SchedulesClient locale={env.defaultLocale} />
+      <SchedulesClient locale={env.defaultLocale} currentUserId={user.id} />
     </PageContainer>
   );
 }

@@ -56,7 +56,7 @@ type Tracker = {
   discordDebugEnabled: boolean;
   discordPingRoleId: string;
   isActive: boolean;
-  permission?: "owner" | "write" | "read";
+  permission?: "owner" | "admin" | "write" | "read";
   sortOrder?: number;
 };
 
@@ -262,8 +262,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const hasTrackers = trackers.length > 0;
   const activeTrackerId = selectedTracker || trackers[0]?.id || "";
   const tracker = trackers.find((item) => item.id === activeTrackerId);
-  const canManageTracker = tracker?.permission !== "read";
-  const isTrackerMutable = Boolean(tracker?.isActive && canManageTracker);
+  const canManageTracker =
+    tracker?.permission === "owner" || tracker?.permission === "admin";
+  const canCreateContent = tracker?.permission !== "read";
+  const isTrackerMutable = Boolean(tracker?.isActive && canCreateContent);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", activeTrackerId],
@@ -416,7 +418,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       queryClient.setQueryData<{ items: Tracker[] } | undefined>(
         ["trackers"],
         (current) => ({
-          items: sortTrackers([...(current?.items || []), item], locale),
+          items: sortTrackers(
+            [...(current?.items || []), { ...item, permission: "owner" as const }],
+            locale,
+          ),
         }),
       );
       toast.success("Tracker angelegt");
@@ -431,6 +436,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       setPayeeId(EMPTY_SELECT_VALUE);
       setCustomPayeeName("");
       setNotes("");
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["payees"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -691,7 +697,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       className="h-10 w-10 rounded-2xl border border-border/60 shadow-inner"
                       style={{ backgroundColor: tracker?.color || "#0f172a" }}
                     />
-                    {tracker ? (
+                    {tracker && canManageTracker ? (
                       <Button
                         variant="outline"
                         size="icon"
@@ -1114,7 +1120,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     ? "Speichere..."
                     : "Eintrag speichern"}
                 </Button>
-                {!canManageTracker ? (
+                {!canCreateContent ? (
                   <p className="text-sm text-muted-foreground">
                     Du hast nur Leserechte fuer diesen Tracker.
                   </p>

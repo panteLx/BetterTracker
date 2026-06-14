@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
-import { requireTrackerWriteAccess } from "@/lib/auth/guards";
-import { conflict, notFound, ok, serverError } from "@/lib/http";
+import { requireTrackerManageAccess } from "@/lib/auth/guards";
+import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { slugify } from "@/lib/utils";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
@@ -13,9 +13,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const access = await requireTrackerWriteAccess(request.headers, id, {
-    allowArchived: true,
-  });
+  const access = await requireTrackerManageAccess(request.headers, id);
   if (access.response) return access.response;
 
   try {
@@ -33,44 +31,6 @@ export async function PATCH(
 
     const currentTracker = await getTrackerById(id);
     if (!currentTracker) return notFound("Tracker not found");
-
-    const wantsOnlyReactivation =
-      currentTracker.isActive === false &&
-      body.isActive === true &&
-      (body.name === undefined || body.name.trim() === currentTracker.name) &&
-      (body.description === undefined ||
-        (body.description?.trim() || null) === currentTracker.description) &&
-      (body.color === undefined || body.color === currentTracker.color) &&
-      (body.currency === undefined ||
-        body.currency.trim().toUpperCase() === currentTracker.currency) &&
-      (body.discordWebhookUrl === undefined ||
-        body.discordWebhookUrl.trim() === currentTracker.discordWebhookUrl) &&
-      (body.discordDebugEnabled === undefined ||
-        body.discordDebugEnabled === currentTracker.discordDebugEnabled) &&
-      (body.discordPingRoleId === undefined ||
-        body.discordPingRoleId.trim() === currentTracker.discordPingRoleId) &&
-      (body.isHidden === undefined || body.isHidden === currentTracker.isHidden);
-
-    const wantsOnlyVisibilityChange =
-      currentTracker.isActive === false &&
-      body.isHidden !== undefined &&
-      (body.isActive === undefined || body.isActive === currentTracker.isActive) &&
-      (body.name === undefined || body.name.trim() === currentTracker.name) &&
-      (body.description === undefined ||
-        (body.description?.trim() || null) === currentTracker.description) &&
-      (body.color === undefined || body.color === currentTracker.color) &&
-      (body.currency === undefined ||
-        body.currency.trim().toUpperCase() === currentTracker.currency) &&
-      (body.discordWebhookUrl === undefined ||
-        body.discordWebhookUrl.trim() === currentTracker.discordWebhookUrl) &&
-      (body.discordDebugEnabled === undefined ||
-        body.discordDebugEnabled === currentTracker.discordDebugEnabled) &&
-      (body.discordPingRoleId === undefined ||
-        body.discordPingRoleId.trim() === currentTracker.discordPingRoleId);
-
-    if (!currentTracker.isActive && !wantsOnlyReactivation && !wantsOnlyVisibilityChange) {
-      return conflict("Tracker is archived and cannot be modified");
-    }
 
     const updateValues = {
       name: body.name?.trim(),
@@ -117,7 +77,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const access = await requireTrackerWriteAccess(request.headers, id);
+  const access = await requireTrackerManageAccess(request.headers, id);
   if (access.response) return access.response;
 
   try {

@@ -44,12 +44,12 @@ export function AdminTrackersClient() {
 
   const trackersQuery = useQuery({
     queryKey: ["admin-trackers"],
-    queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers?includeHidden=1"),
+    queryFn: () => fetchJson<{ items: Tracker[] }>("/api/admin/trackers"),
   });
 
   const patchMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
-      fetchJson(`/api/trackers/${id}`, {
+      fetchJson(`/api/admin/trackers/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
@@ -72,6 +72,19 @@ export function AdminTrackersClient() {
     onSuccess: () => toast.success("Testbenachrichtigung gesendet"),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "Test fehlgeschlagen"),
+  });
+
+  const selfShareMutation = useMutation({
+    mutationFn: (trackerId: string) =>
+      fetchJson(`/api/admin/trackers/${trackerId}/self-share`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      toast.success("Tracker fuer dich freigegeben");
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Freigabe fehlgeschlagen"),
   });
 
   function updateDraft(id: string, patch: Partial<TrackerDraft>) {
@@ -251,6 +264,14 @@ export function AdminTrackersClient() {
                       disabled={testDiscordMutation.isPending}
                     >
                       Discord testen
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => selfShareMutation.mutate(item.id)}
+                      disabled={selfShareMutation.isPending}
+                    >
+                      Mich freigeben
                     </Button>
                   </div>
                 </div>
