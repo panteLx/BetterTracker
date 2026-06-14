@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { appSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { env } from "@/lib/env";
 
 export const DEFAULT_SETTINGS = {
   discordWebhookUrl: "",
@@ -9,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   discordPingRoleId: "",
   serverIpDisplay: "",
   directAddSubscriptions: false,
-  registrationEnabled: env.allowUserRegistration,
+  registrationEnabled: true,
 };
 
 export type SettingsMap = typeof DEFAULT_SETTINGS;

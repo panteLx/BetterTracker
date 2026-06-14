@@ -21,7 +21,6 @@ export const env = {
           "http://127.0.0.1:3000",
           "http://192.168.100.13:3000",
         ],
-  allowUserRegistration: process.env.ALLOW_USER_REGISTRATION !== "false",
   defaultLocale: process.env.DEFAULT_LOCALE || "de-DE",
   timezone: process.env.TZ || "Europe/Berlin",
 };

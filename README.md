@@ -84,7 +84,6 @@ BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.100.13
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://192.168.100.13:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-ALLOW_USER_REGISTRATION=true
 DEFAULT_LOCALE=de-DE
 TZ=Europe/Berlin
 ```
@@ -104,6 +103,7 @@ npm run start
 npm run lint
 npm run db:generate
 npm run db:migrate
+npm run seed
 ```
 
 ## Database
