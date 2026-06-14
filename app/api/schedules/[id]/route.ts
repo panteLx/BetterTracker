@@ -2,10 +2,38 @@ import { eq } from "drizzle-orm";
 import { canMutateTrackerResource } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
+import { updateSchedule } from "@/lib/services/schedule-service";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
-import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
+import { badRequest, conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-import { parseAmountToCents } from "@/lib/utils";
+
+function mapScheduleError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Internal server error";
+  const isZodError =
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "ZodError";
+
+  if (isZodError) {
+    return badRequest(message);
+  }
+
+  if (message.includes("requires a new next due date")) {
+    return conflict(message);
+  }
+
+  if (
+    message.includes("Invalid schedule amount") ||
+    message.includes("not found in tracker") ||
+    message.includes("does not match the selected direction") ||
+    message.includes("Unrecognized key")
+  ) {
+    return badRequest(message);
+  }
+
+  return serverError(error);
+}
 
 async function getSchedule(id: string) {
   const rows = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
@@ -35,54 +63,12 @@ export async function PATCH(
   }
 
   try {
-    const body = await parseRequestJson<{
-      name?: string;
-      amount?: string | number;
-      direction?: "expense" | "income";
-      categoryId?: string | null;
-      payeeId?: string | null;
-      customPayeeName?: string | null;
-      notesTemplate?: string | null;
-      frequency?: "monthly" | "yearly" | "custom_days";
-      intervalValue?: number;
-      nextDueDate?: string;
-      isActive?: boolean;
-      autoCreateDisabled?: boolean;
-    }>(request);
-
-    const [updated] = await db
-      .update(schedules)
-      .set({
-        name: body.name ?? schedule.name,
-        amountCents:
-          body.amount !== undefined
-            ? parseAmountToCents(body.amount) ?? schedule.amountCents
-            : schedule.amountCents,
-        direction: body.direction ?? schedule.direction,
-        categoryId: body.categoryId === undefined ? schedule.categoryId : body.categoryId,
-        payeeId: body.payeeId === undefined ? schedule.payeeId : body.payeeId,
-        customPayeeName:
-          body.customPayeeName === undefined
-            ? schedule.customPayeeName
-            : body.customPayeeName,
-        notesTemplate:
-          body.notesTemplate === undefined
-            ? schedule.notesTemplate
-            : body.notesTemplate,
-        frequency: body.frequency ?? schedule.frequency,
-        intervalValue: body.intervalValue ?? schedule.intervalValue,
-        nextDueDate: body.nextDueDate ?? schedule.nextDueDate,
-        isActive: body.isActive ?? schedule.isActive,
-        autoCreateDisabled:
-          body.autoCreateDisabled ?? schedule.autoCreateDisabled,
-        updatedAt: new Date(),
-      })
-      .where(eq(schedules.id, id))
-      .returning();
+    const body = await parseRequestJson<Record<string, unknown>>(request);
+    const updated = await updateSchedule(id, body);
 
     return ok({ item: updated });
   } catch (error) {
-    return serverError(error);
+    return mapScheduleError(error);
   }
 }
 

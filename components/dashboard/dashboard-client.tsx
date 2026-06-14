@@ -87,6 +87,28 @@ type TransactionResponse = {
   totals: { incomeCents: number; expenseCents: number };
 };
 
+type ScheduleForecastItem = {
+  scheduleId: string;
+  occurrenceKey: string;
+  name: string;
+  payeeName: string;
+  categoryName: string;
+  date: string;
+  amountCents: number;
+  direction: "expense" | "income";
+  status: "overdue" | "due" | "upcoming";
+};
+
+type ScheduleForecastResponse = {
+  days: number;
+  baseBalanceCents: number;
+  projectedDeltaCents: number;
+  projectedBalanceCents: number;
+  scheduledIncomeCents: number;
+  scheduledExpenseCents: number;
+  items: ScheduleForecastItem[];
+};
+
 function sortByName<T extends { name: string }>(items: T[], locale: string) {
   return [...items].sort((left, right) =>
     left.name.localeCompare(right.name, locale),
@@ -104,6 +126,22 @@ function sortTrackers(items: Tracker[], locale: string) {
 
     return left.name.localeCompare(right.name, locale);
   });
+}
+
+function getScheduleForecastStatusLabel(
+  status: ScheduleForecastItem["status"],
+) {
+  if (status === "overdue") return "Ueberfaellig";
+  if (status === "due") return "Faellig";
+  return "Demnaechst";
+}
+
+function getScheduleForecastStatusVariant(
+  status: ScheduleForecastItem["status"],
+) {
+  if (status === "overdue") return "destructive";
+  if (status === "due") return "secondary";
+  return "outline";
 }
 
 type TrackerCreateFormProps = {
@@ -292,6 +330,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     enabled: Boolean(activeTrackerId),
   });
 
+  const forecastQuery = useQuery({
+    queryKey: ["schedules-forecast", activeTrackerId],
+    queryFn: () =>
+      fetchJson<ScheduleForecastResponse>(
+        `/api/schedules/forecast?trackerId=${activeTrackerId}&days=14`,
+      ),
+    enabled: Boolean(activeTrackerId),
+  });
+
   const filteredCategories = useMemo(
     () =>
       (categoriesQuery.data?.items || []).filter(
@@ -306,8 +353,18 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   };
   const transactionCount = transactionsQuery.data?.items.length ?? 0;
   const trackerBalance = totals.incomeCents - totals.expenseCents;
+  const forecast = forecastQuery.data ?? {
+    days: 14,
+    baseBalanceCents: trackerBalance,
+    projectedDeltaCents: 0,
+    projectedBalanceCents: trackerBalance,
+    scheduledIncomeCents: 0,
+    scheduledExpenseCents: 0,
+    items: [],
+  };
   const latestTransaction = transactionsQuery.data?.items[0];
   const recentTransactions = (transactionsQuery.data?.items || []).slice(0, 6);
+  const upcomingScheduledItems = forecast.items.slice(0, 6);
   const latestTransactionLabel = latestTransaction
     ? latestTransaction.payeeName ||
       latestTransaction.customPayeeName ||
@@ -334,6 +391,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         queryKey: ["transactions", activeTrackerId],
       });
       queryClient.invalidateQueries({ queryKey: ["payees", activeTrackerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
     },
     onError: (error) => {
       toast.error(
@@ -419,7 +479,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         ["trackers"],
         (current) => ({
           items: sortTrackers(
-            [...(current?.items || []), { ...item, permission: "owner" as const }],
+            [
+              ...(current?.items || []),
+              { ...item, permission: "owner" as const },
+            ],
             locale,
           ),
         }),
@@ -570,6 +633,24 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     {
       label: "Saldo",
       value: formatCurrency(trackerBalance, tracker?.currency || "EUR", locale),
+      secondaryValue: hasTrackers
+        ? `Prognose in ${forecast.days} Tagen: ${formatCurrency(
+            forecast.projectedBalanceCents,
+            tracker?.currency || "EUR",
+            locale,
+          )}`
+        : undefined,
+      helperText: hasTrackers
+        ? `Geplant: +${formatCurrency(
+            forecast.scheduledIncomeCents,
+            tracker?.currency || "EUR",
+            locale,
+          )} / -${formatCurrency(
+            forecast.scheduledExpenseCents,
+            tracker?.currency || "EUR",
+            locale,
+          )}`
+        : undefined,
       icon: Landmark,
       tone: trackerBalance >= 0 ? "text-foreground" : "text-rose-600",
       surface: "from-primary/12 via-primary/6 to-transparent",
@@ -809,6 +890,16 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <p className="text-2xl font-semibold tracking-tight">
                         {item.value}
                       </p>
+                      {"secondaryValue" in item && item.secondaryValue ? (
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {item.secondaryValue}
+                        </p>
+                      ) : null}
+                      {"helperText" in item && item.helperText ? (
+                        <p className="text-xs text-muted-foreground">
+                          {item.helperText}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="rounded-2xl border border-border/60 bg-background/80 p-2.5">
                       <Icon className={cn("h-4 w-4", item.tone)} />
@@ -993,7 +1084,6 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       </Button>
                     </div>
                   ) : null}
-
                 </div>
 
                 <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/70 p-4">
@@ -1137,6 +1227,72 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         </div>
 
         <div className="space-y-4">
+          {hasTrackers ? (
+            <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Naechste Schedules</p>
+                  <p className="text-sm text-muted-foreground">
+                    Aktive Faelligkeiten der naechsten {forecast.days} Tage.
+                  </p>
+                </div>
+                <div className="rounded-full border border-border/60 bg-background/75 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {forecast.items.length} geplant
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {upcomingScheduledItems.length > 0 ? (
+                  upcomingScheduledItems.map((item) => (
+                    <div
+                      key={item.occurrenceKey}
+                      className="flex flex-col gap-3 rounded-[1.4rem] border border-border/60 bg-background/75 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            variant={getScheduleForecastStatusVariant(
+                              item.status,
+                            )}
+                          >
+                            {getScheduleForecastStatusLabel(item.status)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {item.date}
+                          </span>
+                        </div>
+                        <p className="font-medium">{item.payeeName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.categoryName} - {item.name}
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          "text-lg font-semibold tracking-tight",
+                          item.direction === "expense"
+                            ? "text-rose-600"
+                            : "text-emerald-600",
+                        )}
+                      >
+                        {item.direction === "expense" ? "-" : "+"}
+                        {formatCurrency(
+                          item.amountCents,
+                          tracker?.currency || "EUR",
+                          locale,
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
+                    Keine aktiven Schedule-Buchungen in den naechsten{" "}
+                    {forecast.days} Tagen.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>

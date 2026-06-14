@@ -19,8 +19,8 @@ export default async function Home() {
   return (
     <PageContainer
       user={session.user}
-      title="Buchungen"
-      description="Transaktionen fuer deine Tracker erfassen und letzte Eintraege direkt im Blick behalten."
+      title="Dashboard"
+      description="Erfasse deine Ausgaben und behalte den Überblick über deine Finanzen mit BetterTracker."
     >
       <DashboardClient locale={env.defaultLocale} />
     </PageContainer>
