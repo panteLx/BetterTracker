@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trackerMembers, trackers } from "@/lib/db/schema";
 import { requireAuthenticatedApi } from "@/lib/auth/guards";
@@ -13,69 +13,52 @@ export async function GET(request: Request) {
   const authResult = await requireAuthenticatedApi(request.headers);
   if (authResult.response) return authResult.response;
   const { searchParams } = new URL(request.url);
-  const includeHidden = searchParams.get("includeHidden") === "1";
+  const includeHidden =
+    searchParams.get("includeHidden") === "1" &&
+    authResult.user!.role !== "user";
 
   try {
+    const baseItems = includeHidden
+      ? await db
+          .select({
+            id: trackers.id,
+            name: trackers.name,
+            slug: trackers.slug,
+            description: trackers.description,
+            color: trackers.color,
+            currency: trackers.currency,
+            discordWebhookUrl: trackers.discordWebhookUrl,
+            discordDebugEnabled: trackers.discordDebugEnabled,
+            discordPingRoleId: trackers.discordPingRoleId,
+            isActive: trackers.isActive,
+            isHidden: trackers.isHidden,
+            sortOrder: trackers.sortOrder,
+          })
+          .from(trackers)
+          .orderBy(asc(trackers.sortOrder), asc(trackers.name))
+      : await db
+          .select({
+            id: trackers.id,
+            name: trackers.name,
+            slug: trackers.slug,
+            description: trackers.description,
+            color: trackers.color,
+            currency: trackers.currency,
+            discordWebhookUrl: trackers.discordWebhookUrl,
+            discordDebugEnabled: trackers.discordDebugEnabled,
+            discordPingRoleId: trackers.discordPingRoleId,
+            isActive: trackers.isActive,
+            isHidden: trackers.isHidden,
+            sortOrder: trackers.sortOrder,
+          })
+          .from(trackers)
+          .where(eq(trackers.isHidden, false))
+          .orderBy(asc(trackers.sortOrder), asc(trackers.name));
+
     const items =
       authResult.user!.role === "user"
-        ? await db
-            .select({
-              id: trackers.id,
-              name: trackers.name,
-              slug: trackers.slug,
-              description: trackers.description,
-              color: trackers.color,
-              currency: trackers.currency,
-              discordWebhookUrl: trackers.discordWebhookUrl,
-              discordDebugEnabled: trackers.discordDebugEnabled,
-              discordPingRoleId: trackers.discordPingRoleId,
-              isActive: trackers.isActive,
-              isHidden: trackers.isHidden,
-              sortOrder: trackers.sortOrder,
-              permission: trackerMembers.permission,
-            })
-            .from(trackers)
-            .innerJoin(trackerMembers, eq(trackers.id, trackerMembers.trackerId))
-            .where(
-              and(eq(trackerMembers.userId, authResult.user!.id), eq(trackers.isHidden, false))
-            )
-            .orderBy(asc(trackers.sortOrder), asc(trackers.name))
-        : includeHidden
-          ? await db
-              .select({
-                id: trackers.id,
-                name: trackers.name,
-                slug: trackers.slug,
-                description: trackers.description,
-                color: trackers.color,
-                currency: trackers.currency,
-                discordWebhookUrl: trackers.discordWebhookUrl,
-                discordDebugEnabled: trackers.discordDebugEnabled,
-                discordPingRoleId: trackers.discordPingRoleId,
-                isActive: trackers.isActive,
-                isHidden: trackers.isHidden,
-                sortOrder: trackers.sortOrder,
-              })
-              .from(trackers)
-              .orderBy(asc(trackers.sortOrder), asc(trackers.name))
-          : await db
-              .select({
-                id: trackers.id,
-                name: trackers.name,
-                slug: trackers.slug,
-                description: trackers.description,
-                color: trackers.color,
-                currency: trackers.currency,
-                discordWebhookUrl: trackers.discordWebhookUrl,
-                discordDebugEnabled: trackers.discordDebugEnabled,
-                discordPingRoleId: trackers.discordPingRoleId,
-                isActive: trackers.isActive,
-                isHidden: trackers.isHidden,
-                sortOrder: trackers.sortOrder,
-              })
-              .from(trackers)
-              .where(eq(trackers.isHidden, false))
-              .orderBy(asc(trackers.sortOrder), asc(trackers.name));
+        ? baseItems.map((item) => ({ ...item, permission: "write" as const }))
+        : baseItems;
 
     return ok({ items });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTrackerPermission, canReadTracker, canWriteTracker, isAdminRole, isSuperAdminRole } from "@/lib/auth/permissions";
+import { isAdminRole, isSuperAdminRole } from "@/lib/auth/permissions";
 import { requireApiUser } from "@/lib/auth/session";
 import { getTrackerById } from "@/lib/trackers";
 
@@ -37,14 +37,6 @@ export async function requireTrackerReadAccess(headers: Headers, trackerId: stri
     return {
       user: null,
       response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
-    };
-  }
-
-  const permission = await getTrackerPermission(trackerId, authResult.user.id);
-  if (!canReadTracker(permission)) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 
@@ -87,14 +79,6 @@ export async function requireTrackerWriteAccess(
     return {
       user: null,
       response: NextResponse.json({ error: "Tracker not found" }, { status: 404 }),
-    };
-  }
-
-  const permission = await getTrackerPermission(trackerId, authResult.user.id);
-  if (!canWriteTracker(permission)) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 

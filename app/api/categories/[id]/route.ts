@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { categories, schedules, transactions } from "@/lib/db/schema";
+import { categories } from "@/lib/db/schema";
 import { requireTrackerWriteAccess } from "@/lib/auth/guards";
-import { conflict, notFound, ok, serverError } from "@/lib/http";
+import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
 async function getCategory(id: string) {
@@ -58,26 +58,6 @@ export async function DELETE(
   if (access.response) return access.response;
 
   try {
-    const [linkedTransaction] = await db
-      .select({ id: transactions.id })
-      .from(transactions)
-      .where(eq(transactions.categoryId, id))
-      .limit(1);
-
-    if (linkedTransaction) {
-      return conflict("Kategorie kann nicht geloescht werden, solange Transaktionen daran haengen");
-    }
-
-    const [linkedSchedule] = await db
-      .select({ id: schedules.id })
-      .from(schedules)
-      .where(eq(schedules.categoryId, id))
-      .limit(1);
-
-    if (linkedSchedule) {
-      return conflict("Kategorie kann nicht geloescht werden, solange Schedules daran haengen");
-    }
-
     await db.delete(categories).where(eq(categories.id, id));
     return ok({ success: true });
   } catch (error) {
