@@ -1,10 +1,28 @@
 import Link from "next/link";
+import { AuthRedirectAlert } from "@/components/auth/auth-redirect-alert";
 import { RegisterForm } from "@/components/auth/register-form";
 import { AppHeader } from "@/components/layout/app-header";
+import { oidcDisplayName, oidcEnabled } from "@/lib/auth/oidc";
 import { getRegistrationEnabled } from "@/lib/services/admin-settings-service";
 
-export default async function RegisterPage() {
+type RegisterPageProps = {
+  searchParams: Promise<{
+    error?: string | string[];
+    error_description?: string | string[];
+  }>;
+};
+
+function getFirstValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function RegisterPage({
+  searchParams,
+}: RegisterPageProps) {
   const registrationEnabled = await getRegistrationEnabled();
+  const query = await searchParams;
+  const error = getFirstValue(query.error);
+  const errorDescription = getFirstValue(query.error_description);
 
   return (
     <div className="min-h-screen">
@@ -18,8 +36,17 @@ export default async function RegisterPage() {
             Registriere dich, um Zugriff auf die Funktionen der App zu erhalten.
           </p>
         </div>
+        <AuthRedirectAlert
+          error={error}
+          errorDescription={errorDescription}
+          registrationEnabled={registrationEnabled}
+          variant="register"
+        />
         {registrationEnabled ? (
-          <RegisterForm />
+          <RegisterForm
+            oidcEnabled={oidcEnabled}
+            oidcProviderName={oidcDisplayName}
+          />
         ) : (
           <p className="text-center text-sm text-muted-foreground">
             Registrierungen sind aktuell deaktiviert.

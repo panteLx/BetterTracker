@@ -7,6 +7,7 @@ Its a single local application that handles authentication, transaction entry, r
 ## Features
 
 - Multi-user authentication with Better Auth
+- Optional OpenID Connect (OIDC) login and registration
 - Role-based access for `user`, `admin`, and `superadmin`
 - Multiple trackers such as `Coffee`, `Money`, or custom tracker spaces
 - Transaction entry with categories, payees, notes, and recent activity
@@ -84,6 +85,11 @@ BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.100.13
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://192.168.100.13:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+OIDC_DISPLAY_NAME=OpenID Connect
+OIDC_DISCOVERY_URL=
+OIDC_CLIENT_ID=
+OIDC_CLIENT_SECRET=
+OIDC_SCOPES=openid,profile,email
 DEFAULT_LOCALE=de-DE
 TZ=Europe/Berlin
 ```
@@ -92,6 +98,8 @@ Notes:
 
 - `DATABASE_URL` points to the local SQLite database.
 - `BETTER_AUTH_ALLOWED_HOSTS` and `BETTER_AUTH_TRUSTED_ORIGINS` are important if you access the app through LAN IPs in development.
+- To enable OIDC, set `OIDC_DISCOVERY_URL` and `OIDC_CLIENT_ID`. The callback URL is `${BETTER_AUTH_URL}/api/auth/oauth2/callback/oidc`.
+- The admin setting `Registrierungen erlauben` also applies to OIDC sign-ups. Existing linked OIDC users can still use the login flow when registrations are disabled.
 - Discord webhook settings are configured in the UI, either per tracker or as admin defaults that can be applied to all trackers.
 
 ## Available Scripts
