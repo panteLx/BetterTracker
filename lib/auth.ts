@@ -1,12 +1,26 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
+import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { ac, roles } from "@/lib/auth/access-control";
 import { env } from "@/lib/env";
 import { handleFirstUserPromotion } from "@/lib/auth/first-user";
+import { oidcConfig } from "@/lib/auth/oidc";
 import { getRegistrationEnabled } from "@/lib/services/admin-settings-service";
+
+const adminPlugin = admin({
+  defaultRole: "user",
+  ac,
+  roles,
+});
+
+const oidcPlugin = oidcConfig
+  ? genericOAuth({
+      config: [oidcConfig],
+    })
+  : null;
 
 export const auth = betterAuth({
   secret: env.authSecret,
@@ -27,13 +41,7 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: false,
   },
-  plugins: [
-    admin({
-      defaultRole: "user",
-      ac,
-      roles,
-    }),
-  ],
+  plugins: oidcPlugin ? [oidcPlugin, adminPlugin] : [adminPlugin],
   user: {
     changeEmail: {
       enabled: true,

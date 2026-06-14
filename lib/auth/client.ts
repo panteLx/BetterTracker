@@ -1,7 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
-import { adminClient } from "better-auth/client/plugins";
+import { adminClient, genericOAuthClient } from "better-auth/client/plugins";
 import { ac, roles } from "@/lib/auth/access-control";
 
 export const authClient = createAuthClient({
@@ -10,6 +10,7 @@ export const authClient = createAuthClient({
       ? window.location.origin
       : process.env.NEXT_PUBLIC_APP_URL || "",
   plugins: [
+    genericOAuthClient(),
     adminClient({
       ac,
       roles,

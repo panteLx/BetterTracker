@@ -3,13 +3,22 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/auth/client";
+import { OidcButton } from "@/components/auth/oidc-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  oidcEnabled?: boolean;
+  oidcProviderName?: string;
+};
+
+export function RegisterForm({
+  oidcEnabled = false,
+  oidcProviderName,
+}: RegisterFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,6 +51,21 @@ export function RegisterForm() {
         <CardTitle>Konto erstellen</CardTitle>
       </CardHeader>
       <CardContent>
+        {oidcEnabled ? (
+          <div className="mb-6 space-y-4">
+            <OidcButton mode="register" providerName={oidcProviderName} />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  oder manuell registrieren
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
