@@ -9,9 +9,10 @@ type HeaderProps = {
     email: string;
     role?: string | null;
   } | null;
+  registrationEnabled?: boolean;
 };
 
-export function AppHeader({ user }: HeaderProps) {
+export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -29,34 +30,36 @@ export function AppHeader({ user }: HeaderProps) {
           </div>
         </div>
 
-        <nav className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" asChild>
-            <Link href="/">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Dashboard
-            </Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/transactions">
-              <ReceiptText className="mr-2 h-4 w-4" />
-              Transaktionen
-            </Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/schedules">
-              <TimerReset className="mr-2 h-4 w-4" />
-              Schedules
-            </Link>
-          </Button>
-          {user?.role === "admin" || user?.role === "superadmin" ? (
+        {user ? (
+          <nav className="hidden items-center gap-2 md:flex">
             <Button variant="ghost" asChild>
-              <Link href="/admin">
-                <Shield className="mr-2 h-4 w-4" />
-                Admin
+              <Link href="/">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Dashboard
               </Link>
             </Button>
-          ) : null}
-        </nav>
+            <Button variant="ghost" asChild>
+              <Link href="/transactions">
+                <ReceiptText className="mr-2 h-4 w-4" />
+                Transaktionen
+              </Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/schedules">
+                <TimerReset className="mr-2 h-4 w-4" />
+                Schedules
+              </Link>
+            </Button>
+            {user.role === "admin" || user.role === "superadmin" ? (
+              <Button variant="ghost" asChild>
+                <Link href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin
+                </Link>
+              </Button>
+            ) : null}
+          </nav>
+        ) : null}
 
         <div className="flex items-center gap-2">
           {user ? (
@@ -66,9 +69,11 @@ export function AppHeader({ user }: HeaderProps) {
               <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
               </Button>
-              <Button asChild>
-                <Link href="/register">Registrieren</Link>
-              </Button>
+              {registrationEnabled ? (
+                <Button asChild>
+                  <Link href="/register">Registrieren</Link>
+                </Button>
+              ) : null}
             </>
           )}
         </div>

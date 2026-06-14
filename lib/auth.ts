@@ -6,6 +6,7 @@ import * as schema from "@/lib/db/schema";
 import { ac, roles } from "@/lib/auth/access-control";
 import { env } from "@/lib/env";
 import { handleFirstUserPromotion } from "@/lib/auth/first-user";
+import { getRegistrationEnabled } from "@/lib/services/admin-settings-service";
 
 export const auth = betterAuth({
   secret: env.authSecret,
@@ -24,7 +25,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: !env.allowUserRegistration,
+    disableSignUp: false,
   },
   plugins: [
     admin({
@@ -46,7 +47,8 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async () => {
-          if (!env.allowUserRegistration) {
+          const registrationEnabled = await getRegistrationEnabled();
+          if (!registrationEnabled) {
             throw new Error("Registration is currently disabled.");
           }
         },

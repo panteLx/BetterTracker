@@ -6,6 +6,7 @@ import { scheduleInputSchema } from "@/lib/validators/schedule";
 import { addInterval, classifyScheduleStatus } from "@/lib/date";
 import { createTransaction } from "@/lib/services/transaction-service";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
+import { getTrackerById } from "@/lib/trackers";
 
 export async function listSchedules(trackerId: string, status?: string) {
   const base = await db
@@ -29,6 +30,14 @@ export async function createSchedule(input: unknown, actorUserId: string) {
   const amountCents = parseAmountToCents(parsed.amount);
   if (amountCents === null || amountCents <= 0) {
     throw new Error("Invalid schedule amount");
+  }
+
+  const tracker = await getTrackerById(parsed.trackerId);
+  if (!tracker) {
+    throw new Error("Tracker not found");
+  }
+  if (!tracker.isActive) {
+    throw new Error("Tracker is archived and cannot be modified");
   }
 
   const [created] = await db

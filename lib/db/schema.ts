@@ -95,6 +95,7 @@ export const trackers = sqliteTable(
       .notNull(),
     discordPingRoleId: text("discord_ping_role_id").notNull().default(""),
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     ...timestamps,
   },

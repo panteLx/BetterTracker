@@ -4,12 +4,9 @@ import { eq } from "drizzle-orm";
 import { env } from "@/lib/env";
 
 export const DEFAULT_SETTINGS = {
-  debugEnabled: false,
   discordWebhookUrl: "",
   discordDebugEnabled: false,
   discordPingRoleId: "",
-  defaultLocale: env.defaultLocale,
-  defaultTimezone: env.timezone,
   serverIpDisplay: "",
   directAddSubscriptions: false,
   registrationEnabled: env.allowUserRegistration,
@@ -70,4 +67,8 @@ export async function setSetting(
     valueJson: JSON.stringify(value),
     updatedByUserId: updatedByUserId ?? null,
   });
+}
+
+export async function getRegistrationEnabled() {
+  return getSetting<boolean>("registrationEnabled");
 }

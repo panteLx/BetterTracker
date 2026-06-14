@@ -14,7 +14,7 @@ export default async function AdminSettingsPage() {
     <PageContainer
       user={user}
       title="Admin Settings"
-      description="Locale, Zeitzone, Registrierung und Discord-Defaults fuer Tracker verwalten."
+      description="System- und Discord-Defaults zentral verwalten."
     >
       <AdminNav />
       <AdminSettingsClient />

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchJson } from "@/lib/client-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateTime } from "@/lib/utils";
 
 type LogItem = {
   id: string;
@@ -14,7 +15,12 @@ type LogItem = {
   metadataJson?: string | null;
 };
 
-export function AdminLogsClient() {
+type AdminLogsClientProps = {
+  locale: string;
+  timezone: string;
+};
+
+export function AdminLogsClient({ locale, timezone }: AdminLogsClientProps) {
   const logsQuery = useQuery({
     queryKey: ["admin-logs"],
     queryFn: () => fetchJson<{ items: LogItem[] }>("/api/admin/logs"),
@@ -39,7 +45,7 @@ export function AdminLogsClient() {
           <TableBody>
             {(logsQuery.data?.items || []).map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{new Date(item.createdAt).toLocaleString("de-DE")}</TableCell>
+                <TableCell>{formatDateTime(item.createdAt, locale, timezone)}</TableCell>
                 <TableCell>{item.action}</TableCell>
                 <TableCell>{item.resourceType}</TableCell>
                 <TableCell>{item.severity}</TableCell>
