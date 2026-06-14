@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { transactions } from "@/lib/db/schema";
+import { categories, transactions } from "@/lib/db/schema";
 import { requireTrackerWriteAccess } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { notFound, ok, serverError } from "@/lib/http";
@@ -35,6 +35,36 @@ export async function PATCH(
       notes?: string | null;
     }>(request);
 
+    const nextCategoryId =
+      body.categoryId === undefined ? existing.categoryId : body.categoryId;
+
+    if (!nextCategoryId) {
+      throw new Error("Transaction category is required");
+    }
+
+    const [category] = await db
+      .select({
+        id: categories.id,
+        type: categories.type,
+      })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.id, nextCategoryId),
+          eq(categories.trackerId, existing.trackerId)
+        )
+      )
+      .limit(1);
+
+    if (!category) {
+      throw new Error("Transaction category is required");
+    }
+
+    const nextDirection = body.direction ?? existing.direction;
+    if (category.type !== nextDirection && category.type !== "transfer") {
+      throw new Error("Transaction category does not match the selected direction");
+    }
+
     const [updated] = await db
       .update(transactions)
       .set({
@@ -44,9 +74,8 @@ export async function PATCH(
           body.amount !== undefined
             ? parseAmountToCents(body.amount) ?? existing.amountCents
             : existing.amountCents,
-        direction: body.direction ?? existing.direction,
-        categoryId:
-          body.categoryId === undefined ? existing.categoryId : body.categoryId,
+        direction: nextDirection,
+        categoryId: nextCategoryId,
         payeeId: body.payeeId === undefined ? existing.payeeId : body.payeeId,
         customPayeeName:
           body.customPayeeName === undefined

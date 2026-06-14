@@ -14,12 +14,17 @@ export async function listTransactions(query: unknown) {
   if (parsed.from) filters.push(gte(transactions.date, parsed.from));
   if (parsed.to) filters.push(lte(transactions.date, parsed.to));
   if (parsed.categoryId) filters.push(eq(transactions.categoryId, parsed.categoryId));
+  if (parsed.payeeId) filters.push(eq(transactions.payeeId, parsed.payeeId));
   if (parsed.direction) filters.push(eq(transactions.direction, parsed.direction));
   if (parsed.q) {
+    const searchTerm = `%${parsed.q.trim()}%`;
     filters.push(
       or(
-        like(transactions.notes, `%${parsed.q}%`),
-        like(transactions.customPayeeName, `%${parsed.q}%`)
+        like(transactions.notes, searchTerm),
+        like(transactions.customPayeeName, searchTerm),
+        like(payees.name, searchTerm),
+        like(categories.name, searchTerm),
+        like(transactions.accountName, searchTerm)
       )!
     );
   }
@@ -51,6 +56,8 @@ export async function listTransactions(query: unknown) {
       expenseCents: sql<number>`coalesce(sum(case when ${transactions.direction} = 'expense' then ${transactions.amountCents} else 0 end), 0)`,
     })
     .from(transactions)
+    .leftJoin(categories, eq(categories.id, transactions.categoryId))
+    .leftJoin(payees, eq(payees.id, transactions.payeeId))
     .where(and(...filters));
 
   return {
@@ -72,6 +79,28 @@ export async function createTransaction(input: unknown, actorUserId: string) {
   }
   if (!tracker.isActive) {
     throw new Error("Tracker is archived and cannot be modified");
+  }
+
+  const [category] = await db
+    .select({
+      id: categories.id,
+      type: categories.type,
+    })
+    .from(categories)
+    .where(
+      and(
+        eq(categories.id, parsed.categoryId),
+        eq(categories.trackerId, parsed.trackerId)
+      )
+    )
+    .limit(1);
+
+  if (!category) {
+    throw new Error("Transaction category is required");
+  }
+
+  if (category.type !== parsed.direction && category.type !== "transfer") {
+    throw new Error("Transaction category does not match the selected direction");
   }
 
   let resolvedPayeeId = parsed.payeeId ?? null;

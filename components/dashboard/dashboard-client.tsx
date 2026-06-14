@@ -183,7 +183,9 @@ function TrackerCreateForm({
           <Input
             id="new-tracker-currency"
             value={currency}
-            onChange={(event) => onCurrencyChange(event.target.value.toUpperCase())}
+            onChange={(event) =>
+              onCurrencyChange(event.target.value.toUpperCase())
+            }
             placeholder="EUR"
           />
         </div>
@@ -246,9 +248,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const [newTrackerName, setNewTrackerName] = useState("");
   const [newTrackerColor, setNewTrackerColor] = useState(DEFAULT_TRACKER_COLOR);
   const [newTrackerCurrency, setNewTrackerCurrency] = useState("EUR");
-  const [newTrackerDiscordWebhookUrl, setNewTrackerDiscordWebhookUrl] = useState("");
-  const [newTrackerDiscordPingRoleId, setNewTrackerDiscordPingRoleId] = useState("");
-  const [newTrackerDiscordDebugEnabled, setNewTrackerDiscordDebugEnabled] = useState(false);
+  const [newTrackerDiscordWebhookUrl, setNewTrackerDiscordWebhookUrl] =
+    useState("");
+  const [newTrackerDiscordPingRoleId, setNewTrackerDiscordPingRoleId] =
+    useState("");
+  const [newTrackerDiscordDebugEnabled, setNewTrackerDiscordDebugEnabled] =
+    useState(false);
   const [trackerDrafts, setTrackerDrafts] = useState<
     Record<
       string,
@@ -274,15 +279,22 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const tracker = trackers.find((item) => item.id === activeTrackerId);
   const canManageTracker = tracker?.permission !== "read";
   const isTrackerMutable = Boolean(tracker?.isActive && canManageTracker);
-  const trackerDraftName = trackerDrafts[activeTrackerId]?.name ?? tracker?.name ?? "";
+  const trackerDraftName =
+    trackerDrafts[activeTrackerId]?.name ?? tracker?.name ?? "";
   const trackerDraftColor =
-    trackerDrafts[activeTrackerId]?.color ?? tracker?.color ?? DEFAULT_TRACKER_COLOR;
+    trackerDrafts[activeTrackerId]?.color ??
+    tracker?.color ??
+    DEFAULT_TRACKER_COLOR;
   const trackerDraftCurrency =
     trackerDrafts[activeTrackerId]?.currency ?? tracker?.currency ?? "EUR";
   const trackerDraftDiscordWebhookUrl =
-    trackerDrafts[activeTrackerId]?.discordWebhookUrl ?? tracker?.discordWebhookUrl ?? "";
+    trackerDrafts[activeTrackerId]?.discordWebhookUrl ??
+    tracker?.discordWebhookUrl ??
+    "";
   const trackerDraftDiscordPingRoleId =
-    trackerDrafts[activeTrackerId]?.discordPingRoleId ?? tracker?.discordPingRoleId ?? "";
+    trackerDrafts[activeTrackerId]?.discordPingRoleId ??
+    tracker?.discordPingRoleId ??
+    "";
   const trackerDraftDiscordDebugEnabled =
     trackerDrafts[activeTrackerId]?.discordDebugEnabled ??
     tracker?.discordDebugEnabled ??
@@ -332,7 +344,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const latestTransactionLabel = latestTransaction
     ? latestTransaction.payeeName ||
       latestTransaction.customPayeeName ||
-      "Kein Name angegeben"
+      "Anonym"
     : "Noch keine Buchung";
   const effectiveCategoryId = filteredCategories.some(
     (item) => item.id === categoryId,
@@ -489,17 +501,24 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         }),
       }),
     onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Tracker[] } | undefined>(["trackers"], (current) => ({
-        items: sortTrackers(
-          (current?.items || []).map((entry) => (entry.id === item.id ? { ...entry, ...item } : entry)),
-          locale
-        ),
-      }));
+      queryClient.setQueryData<{ items: Tracker[] } | undefined>(
+        ["trackers"],
+        (current) => ({
+          items: sortTrackers(
+            (current?.items || []).map((entry) =>
+              entry.id === item.id ? { ...entry, ...item } : entry,
+            ),
+            locale,
+          ),
+        }),
+      );
       toast.success("Tracker gespeichert");
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Tracker konnte nicht gespeichert werden"
+        error instanceof Error
+          ? error.message
+          : "Tracker konnte nicht gespeichert werden",
       );
     },
   });
@@ -523,13 +542,17 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       return;
     }
 
+    if (effectiveCategoryId === EMPTY_SELECT_VALUE) {
+      toast.error("Bitte eine Kategorie waehlen");
+      return;
+    }
+
     createTransactionMutation.mutate({
       trackerId: activeTrackerId,
       date,
       amount,
       direction,
-      categoryId:
-        effectiveCategoryId === EMPTY_SELECT_VALUE ? null : effectiveCategoryId,
+      categoryId: effectiveCategoryId,
       payeeId: payeeId === EMPTY_SELECT_VALUE ? null : payeeId,
       customPayeeName: customPayeeName.trim() || null,
       notes: notes.trim() || null,
@@ -631,14 +654,22 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const statCards = [
     {
       label: "Einnahmen",
-      value: formatCurrency(totals.incomeCents, tracker?.currency || "EUR", locale),
+      value: formatCurrency(
+        totals.incomeCents,
+        tracker?.currency || "EUR",
+        locale,
+      ),
       icon: ArrowUpRight,
       tone: "text-emerald-600",
       surface: "from-emerald-500/12 via-emerald-500/6 to-transparent",
     },
     {
       label: "Ausgaben",
-      value: formatCurrency(totals.expenseCents, tracker?.currency || "EUR", locale),
+      value: formatCurrency(
+        totals.expenseCents,
+        tracker?.currency || "EUR",
+        locale,
+      ),
       icon: ArrowDownLeft,
       tone: "text-rose-600",
       surface: "from-rose-500/12 via-rose-500/6 to-transparent",
@@ -704,13 +735,19 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   })}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="rounded-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                      >
                         <Plus className="mr-2 h-4 w-4" />
                         Neuer Tracker
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-96 p-3">
-                      <DropdownMenuLabel className="px-0">Neuen Tracker anlegen</DropdownMenuLabel>
+                      <DropdownMenuLabel className="px-0">
+                        Neuen Tracker anlegen
+                      </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <TrackerCreateForm
                         title="Neuer Tracker"
@@ -727,9 +764,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                         onNameChange={setNewTrackerName}
                         onColorChange={setNewTrackerColor}
                         onCurrencyChange={setNewTrackerCurrency}
-                        onDiscordWebhookUrlChange={setNewTrackerDiscordWebhookUrl}
-                        onDiscordPingRoleIdChange={setNewTrackerDiscordPingRoleId}
-                        onDiscordDebugEnabledChange={setNewTrackerDiscordDebugEnabled}
+                        onDiscordWebhookUrlChange={
+                          setNewTrackerDiscordWebhookUrl
+                        }
+                        onDiscordPingRoleIdChange={
+                          setNewTrackerDiscordPingRoleId
+                        }
+                        onDiscordDebugEnabledChange={
+                          setNewTrackerDiscordDebugEnabled
+                        }
                         onSubmit={handleCreateTracker}
                       />
                     </DropdownMenuContent>
@@ -751,7 +794,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       {tracker?.name || "Kein Tracker aktiv"}
                     </p>
                     {tracker && !tracker.isActive ? (
-                      <p className="text-xs text-muted-foreground">Archiviert</p>
+                      <p className="text-xs text-muted-foreground">
+                        Archiviert
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex items-start gap-2">
@@ -762,14 +807,23 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     {tracker ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="rounded-2xl">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-2xl"
+                          >
                             <Settings2 className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-80 p-3">
-                          <DropdownMenuLabel className="px-0">Tracker-Einstellungen</DropdownMenuLabel>
+                          <DropdownMenuLabel className="px-0">
+                            Tracker-Einstellungen
+                          </DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <form onSubmit={handleUpdateTracker} className="space-y-3 pt-2">
+                          <form
+                            onSubmit={handleUpdateTracker}
+                            className="space-y-3 pt-2"
+                          >
                             <div className="space-y-2">
                               <Label htmlFor="tracker-draft-name">Name</Label>
                               <Input
@@ -804,7 +858,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="tracker-draft-currency">Waehrung</Label>
+                              <Label htmlFor="tracker-draft-currency">
+                                Waehrung
+                              </Label>
                               <Input
                                 id="tracker-draft-currency"
                                 value={trackerDraftCurrency}
@@ -813,7 +869,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                                     ...current,
                                     [activeTrackerId]: {
                                       ...current[activeTrackerId],
-                                      currency: event.target.value.toUpperCase(),
+                                      currency:
+                                        event.target.value.toUpperCase(),
                                     },
                                   }))
                                 }
@@ -822,7 +879,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             </div>
                             <DropdownMenuGroup className="space-y-3">
                               <div className="space-y-2">
-                                <Label htmlFor="tracker-draft-webhook">Discord Webhook URL</Label>
+                                <Label htmlFor="tracker-draft-webhook">
+                                  Discord Webhook URL
+                                </Label>
                                 <Input
                                   id="tracker-draft-webhook"
                                   value={trackerDraftDiscordWebhookUrl}
@@ -840,7 +899,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="tracker-draft-role">Discord Ping Role ID</Label>
+                                <Label htmlFor="tracker-draft-role">
+                                  Discord Ping Role ID
+                                </Label>
                                 <Input
                                   id="tracker-draft-role"
                                   value={trackerDraftDiscordPingRoleId}
@@ -858,9 +919,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                               </div>
                               <div className="flex items-center justify-between rounded-2xl border border-border/60 p-3">
                                 <div>
-                                  <p className="text-sm font-medium">Discord Debug</p>
+                                  <p className="text-sm font-medium">
+                                    Discord Debug
+                                  </p>
                                   <p className="text-xs text-muted-foreground">
-                                    Zusatzinfos fuer Benachrichtigungen mitsenden.
+                                    Zusatzinfos fuer Benachrichtigungen
+                                    mitsenden.
                                   </p>
                                 </div>
                                 <Switch
@@ -880,9 +944,14 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             <Button
                               type="submit"
                               className="w-full"
-                              disabled={updateTrackerMutation.isPending || !isTrackerMutable}
+                              disabled={
+                                updateTrackerMutation.isPending ||
+                                !isTrackerMutable
+                              }
                             >
-                              {updateTrackerMutation.isPending ? "Speichert..." : "Tracker speichern"}
+                              {updateTrackerMutation.isPending
+                                ? "Speichert..."
+                                : "Tracker speichern"}
                             </Button>
                             {!canManageTracker ? (
                               <p className="text-sm text-muted-foreground">
@@ -891,7 +960,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             ) : null}
                             {!tracker.isActive ? (
                               <p className="text-sm text-muted-foreground">
-                                Dieser Tracker ist archiviert und kann nicht bearbeitet werden.
+                                Dieser Tracker ist archiviert und kann nicht
+                                bearbeitet werden.
                               </p>
                             ) : null}
                           </form>
@@ -940,10 +1010,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     </div>
                     <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/45 to-background/80 p-3">
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Kategorien
+                        Transaktionen
                       </p>
                       <p className="mt-2 text-xl font-semibold">
-                        {categoriesQuery.data?.items.length ?? 0}
+                        {transactionCount}
                       </p>
                     </div>
                   </div>
@@ -967,8 +1037,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   <div className="space-y-1">
                     <p className="font-semibold">Erster Schritt</p>
                     <p className="text-sm text-muted-foreground">
-                      Starte mit einem Tracker fuer deinen Haushalt, Urlaub
-                      oder ein gemeinsames Projekt.
+                      Starte mit einem Tracker fuer deinen Haushalt, Urlaub oder
+                      ein gemeinsames Projekt.
                     </p>
                   </div>
                 </div>
@@ -1104,6 +1174,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <Label>Kategorie</Label>
                       <p className="text-xs text-muted-foreground">
                         Passende Kategorien fuer den aktuellen Buchungstyp.
+                        Pflichtfeld.
                       </p>
                     </div>
                     <Button
@@ -1119,7 +1190,11 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   </div>
 
                   <Select
-                    value={effectiveCategoryId}
+                    value={
+                      effectiveCategoryId === EMPTY_SELECT_VALUE
+                        ? undefined
+                        : effectiveCategoryId
+                    }
                     onValueChange={(value) => {
                       setCategoryId(value);
                       if (value !== EMPTY_SELECT_VALUE) {
@@ -1132,9 +1207,6 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <SelectValue placeholder="Kategorie waehlen" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        Keine Kategorie
-                      </SelectItem>
                       {filteredCategories.map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.name}
@@ -1160,7 +1232,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <Button
                         type="button"
                         onClick={handleCreateCategory}
-                        disabled={createCategoryMutation.isPending || !isTrackerMutable}
+                        disabled={
+                          createCategoryMutation.isPending || !isTrackerMutable
+                        }
                       >
                         {createCategoryMutation.isPending
                           ? "Speichert..."
@@ -1215,9 +1289,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <SelectValue placeholder="Payee waehlen" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        Kein Payee
-                      </SelectItem>
+                      <SelectItem value={EMPTY_SELECT_VALUE}>Anonym</SelectItem>
                       {(payeesQuery.data?.items || []).map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.name}
@@ -1230,14 +1302,18 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
                       <Input
                         value={newPayeeName}
-                        onChange={(event) => setNewPayeeName(event.target.value)}
+                        onChange={(event) =>
+                          setNewPayeeName(event.target.value)
+                        }
                         disabled={!isTrackerMutable}
                         placeholder="z. B. Baeckerei"
                       />
                       <Button
                         type="button"
                         onClick={handleCreatePayee}
-                        disabled={createPayeeMutation.isPending || !isTrackerMutable}
+                        disabled={
+                          createPayeeMutation.isPending || !isTrackerMutable
+                        }
                       >
                         {createPayeeMutation.isPending
                           ? "Speichert..."
@@ -1294,7 +1370,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     createTransactionMutation.isPending ||
                     !activeTrackerId ||
                     !date ||
-                    !isTrackerMutable
+                    !isTrackerMutable ||
+                    effectiveCategoryId === EMPTY_SELECT_VALUE
                   }
                 >
                   {createTransactionMutation.isPending
@@ -1308,8 +1385,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 ) : null}
                 {tracker && !tracker.isActive ? (
                   <p className="text-sm text-muted-foreground">
-                    Dieser Tracker ist archiviert. Neue Eintraege, Kategorien und Payees sind
-                    gesperrt.
+                    Dieser Tracker ist archiviert. Neue Eintraege, Kategorien
+                    und Payees sind gesperrt.
                   </p>
                 ) : null}
               </form>
@@ -1362,7 +1439,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                         </span>
                       </div>
                       <p className="font-medium">
-                        {item.payeeName || item.customPayeeName || "Ohne Payee"}
+                        {item.payeeName || item.customPayeeName || "Anonym"}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {item.categoryName || "Ohne Kategorie"}

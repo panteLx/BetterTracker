@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       from: searchParams.get("from") || undefined,
       to: searchParams.get("to") || undefined,
       categoryId: searchParams.get("categoryId") || undefined,
+      payeeId: searchParams.get("payeeId") || undefined,
       direction: searchParams.get("direction") || undefined,
       q: searchParams.get("q") || undefined,
     });
