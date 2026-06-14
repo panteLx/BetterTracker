@@ -65,6 +65,7 @@ export function AdminSettingsClient() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!form) return;
     patchMutation.mutate(form);
   }
 
