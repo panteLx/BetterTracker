@@ -1,7 +1,3 @@
-import { db } from "@/lib/db";
-import { trackerMembers, user } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
-
 export type Role = "user" | "admin" | "superadmin";
 export type TrackerPermission = "owner" | "admin" | "write" | "read";
 
@@ -11,19 +7,6 @@ export function isAdminRole(role?: string | null): role is "admin" | "superadmin
 
 export function isSuperAdminRole(role?: string | null): role is "superadmin" {
   return role === "superadmin";
-}
-
-export async function getTrackerPermission(
-  trackerId: string,
-  userId: string
-): Promise<TrackerPermission | null> {
-  const rows = await db
-    .select({ permission: trackerMembers.permission })
-    .from(trackerMembers)
-    .where(and(eq(trackerMembers.trackerId, trackerId), eq(trackerMembers.userId, userId)))
-    .limit(1);
-
-  return rows[0]?.permission ?? null;
 }
 
 export function canManageTracker(permission: TrackerPermission | null) {
@@ -70,11 +53,4 @@ export function canMutateTrackerResource(
   return createdByUserId === actorUserId;
 }
 
-export async function getUserRole(userId: string): Promise<Role | null> {
-  const rows = await db
-    .select({ role: user.role })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
-  return (rows[0]?.role as Role | undefined) ?? null;
-}
+
