@@ -67,7 +67,7 @@ function getAlertContent({
       return {
         title: "Die OIDC-Anmeldung konnte nicht abgeschlossen werden.",
         description:
-          "Bitte versuche es erneut. Wenn der Fehler bleibt, pruefe die OIDC-Konfiguration.",
+          "Bitte versuche es erneut. Wenn der Fehler bleibt, prüfe die OIDC-Konfiguration.",
       };
     default:
       return {

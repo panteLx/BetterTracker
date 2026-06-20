@@ -56,7 +56,7 @@ export function TrackerColorPicker({
             type="button"
             variant="outline"
             className="h-10 w-14 shrink-0 rounded-xl px-0"
-            aria-label="Farbe auswaehlen"
+            aria-label="Farbe auswählen"
           >
             <span
               className="h-6 w-6 rounded-full border border-black/10 shadow-sm"

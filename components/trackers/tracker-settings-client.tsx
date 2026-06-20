@@ -244,13 +244,13 @@ export function TrackerSettingsClient({
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
-      toast.success("Kategorie geloescht");
+      toast.success("Kategorie gelöscht");
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Kategorie konnte nicht geloescht werden",
+          : "Kategorie konnte nicht gelöscht werden",
       );
     },
   });
@@ -291,7 +291,7 @@ export function TrackerSettingsClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Freigabe hinzugefuegt");
+      toast.success("Freigabe hinzugefügt");
       setMemberSearch("");
       queryClient.invalidateQueries({
         queryKey: ["tracker-members", activeTrackerId],
@@ -389,7 +389,7 @@ export function TrackerSettingsClient({
   }
 
   function handleDeleteCategory(id: string, name: string) {
-    if (!window.confirm(`Kategorie "${name}" wirklich loeschen?`)) {
+    if (!window.confirm(`Kategorie "${name}" wirklich löschen?`)) {
       return;
     }
 
@@ -397,7 +397,7 @@ export function TrackerSettingsClient({
   }
 
   function handleDeletePayee(id: string, name: string) {
-    if (!window.confirm(`Einzahler "${name}" wirklich loeschen?`)) {
+    if (!window.confirm(`Einzahler "${name}" wirklich löschen?`)) {
       return;
     }
 
@@ -412,7 +412,7 @@ export function TrackerSettingsClient({
   }
 
   function handleRemoveMember(memberId: string, label: string) {
-    if (!window.confirm(`Freigabe fuer "${label}" wirklich entfernen?`)) {
+    if (!window.confirm(`Freigabe für "${label}" wirklich entfernen?`)) {
       return;
     }
 
@@ -427,13 +427,13 @@ export function TrackerSettingsClient({
             <Settings2 className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <p className="font-medium">Kein Tracker verfuegbar</p>
+            <p className="font-medium">Kein Tracker verfügbar</p>
             <p className="text-sm text-muted-foreground">
               Lege zuerst einen Tracker an, bevor du die Settings verwaltest.
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link href="/">Zurueck zu den Buchungen</Link>
+              <Link href="/">Zurück zu den Buchungen</Link>
           </Button>
         </CardContent>
       </Card>
@@ -446,18 +446,18 @@ export function TrackerSettingsClient({
         <CardHeader className="gap-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle>Tracker waehlen</CardTitle>
+              <CardTitle>Tracker wählen</CardTitle>
             </div>
             <Button asChild variant="outline">
               <Link href="/">
                 <ArrowLeft className="h-4 w-4" />
-                Zurueck zu den Buchungen
+                Zurück zu den Buchungen
               </Link>
             </Button>
           </div>
           <Select value={activeTrackerId} onValueChange={handleTrackerChange}>
             <SelectTrigger className="max-w-xl">
-              <SelectValue placeholder="Tracker waehlen" />
+              <SelectValue placeholder="Tracker wählen" />
             </SelectTrigger>
             <SelectContent>
               {trackers.map((item) => (
@@ -504,7 +504,7 @@ export function TrackerSettingsClient({
                       }))
                     }
                     rows={4}
-                    placeholder="Optionaler Kontext fuer diesen Tracker"
+                    placeholder="Optionaler Kontext für diesen Tracker"
                   />
                 </div>
 
@@ -804,7 +804,7 @@ export function TrackerSettingsClient({
                             }
                           >
                             <Trash2 className="h-4 w-4" />
-                            Loeschen
+                            Löschen
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -850,7 +850,7 @@ export function TrackerSettingsClient({
                             }
                           >
                             <Trash2 className="h-4 w-4" />
-                            Loeschen
+                            Löschen
                           </Button>
                         </TableCell>
                       </TableRow>

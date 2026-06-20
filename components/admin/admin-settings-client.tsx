@@ -130,7 +130,7 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
             <div>
               <p className="font-medium">Discord-Default Debug</p>
               <p className="text-sm text-muted-foreground">
-                Neue Tracker uebernehmen diesen Discord-Debug-Standardwert.
+                Neue Tracker übernehmen diesen Discord-Debug-Standardwert.
               </p>
             </div>
             <Switch
@@ -157,7 +157,7 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
               }
               disabled={applyDiscordDefaultsMutation.isPending}
             >
-              Auf alle Tracker uebernehmen
+              Auf alle Tracker übernehmen
             </Button>
           </div>
         </CardContent>
