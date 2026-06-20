@@ -12,7 +12,7 @@ export default async function SchedulesPage() {
     <PageContainer
       user={user}
       title="Termine"
-      description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion uebernehmen."
+      description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion übernehmen."
     >
       <SchedulesClient locale={env.defaultLocale} currentUserId={user.id} />
     </PageContainer>

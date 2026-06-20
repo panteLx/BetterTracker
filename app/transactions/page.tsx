@@ -12,7 +12,7 @@ export default async function TransactionsPage() {
     <PageContainer
       user={user}
       title="Transaktionen"
-      description="Filterbare Historie mit Summen fuer Einnahmen, Ausgaben und Saldo."
+      description="Filterbare Historie mit Summen für Einnahmen, Ausgaben und Saldo."
     >
       <TransactionsClient locale={env.defaultLocale} currentUserId={user.id} />
     </PageContainer>

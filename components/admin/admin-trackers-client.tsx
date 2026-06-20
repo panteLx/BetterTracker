@@ -80,7 +80,7 @@ export function AdminTrackersClient() {
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Tracker fuer dich freigegeben");
+      toast.success("Tracker für dich freigegeben");
       queryClient.invalidateQueries({ queryKey: ["trackers"] });
     },
     onError: (error) =>
@@ -210,7 +210,7 @@ export function AdminTrackersClient() {
                     <div>
                       <p className="font-medium">Discord Debug</p>
                       <p className="text-sm text-muted-foreground">
-                        Zusaetzliche Discord-Debugdaten fuer diesen Tracker senden
+                        Zusätzliche Discord-Debugdaten für diesen Tracker senden
                       </p>
                     </div>
                     <Switch
@@ -236,7 +236,7 @@ export function AdminTrackersClient() {
                     <div>
                       <p className="font-medium">Tracker ausblenden</p>
                       <p className="text-sm text-muted-foreground">
-                        Ausgeblendete Tracker sind fuer normale Benutzer nicht mehr sichtbar.
+                        Ausgeblendete Tracker sind für normale Benutzer nicht mehr sichtbar.
                       </p>
                     </div>
                     <Switch

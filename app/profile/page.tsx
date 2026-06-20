@@ -21,7 +21,7 @@ export default async function ProfilePage() {
     <PageContainer
       user={current}
       title="Profil"
-      description="Persoenliche Kontoinformationen und aktive Sessions."
+      description="Persönliche Kontoinformationen und aktive Sessions."
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -51,9 +51,9 @@ export default async function ProfilePage() {
           <CardContent className="space-y-3">
             {sessions.map((session) => (
               <div key={session.id} className="rounded-2xl border border-border/60 p-4 text-sm">
-                <p className="font-medium">{session.userAgent || "Unbekanntes Geraet"}</p>
+                <p className="font-medium">{session.userAgent || "Unbekanntes Gerät"}</p>
                 <p className="text-muted-foreground">
-                  Laeuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
+                  Läuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
                 </p>
               </div>
             ))}

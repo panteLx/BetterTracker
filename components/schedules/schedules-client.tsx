@@ -7,7 +7,13 @@ import { fetchJson } from "@/lib/client-fetch";
 import { formatCurrency, toDateInputValue } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 const EMPTY_SELECT_VALUE = "none";
 
@@ -93,11 +100,11 @@ function sortByName<T extends { name: string }>(items: T[], locale: string) {
 }
 
 function getScheduleStatusLabel(status: Schedule["status"]) {
-  if (status === "overdue") return "Ueberfaellig";
-  if (status === "due") return "Faellig";
-  if (status === "upcoming") return "Demnaechst";
+  if (status === "overdue") return "Überfällig";
+  if (status === "due") return "Fällig";
+  if (status === "upcoming") return "Demnächst";
   if (status === "completed") return "Abgeschlossen";
-  return "Unvollstaendig";
+  return "Unvollständig";
 }
 
 function getFrequencyLabel(
@@ -108,9 +115,9 @@ function getFrequencyLabel(
     return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
   }
   if (frequency === "yearly") {
-    return intervalValue === 1 ? "Jaehrlich" : `Alle ${intervalValue} Jahre`;
+    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
   }
-  return intervalValue === 1 ? "Taeglich" : `Alle ${intervalValue} Tage`;
+  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
 }
 
 function getStatusVariant(status: Schedule["status"]) {
@@ -206,6 +213,11 @@ export function SchedulesClient({
   const filteredCategories = (categoriesQuery.data?.items || []).filter(
     (item) => item.type === direction || item.type === "transfer",
   );
+  const parsedIntervalValue = Number(intervalValue);
+  const normalizedIntervalValue =
+    Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
+      ? parsedIntervalValue
+      : 1;
 
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -273,7 +285,7 @@ export function SchedulesClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Termin geloescht");
+      toast.success("Termin gelöscht");
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -283,7 +295,7 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Loeschen fehlgeschlagen",
+        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
       );
     },
   });
@@ -374,7 +386,7 @@ export function SchedulesClient({
     event.preventDefault();
 
     if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker waehlen");
+      toast.error("Bitte zuerst einen Tracker wählen");
       return;
     }
 
@@ -399,7 +411,7 @@ export function SchedulesClient({
 
   function handleCreatePayee() {
     if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker waehlen");
+      toast.error("Bitte zuerst einen Tracker wählen");
       return;
     }
 
@@ -416,7 +428,7 @@ export function SchedulesClient({
 
   function handleCreateCategory() {
     if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker waehlen");
+      toast.error("Bitte zuerst einen Tracker wählen");
       return;
     }
 
@@ -505,7 +517,7 @@ export function SchedulesClient({
 
   function submitReactivate(id: string) {
     if (!reactivationDate) {
-      toast.error("Bitte ein neues naechstes Datum angeben");
+      toast.error("Bitte ein neues nächstes Datum angeben");
       return;
     }
 
@@ -531,12 +543,12 @@ export function SchedulesClient({
           return (
             <div
               key={item.id}
-              className="rounded-2xl border border-border/60 p-4"
+              className="rounded-[1.45rem] border border-border/60 bg-background/78 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur-sm"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">{item.name}</h3>
+                    <h3 className="text-[15px] font-semibold">{item.name}</h3>
                     <Badge
                       variant={
                         item.direction === "expense"
@@ -552,11 +564,11 @@ export function SchedulesClient({
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
-                      {item.payeeName || "Einzahler fehlt"} |{" "}
+                      {item.payeeName || "Einzahler fehlt"} ·{" "}
                       {item.categoryName || "Kategorie fehlt"}
                     </p>
                     <p>
-                      Naechster Termin {item.nextDueDate} |{" "}
+                      Nächster Termin {item.nextDueDate} |{" "}
                       {getFrequencyLabel(item.frequency, item.intervalValue)}
                     </p>
                     {item.lastCompletedDate ? (
@@ -574,7 +586,7 @@ export function SchedulesClient({
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <div className="mr-2 text-lg font-semibold">
+                  <div className="mr-2 rounded-full border border-border/60 bg-muted/35 px-3 py-1 text-base font-semibold">
                     {formatCurrency(item.amountCents, currency, locale)}
                   </div>
                   {item.isActive ? (
@@ -599,7 +611,7 @@ export function SchedulesClient({
                       onClick={() => completeSchedule(item.id)}
                       disabled={updateMutation.isPending || !isTrackerMutable}
                     >
-                      Abschliessen
+                      Abschließen
                     </Button>
                   ) : null}
                   {!item.isActive && item.canEdit ? (
@@ -632,7 +644,7 @@ export function SchedulesClient({
                       onClick={() => deleteMutation.mutate(item.id)}
                       disabled={deleteMutation.isPending || !isTrackerMutable}
                     >
-                      Loeschen
+                      Löschen
                     </Button>
                   ) : null}
                 </div>
@@ -667,7 +679,7 @@ export function SchedulesClient({
               ) : null}
 
               {isEditing && editState ? (
-                <div className="mt-4 grid gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+                <div className="mt-4 grid gap-4 rounded-[1.2rem] border border-border/60 bg-muted/20 p-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Input
                       value={editState.name}
@@ -735,8 +747,8 @@ export function SchedulesClient({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="monthly">Monatlich</SelectItem>
-                        <SelectItem value="yearly">Jaehrlich</SelectItem>
-                        <SelectItem value="custom_days">Custom Days</SelectItem>
+                        <SelectItem value="yearly">Jährlich</SelectItem>
+                        <SelectItem value="custom_days">Alle X Tage</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
@@ -761,11 +773,11 @@ export function SchedulesClient({
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Kategorie waehlen" />
+                        <SelectValue placeholder="Kategorie wählen" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={EMPTY_SELECT_VALUE}>
-                          Bitte waehlen
+                          Bitte wählen
                         </SelectItem>
                         {(categoriesQuery.data?.items || [])
                           .filter(
@@ -847,8 +859,8 @@ export function SchedulesClient({
           );
         })}
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Keine Eintraege in diesem Tab.
+          <p className="rounded-[1.2rem] border border-dashed border-border/70 bg-background/55 p-5 text-sm text-muted-foreground">
+            Keine Einträge in diesem Tab.
           </p>
         ) : null}
       </div>
@@ -856,300 +868,432 @@ export function SchedulesClient({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Neuer Termin</CardTitle>
+    <div className="grid gap-6">
+      <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/35 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.45)]">
+        <CardHeader className="gap-5 border-b border-border/50 bg-gradient-to-r from-primary/8 via-background/80 to-transparent">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl tracking-tight">
+                Schedules verwalten
+              </CardTitle>
+              <CardDescription className="max-w-2xl text-sm">
+                Wiederkehrende Buchungen strukturiert anlegen, sauber zuordnen
+                und bei Bedarf direkt auslösen.
+              </CardDescription>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Fällig
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  {dueQuery.data?.items.length ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Demnächst
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  {upcomingQuery.data?.items.length ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Abgeschlossen
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  {inactiveQuery.data?.items.length ?? 0}
+                </p>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Tracker</Label>
-              <Select
-                value={activeTrackerId}
-                onValueChange={setSelectedTracker}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tracker waehlen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(trackersQuery.data?.items || []).map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Betrag</Label>
-                <Input
-                  id="amount"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Typ</Label>
-                <Select
-                  value={direction}
-                  onValueChange={(value) =>
-                    setDirection(value as "expense" | "income")
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expense">Ausgabe</SelectItem>
-                    <SelectItem value="income">Einnahme</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <CardContent className="grid gap-6 px-6 py-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.92fr)]">
+          <div className="space-y-4">
+            <div className="rounded-[1.45rem] border border-primary/15 bg-primary/7 p-4">
+              <p className="text-sm font-medium">Neuer Termin</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Erfasse Grunddaten, Zuordnung und Rhythmus in einer kompakten
+                Eingabefläche.
+              </p>
             </div>
 
-            <div className="space-y-3 rounded-2xl border border-border/60 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <form onSubmit={onSubmit} className="space-y-5">
+              <section className="space-y-4 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
                 <div>
-                  <Label>Kategorie</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Ein Termin braucht eine feste Kategorie.
+                  <p className="text-sm font-semibold">Grunddaten</p>
+                  <p className="text-sm text-muted-foreground">
+                    Tracker, Name, Betrag und Richtung des Termins.
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowNewCategory((current) => !current)}
-                  disabled={!isTrackerMutable}
-                >
-                  Neue Kategorie
-                </Button>
-              </div>
-              <Select
-                value={categoryId}
-                onValueChange={setCategoryId}
-                disabled={!isTrackerMutable}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategorie waehlen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>
-                    Bitte waehlen
-                  </SelectItem>
-                  {filteredCategories.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {showNewCategory ? (
-                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                  <Input
-                    value={newCategoryName}
-                    onChange={(event) => setNewCategoryName(event.target.value)}
-                    disabled={!isTrackerMutable}
-                    placeholder="Neue Kategorie"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    disabled={
-                      createCategoryMutation.isPending || !isTrackerMutable
-                    }
-                  >
-                    {createCategoryMutation.isPending
-                      ? "Speichert..."
-                      : "Anlegen"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowNewCategory(false);
-                      setNewCategoryName("");
-                    }}
-                  >
-                    Abbrechen
-                  </Button>
-                </div>
-              ) : null}
-            </div>
 
-            <div className="space-y-3 rounded-2xl border border-border/60 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)]">
+                  <div>
+                    <Label>Tracker</Label>
+                    <Select
+                      value={activeTrackerId}
+                      onValueChange={setSelectedTracker}
+                    >
+                      <SelectTrigger className="mt-2 bg-background/90">
+                        <SelectValue placeholder="Tracker wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(trackersQuery.data?.items || []).map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-border/60 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">
+                      {direction === "expense" ? "Ausgabe" : "Einnahme"}
+                    </p>
+                    <p className="mt-1">
+                      {amount.trim()
+                        ? `${amount} ${tracker?.currency || "EUR"}`
+                        : "Betrag noch nicht gesetzt"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="z. B. Miete Juli"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Betrag</Label>
+                    <Input
+                      id="amount"
+                      value={amount}
+                      onChange={(event) => setAmount(event.target.value)}
+                      placeholder="12,50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setDirection("expense")}
+                    className={`rounded-[1.2rem] border px-4 py-3 text-left transition ${
+                      direction === "expense"
+                        ? "border-rose-300 bg-rose-50 text-rose-700"
+                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <p className="font-medium">Ausgabe</p>
+                    <p className="mt-1 text-sm">Für Abos, Miete oder Fixkosten.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirection("income")}
+                    className={`rounded-[1.2rem] border px-4 py-3 text-left transition ${
+                      direction === "income"
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <p className="font-medium">Einnahme</p>
+                    <p className="mt-1 text-sm">
+                      Für Gehalt, Rückzahlungen oder Gutschriften.
+                    </p>
+                  </button>
+                </div>
+              </section>
+
+              <section className="grid gap-5 lg:grid-cols-2">
+                <div className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">Kategorie</p>
+                      <p className="text-sm text-muted-foreground">
+                        Feste Zuordnung für spätere Buchungen.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewCategory((current) => !current)}
+                      disabled={!isTrackerMutable}
+                    >
+                      Neue Kategorie
+                    </Button>
+                  </div>
+                  <Select
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    disabled={!isTrackerMutable}
+                  >
+                    <SelectTrigger className="bg-background/90">
+                      <SelectValue placeholder="Kategorie wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={EMPTY_SELECT_VALUE}>
+                        Bitte wählen
+                      </SelectItem>
+                      {filteredCategories.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {showNewCategory ? (
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <Input
+                        value={newCategoryName}
+                        onChange={(event) =>
+                          setNewCategoryName(event.target.value)
+                        }
+                        disabled={!isTrackerMutable}
+                        placeholder="Neue Kategorie"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={
+                          createCategoryMutation.isPending || !isTrackerMutable
+                        }
+                      >
+                        {createCategoryMutation.isPending
+                          ? "Speichert..."
+                          : "Anlegen"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setShowNewCategory(false);
+                          setNewCategoryName("");
+                        }}
+                      >
+                        Abbrechen
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">Einzahler</p>
+                      <p className="text-sm text-muted-foreground">
+                        Gespeicherter Partner für den Termin.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewPayee((current) => !current)}
+                      disabled={!isTrackerMutable}
+                    >
+                      Neuer Einzahler
+                    </Button>
+                  </div>
+                  <Select
+                    value={payeeId}
+                    onValueChange={setPayeeId}
+                    disabled={!isTrackerMutable}
+                  >
+                    <SelectTrigger className="bg-background/90">
+                      <SelectValue placeholder="Einzahler wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={EMPTY_SELECT_VALUE}>
+                        Bitte wählen
+                      </SelectItem>
+                      {(payeesQuery.data?.items || []).map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {showNewPayee ? (
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <Input
+                        value={newPayeeName}
+                        onChange={(event) =>
+                          setNewPayeeName(event.target.value)
+                        }
+                        disabled={!isTrackerMutable}
+                        placeholder="Neuer Einzahler"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCreatePayee}
+                        disabled={
+                          createPayeeMutation.isPending || !isTrackerMutable
+                        }
+                      >
+                        {createPayeeMutation.isPending
+                          ? "Speichert..."
+                          : "Anlegen"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setShowNewPayee(false);
+                          setNewPayeeName("");
+                        }}
+                      >
+                        Abbrechen
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+
+              <section className="space-y-4 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
                 <div>
-                  <Label>Einzahler</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Ein Termin braucht einen gespeicherten Einzahler.
+                  <p className="text-sm font-semibold">Rhythmus</p>
+                  <p className="text-sm text-muted-foreground">
+                    Lege Wiederholung und Start des Termins fest.
                   </p>
                 </div>
+
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_140px_180px]">
+                  <div>
+                    <Label>Frequenz</Label>
+                    <Select
+                      value={frequency}
+                      onValueChange={(value) =>
+                        setFrequency(
+                          value as "monthly" | "yearly" | "custom_days",
+                        )
+                      }
+                    >
+                      <SelectTrigger className="mt-2 bg-background/90">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monatlich</SelectItem>
+                        <SelectItem value="yearly">Jährlich</SelectItem>
+                        <SelectItem value="custom_days">
+                          Alle X Tage
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="interval">Intervall</Label>
+                    <Input
+                      id="interval"
+                      value={intervalValue}
+                      onChange={(event) => setIntervalValue(event.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nextDueDate">Startdatum</Label>
+                    <Input
+                      id="nextDueDate"
+                      type="date"
+                      value={nextDueDate}
+                      onChange={(event) => setNextDueDate(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <div className="rounded-[1.2rem] border border-border/60 bg-muted/25 p-4 text-sm text-muted-foreground">
+                      Die erste Fälligkeit wird aus Startdatum plus Intervall
+                      berechnet.
+                    </div>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-border/60 bg-background/60 p-4 text-sm">
+                    <p className="text-muted-foreground">Ergebnis</p>
+                    <p className="mt-1 font-medium text-foreground">
+                      {getFrequencyLabel(frequency, normalizedIntervalValue)}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
+                <div>
+                  <p className="text-sm font-semibold">Zusatz</p>
+                  <p className="text-sm text-muted-foreground">
+                    Optionale Notiz, die beim Buchen übernommen wird.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notesTemplate">Notizvorlage</Label>
+                  <Textarea
+                    id="notesTemplate"
+                    value={notesTemplate}
+                    onChange={(event) => setNotesTemplate(event.target.value)}
+                    placeholder="Wird beim Buchen übernommen"
+                    rows={3}
+                  />
+                </div>
+              </section>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  {!canCreateContent ? (
+                    <p className="text-sm text-muted-foreground">
+                      Du hast nur Leserechte für diesen Tracker.
+                    </p>
+                  ) : null}
+                  {tracker && !tracker.isActive ? (
+                    <p className="text-sm text-muted-foreground">
+                      Dieser Tracker ist archiviert. Termine können nicht
+                      bearbeitet werden.
+                    </p>
+                  ) : null}
+                </div>
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowNewPayee((current) => !current)}
-                  disabled={!isTrackerMutable}
+                  className="min-w-44 rounded-2xl"
+                  size="lg"
+                  disabled={createMutation.isPending || !isTrackerMutable}
                 >
-                  Neuer Einzahler
+                  {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
                 </Button>
               </div>
-              <Select
-                value={payeeId}
-                onValueChange={setPayeeId}
-                disabled={!isTrackerMutable}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Einzahler wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>
-                    Bitte wählen
-                  </SelectItem>
-                  {(payeesQuery.data?.items || []).map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {showNewPayee ? (
-                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                  <Input
-                    value={newPayeeName}
-                    onChange={(event) => setNewPayeeName(event.target.value)}
-                    disabled={!isTrackerMutable}
-                    placeholder="Neuer Einzahler"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleCreatePayee}
-                    disabled={
-                      createPayeeMutation.isPending || !isTrackerMutable
-                    }
-                  >
-                    {createPayeeMutation.isPending ? "Speichert..." : "Anlegen"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowNewPayee(false);
-                      setNewPayeeName("");
-                    }}
-                  >
-                    Abbrechen
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+            </form>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notesTemplate">Notizvorlage</Label>
-              <Input
-                id="notesTemplate"
-                value={notesTemplate}
-                onChange={(event) => setNotesTemplate(event.target.value)}
-                placeholder="Wird beim Buchen uebernommen"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Frequenz</Label>
-                <Select
-                  value={frequency}
-                  onValueChange={(value) =>
-                    setFrequency(value as "monthly" | "yearly" | "custom_days")
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monatlich</SelectItem>
-                    <SelectItem value="yearly">Jaehrlich</SelectItem>
-                    <SelectItem value="custom_days">Custom Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="interval">Intervall</Label>
-                <Input
-                  id="interval"
-                  value={intervalValue}
-                  onChange={(event) => setIntervalValue(event.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nextDueDate">Startdatum</Label>
-              <Input
-                id="nextDueDate"
-                type="date"
-                value={nextDueDate}
-                onChange={(event) => setNextDueDate(event.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Die erste Faelligkeit wird aus Startdatum plus Intervall
-                berechnet.
-              </p>
-            </div>
-
-            <Button
-              className="w-full"
-              disabled={createMutation.isPending || !isTrackerMutable}
-            >
-              {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
-            </Button>
-            {!canCreateContent ? (
-              <p className="text-sm text-muted-foreground">
-                Du hast nur Leserechte fuer diesen Tracker.
-              </p>
-            ) : null}
-            {tracker && !tracker.isActive ? (
-              <p className="text-sm text-muted-foreground">
-                Dieser Tracker ist archiviert. Termine koennen nicht bearbeitet
-                werden.
-              </p>
-            ) : null}
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Faelligkeiten</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="due">
-            <TabsList className="mb-4">
-              <TabsTrigger value="due">Faellig</TabsTrigger>
-              <TabsTrigger value="upcoming">Demnaechst</TabsTrigger>
-              <TabsTrigger value="inactive">Abgeschlossen</TabsTrigger>
-            </TabsList>
-            <TabsContent value="due">
-              {renderItems(dueQuery.data?.items || [])}
-            </TabsContent>
-            <TabsContent value="upcoming">
-              {renderItems(upcomingQuery.data?.items || [])}
-            </TabsContent>
-            <TabsContent value="inactive">
-              {renderItems(inactiveQuery.data?.items || [])}
-            </TabsContent>
-          </Tabs>
+          <Card className="border-border/60 bg-gradient-to-br from-background via-background to-muted/25 shadow-sm">
+            <CardHeader className="border-b border-border/50 pb-4">
+              <CardTitle>Fälligkeiten</CardTitle>
+              <CardDescription>
+                Fällige, kommende und abgeschlossene Termine mit derselben
+                Buchungsmechanik wie im Dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-5">
+              <Tabs defaultValue="due">
+                <TabsList className="mb-5 grid w-full grid-cols-3 rounded-[1rem] bg-muted/50 p-1">
+                  <TabsTrigger value="due">Fällig</TabsTrigger>
+                  <TabsTrigger value="upcoming">Demnächst</TabsTrigger>
+                  <TabsTrigger value="inactive">Abgeschlossen</TabsTrigger>
+                </TabsList>
+                <TabsContent value="due">
+                  {renderItems(dueQuery.data?.items || [])}
+                </TabsContent>
+                <TabsContent value="upcoming">
+                  {renderItems(upcomingQuery.data?.items || [])}
+                </TabsContent>
+                <TabsContent value="inactive">
+                  {renderItems(inactiveQuery.data?.items || [])}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </CardContent>
       </Card>
     </div>

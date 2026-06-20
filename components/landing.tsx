@@ -32,7 +32,7 @@ export function LandingPage({ registrationEnabled }: LandingPageProps) {
               <p className="max-w-2xl text-base text-muted-foreground">
                 BetterTracker hilft dir beim Erfassen von Einnahmen und
                 Ausgaben, bei wiederkehrenden Zahlungen und beim Aufteilen in
-                eigene Tracker fuer Alltag, Reisen oder Projekte.
+                eigene Tracker für Alltag, Reisen oder Projekte.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -83,7 +83,7 @@ export function LandingPage({ registrationEnabled }: LandingPageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Lege separate Tracker fuer Haushalt, Urlaub, WG oder
+                Lege separate Tracker für Haushalt, Urlaub, WG oder
                 Nebenkosten an und halte alles sauber getrennt.
               </CardContent>
             </Card>

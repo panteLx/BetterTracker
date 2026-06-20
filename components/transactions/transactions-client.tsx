@@ -191,14 +191,14 @@ export function TransactionsClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Transaktion geloescht");
+      toast.success("Transaktion gelöscht");
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Loeschen fehlgeschlagen",
+        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
       );
     },
   });
@@ -473,7 +473,7 @@ export function TransactionsClient({
                                 deleteMutation.isPending || !tracker?.isActive
                               }
                             >
-                              Loeschen
+                              Löschen
                             </Button>
                           ) : null}
                         </div>
@@ -551,7 +551,7 @@ export function TransactionsClient({
                                 }
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Kategorie waehlen" />
+                                  <SelectValue placeholder="Kategorie wählen" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {editCategories.map((category) => (
@@ -657,13 +657,13 @@ export function TransactionsClient({
           </Table>
           {(transactionsQuery.data?.items || []).length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Keine Transaktionen fuer die aktuellen Filter gefunden.
+              Keine Transaktionen für die aktuellen Filter gefunden.
             </p>
           ) : null}
           {tracker && !tracker.isActive ? (
             <p className="mt-4 text-sm text-muted-foreground">
               Dieser Tracker ist archiviert. Transaktionen koennen nicht
-              geaendert oder geloescht werden.
+              geändert oder gelöscht werden.
             </p>
           ) : null}
         </CardContent>

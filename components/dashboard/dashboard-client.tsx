@@ -131,9 +131,9 @@ function sortTrackers(items: Tracker[], locale: string) {
 function getScheduleForecastStatusLabel(
   status: ScheduleForecastItem["status"],
 ) {
-  if (status === "overdue") return "Ueberfaellig";
-  if (status === "due") return "Faellig";
-  return "Demnaechst";
+  if (status === "overdue") return "Überfällig";
+  if (status === "due") return "Fällig";
+  return "Demnächst";
 }
 
 function getScheduleForecastStatusVariant(
@@ -216,7 +216,7 @@ function TrackerCreateForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-currency">Waehrung</Label>
+          <Label htmlFor="new-tracker-currency">Währung</Label>
           <Input
             id="new-tracker-currency"
             value={currency}
@@ -248,7 +248,7 @@ function TrackerCreateForm({
           <div>
             <p className="text-sm font-medium">Discord Debug</p>
             <p className="text-xs text-muted-foreground">
-              Zusaetzliche Debug-Infos in Discord mitsenden.
+              Zusätzliche Debug-Infos in Discord mitsenden.
             </p>
           </div>
           <Switch
@@ -364,7 +364,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   };
   const latestTransaction = transactionsQuery.data?.items[0];
   const recentTransactions = (transactionsQuery.data?.items || []).slice(0, 6);
-  const upcomingScheduledItems = forecast.items.slice(0, 6);
+  const upcomingScheduledItems = forecast.items;
   const latestTransactionLabel = latestTransaction
     ? latestTransaction.payeeName ||
       latestTransaction.customPayeeName ||
@@ -398,6 +398,30 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
+    },
+  });
+
+  const createScheduleTransactionMutation = useMutation({
+    mutationFn: (scheduleId: string) =>
+      fetchJson(`/api/schedules/${scheduleId}/create-transaction`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      toast.success("Termin als Transaktion gebucht");
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["transactions", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
       );
     },
   });
@@ -503,6 +527,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["payees"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (error) => {
       toast.error(
@@ -533,7 +558,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     }
 
     if (effectiveCategoryId === EMPTY_SELECT_VALUE) {
-      toast.error("Bitte eine Kategorie waehlen");
+      toast.error("Bitte eine Kategorie wählen");
       return;
     }
 
@@ -675,7 +700,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               </CardTitle>
               <CardDescription className="max-w-2xl">
                 {hasTrackers
-                  ? "Transaktionen fuer den aktiven Tracker erfassen und die letzten Eintraege direkt daneben pruefen."
+                  ? "Transaktionen für den aktiven Tracker erfassen und die letzten Einträge direkt daneben prüfen."
                   : "Lege deinen ersten Tracker an, bevor du Buchungen, Kategorien und Termine erfasst."}
               </CardDescription>
             </div>
@@ -725,7 +750,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       <DropdownMenuSeparator />
                       <TrackerCreateForm
                         title="Neuer Tracker"
-                        description="Lege einen weiteren Bereich an und verknuepfe auf Wunsch direkt Discord."
+                        description="Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt Discord."
                         name={newTrackerName}
                         color={newTrackerColor}
                         currency={newTrackerCurrency}
@@ -817,7 +842,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                               ? "Ausgabe"
                               : "Einnahme"
                           }`
-                        : "Neue Eintraege erscheinen sofort hier."}
+                        : "Neue Einträge erscheinen sofort hier."}
                     </p>
                   </div>
 
@@ -859,7 +884,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   <div className="space-y-1">
                     <p className="font-semibold">Erster Schritt</p>
                     <p className="text-sm text-muted-foreground">
-                      Starte mit einem Tracker fuer deinen Haushalt, Urlaub oder
+                      Starte mit einem Tracker für deinen Haushalt, Urlaub oder
                       ein gemeinsames Projekt.
                     </p>
                   </div>
@@ -941,7 +966,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold">Neue Buchung</p>
-                  <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                     Betrag, Kategorie, Einzahler und Notiz eintragen.
                   </p>
                 </div>
@@ -1035,7 +1060,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     disabled={!isTrackerMutable}
                   >
                     <SelectTrigger className="bg-background/80">
-                      <SelectValue placeholder="Kategorie waehlen" />
+                      <SelectValue placeholder="Kategorie wählen" />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredCategories.map((item) => (
@@ -1137,7 +1162,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                           setNewPayeeName(event.target.value)
                         }
                         disabled={!isTrackerMutable}
-                        placeholder="z. B. Baeckerei"
+                        placeholder="z. B. Bäckerei"
                       />
                       <Button
                         type="button"
@@ -1189,7 +1214,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     value={notes}
                     onChange={(event) => setNotes(event.target.value)}
                     disabled={!isTrackerMutable}
-                    placeholder="Kurzer Kontext fuer die Buchung"
+                    placeholder="Kurzer Kontext für die Buchung"
                     rows={4}
                   />
                 </div>
@@ -1211,12 +1236,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 </Button>
                 {!canCreateContent ? (
                   <p className="text-sm text-muted-foreground">
-                    Du hast nur Leserechte fuer diesen Tracker.
+                    Du hast nur Leserechte für diesen Tracker.
                   </p>
                 ) : null}
                 {tracker && !tracker.isActive ? (
                   <p className="text-sm text-muted-foreground">
-                    Dieser Tracker ist archiviert. Neue Eintraege, Kategorien
+                    Dieser Tracker ist archiviert. Neue Einträge, Kategorien
                     und Einzahler sind gesperrt.
                   </p>
                 ) : null}
@@ -1232,7 +1257,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 <div>
                   <p className="text-sm font-semibold">Nächste Termine</p>
                   <p className="text-sm text-muted-foreground">
-                    Aktive Faelligkeiten der naechsten {forecast.days} Tage.
+                    Aktive Fälligkeiten der nächsten {forecast.days} Tage direkt
+                    aus dem Dashboard buchen.
                   </p>
                 </div>
                 <div className="rounded-full border border-border/60 bg-background/75 px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -1245,46 +1271,70 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   upcomingScheduledItems.map((item) => (
                     <div
                       key={item.occurrenceKey}
-                      className="flex flex-col gap-3 rounded-[1.4rem] border border-border/60 bg-background/75 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-[1.4rem] border border-border/60 bg-background/75 p-4"
                     >
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant={getScheduleForecastStatusVariant(
-                              item.status,
-                            )}
-                          >
-                            {getScheduleForecastStatusLabel(item.status)}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {item.date}
-                          </span>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                              variant={getScheduleForecastStatusVariant(
+                                item.status,
+                              )}
+                            >
+                              {getScheduleForecastStatusLabel(item.status)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {item.date}
+                            </span>
+                          </div>
+                          <p className="font-medium">{item.payeeName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.categoryName} - {item.name}
+                          </p>
                         </div>
-                        <p className="font-medium">{item.payeeName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.categoryName} - {item.name}
-                        </p>
+                        <div
+                          className={cn(
+                            "text-lg font-semibold tracking-tight",
+                            item.direction === "expense"
+                              ? "text-rose-600"
+                              : "text-emerald-600",
+                          )}
+                        >
+                          {item.direction === "expense" ? "-" : "+"}
+                          {formatCurrency(
+                            item.amountCents,
+                            tracker?.currency || "EUR",
+                            locale,
+                          )}
+                        </div>
                       </div>
-                      <div
-                        className={cn(
-                          "text-lg font-semibold tracking-tight",
-                          item.direction === "expense"
-                            ? "text-rose-600"
-                            : "text-emerald-600",
-                        )}
-                      >
-                        {item.direction === "expense" ? "-" : "+"}
-                        {formatCurrency(
-                          item.amountCents,
-                          tracker?.currency || "EUR",
-                          locale,
-                        )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-muted-foreground">
+                          Die Buchung wird mit dem heutigen Datum erzeugt und
+                          der nächste Termin wie gewohnt weitergeschoben.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() =>
+                            createScheduleTransactionMutation.mutate(
+                              item.scheduleId,
+                            )
+                          }
+                          disabled={
+                            createScheduleTransactionMutation.isPending ||
+                            !tracker?.isActive
+                          }
+                        >
+                          Jetzt buchen
+                        </Button>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
-                    Keine aktiven Termin-Buchungen in den naechsten{" "}
+                    Keine aktiven Termin-Buchungen in den nächsten{" "}
                     {forecast.days} Tagen.
                   </div>
                 )}
@@ -1300,7 +1350,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {hasTrackers
-                    ? "Die letzten Eintraege fuer den aktiven Tracker."
+                    ? "Die letzten Einträge für den aktiven Tracker."
                     : "Nach dem ersten Tracker kannst du sofort Ausgaben, Einnahmen, Kategorien und Termine verwalten."}
                 </p>
               </div>
@@ -1364,7 +1414,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
                   {hasTrackers
                     ? "Noch keine Transaktionen vorhanden."
-                    : "Sobald du den ersten Tracker angelegt hast, startet hier dein persoenliches Onboarding im eigentlichen Produktfluss."}
+                    : "Sobald du den ersten Tracker angelegt hast, startet hier dein persönliches Onboarding im eigentlichen Produktfluss."}
                 </div>
               )}
             </div>

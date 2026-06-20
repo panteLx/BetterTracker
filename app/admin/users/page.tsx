@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
     <PageContainer
       user={user}
       title="Admin Users"
-      description="Benutzerrollen, Bans und grundlegende Identitaetsverwaltung."
+      description="Benutzerrollen, Bans und grundlegende Identitätsverwaltung."
     >
       <AdminNav />
       <AdminUsersClient currentRole={user.role || "user"} />
