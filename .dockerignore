@@ -1,0 +1,12 @@
+.git
+.github
+.next
+node_modules
+data/*
+!data/.gitkeep
+.env
+.env.*
+*.log
+coverage
+Dockerfile*
+README.md

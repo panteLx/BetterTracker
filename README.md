@@ -149,6 +149,83 @@ npm run build
 npm run start
 ```
 
+## Docker
+
+Build and run the production image:
+
+```bash
+docker build -t bettertracker:local .
+docker run --rm \
+  --name bettertracker \
+  -p 3000:3000 \
+  -v bettertracker-data:/app/data \
+  -e BETTER_AUTH_SECRET="$(openssl rand -base64 32)" \
+  -e BETTER_AUTH_URL="http://localhost:3000" \
+  -e NEXT_PUBLIC_APP_URL="http://localhost:3000" \
+  bettertracker:local
+```
+
+The container stores SQLite data in `/app/data` and applies pending Drizzle
+migrations during startup. Set `RUN_MIGRATIONS=false` to disable automatic
+migrations.
+
+To run the published image with Docker Compose:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Compose loads the existing `.env` file and passes all variables from it to the
+container. If no `.env` exists yet, use the included template:
+
+```bash
+cp .env.compose.example .env
+openssl rand -base64 32
+```
+
+Put the generated value into `BETTER_AUTH_SECRET` in `.env`. A differently
+named environment file can be selected with
+`BETTERTRACKER_ENV_FILE=/path/to/file docker compose up -d`.
+
+Use a fixed release such as `ghcr.io/pantelx/bettertracker:1.0.0` for
+`BETTERTRACKER_IMAGE` in production. To update later:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+SQLite data is kept in the named volume `bettertracker-data`. Stop the
+application with `docker compose down`. Do not add `--volumes` unless the
+database should also be deleted.
+
+For a deployment behind a public domain or reverse proxy, also set
+`BETTER_AUTH_ALLOWED_HOSTS` and `BETTER_AUTH_TRUSTED_ORIGINS` to the deployed
+host and origin.
+
+## GitHub Container Registry
+
+The workflow in `.github/workflows/container.yml` publishes images to:
+
+```text
+ghcr.io/<github-owner>/<repository>
+```
+
+Every push to `main` publishes `main` and `sha-<commit>` tags. Releases use
+Semantic Versioning Git tags:
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+The `v1.0.0` tag publishes the container tags `1.0.0`, `1.0`, `1`, and
+`latest`. Pre-releases such as `v1.1.0-rc.1` do not replace `latest`.
+
+No registry password is required in the repository: the workflow publishes
+with GitHub's built-in `GITHUB_TOKEN`.
+
 ## License
 
 This repository currently does not define a separate license file.

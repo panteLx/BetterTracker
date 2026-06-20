@@ -1,0 +1,20 @@
+services:
+  bettertracker:
+    image: ghcr.io/pantelx/bettertracker:latest
+    container_name: bettertracker
+    restart: unless-stopped
+    init: true
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL:-file:./data/sqlite.db}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    volumes:
+      - data:/app/data
+
+volumes:
+  data:
