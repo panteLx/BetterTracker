@@ -178,7 +178,9 @@ export function TransactionsClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen",
+        error instanceof Error
+          ? error.message
+          : "Aktualisierung fehlgeschlagen",
       );
     },
   });
@@ -213,8 +215,7 @@ export function TransactionsClient({
     }
 
     return (categoriesQuery.data?.items || []).filter(
-      (item) =>
-        item.type === editState.direction || item.type === "transfer",
+      (item) => item.type === editState.direction || item.type === "transfer",
     );
   }, [categoriesQuery.data?.items, editState]);
 
@@ -309,7 +310,7 @@ export function TransactionsClient({
             </Select>
 
             <Input
-              placeholder="Suche nach Payee, Kategorie, Notiz oder Konto"
+              placeholder="Suche nach Einzahler, Kategorie, Notiz oder Konto"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -343,10 +344,10 @@ export function TransactionsClient({
 
             <Select value={payeeId} onValueChange={setPayeeId}>
               <SelectTrigger>
-                <SelectValue placeholder="Alle Payees" />
+                <SelectValue placeholder="Alle Einzahler" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>Alle Payees</SelectItem>
+                <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
                 {(payeesQuery.data?.items || []).map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name}
@@ -413,7 +414,7 @@ export function TransactionsClient({
             <TableHeader>
               <TableRow>
                 <TableHead>Datum</TableHead>
-                <TableHead>Payee</TableHead>
+                <TableHead>Einzahler</TableHead>
                 <TableHead>Kategorie</TableHead>
                 <TableHead>Notizen</TableHead>
                 <TableHead className="text-right">Betrag</TableHead>
@@ -456,7 +457,9 @@ export function TransactionsClient({
                               variant="ghost"
                               size="sm"
                               onClick={() => startEdit(item)}
-                              disabled={updateMutation.isPending || !tracker?.isActive}
+                              disabled={
+                                updateMutation.isPending || !tracker?.isActive
+                              }
                             >
                               Bearbeiten
                             </Button>
@@ -466,7 +469,9 @@ export function TransactionsClient({
                               variant="ghost"
                               size="sm"
                               onClick={() => deleteMutation.mutate(item.id)}
-                              disabled={deleteMutation.isPending || !tracker?.isActive}
+                              disabled={
+                                deleteMutation.isPending || !tracker?.isActive
+                              }
                             >
                               Loeschen
                             </Button>
@@ -495,7 +500,10 @@ export function TransactionsClient({
                                 onChange={(event) =>
                                   setEditState((current) =>
                                     current
-                                      ? { ...current, amount: event.target.value }
+                                      ? {
+                                          ...current,
+                                          amount: event.target.value,
+                                        }
                                       : current,
                                   )
                                 }
@@ -521,8 +529,12 @@ export function TransactionsClient({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="expense">Ausgabe</SelectItem>
-                                  <SelectItem value="income">Einnahme</SelectItem>
+                                  <SelectItem value="expense">
+                                    Ausgabe
+                                  </SelectItem>
+                                  <SelectItem value="income">
+                                    Einnahme
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -543,7 +555,10 @@ export function TransactionsClient({
                                 </SelectTrigger>
                                 <SelectContent>
                                   {editCategories.map((category) => (
-                                    <SelectItem key={category.id} value={category.id}>
+                                    <SelectItem
+                                      key={category.id}
+                                      value={category.id}
+                                    >
                                       {category.name}
                                     </SelectItem>
                                   ))}
@@ -568,17 +583,22 @@ export function TransactionsClient({
                                 }
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Payee waehlen" />
+                                  <SelectValue placeholder="Einzahler wählen" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value={EMPTY_SELECT_VALUE}>
                                     Anonym / Freitext
                                   </SelectItem>
-                                  {(payeesQuery.data?.items || []).map((payee) => (
-                                    <SelectItem key={payee.id} value={payee.id}>
-                                      {payee.name}
-                                    </SelectItem>
-                                  ))}
+                                  {(payeesQuery.data?.items || []).map(
+                                    (payee) => (
+                                      <SelectItem
+                                        key={payee.id}
+                                        value={payee.id}
+                                      >
+                                        {payee.name}
+                                      </SelectItem>
+                                    ),
+                                  )}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -596,7 +616,7 @@ export function TransactionsClient({
                                       : current,
                                   )
                                 }
-                                placeholder="Einmaliger Payee"
+                                placeholder="Einmaliger Einzahler"
                               />
                             ) : null}
 

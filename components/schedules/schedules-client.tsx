@@ -87,7 +87,9 @@ function amountToInputValue(amountCents: number) {
 }
 
 function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) => left.name.localeCompare(right.name, locale));
+  return [...items].sort((left, right) =>
+    left.name.localeCompare(right.name, locale),
+  );
 }
 
 function getScheduleStatusLabel(status: Schedule["status"]) {
@@ -100,7 +102,7 @@ function getScheduleStatusLabel(status: Schedule["status"]) {
 
 function getFrequencyLabel(
   frequency: Schedule["frequency"] | EditScheduleState["frequency"],
-  intervalValue: number
+  intervalValue: number,
 ) {
   if (frequency === "monthly") {
     return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
@@ -129,7 +131,9 @@ export function SchedulesClient({
   const [categoryId, setCategoryId] = useState(EMPTY_SELECT_VALUE);
   const [payeeId, setPayeeId] = useState(EMPTY_SELECT_VALUE);
   const [notesTemplate, setNotesTemplate] = useState("");
-  const [frequency, setFrequency] = useState<"monthly" | "yearly" | "custom_days">("monthly");
+  const [frequency, setFrequency] = useState<
+    "monthly" | "yearly" | "custom_days"
+  >("monthly");
   const [intervalValue, setIntervalValue] = useState("1");
   const [nextDueDate, setNextDueDate] = useState(toDateInputValue(new Date()));
   const [showNewPayee, setShowNewPayee] = useState(false);
@@ -139,22 +143,29 @@ export function SchedulesClient({
   const [editingScheduleId, setEditingScheduleId] = useState("");
   const [editState, setEditState] = useState<EditScheduleState | null>(null);
   const [reactivatingScheduleId, setReactivatingScheduleId] = useState("");
-  const [reactivationDate, setReactivationDate] = useState(toDateInputValue(new Date()));
+  const [reactivationDate, setReactivationDate] = useState(
+    toDateInputValue(new Date()),
+  );
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
   });
 
-  const activeTrackerId = selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
-  const tracker = trackersQuery.data?.items.find((item) => item.id === activeTrackerId);
+  const activeTrackerId =
+    selectedTracker || trackersQuery.data?.items?.[0]?.id || "";
+  const tracker = trackersQuery.data?.items.find(
+    (item) => item.id === activeTrackerId,
+  );
   const canCreateContent = tracker?.permission !== "read";
   const isTrackerMutable = Boolean(tracker?.isActive && canCreateContent);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", activeTrackerId],
     queryFn: () =>
-      fetchJson<{ items: Category[] }>(`/api/categories?trackerId=${activeTrackerId}`),
+      fetchJson<{ items: Category[] }>(
+        `/api/categories?trackerId=${activeTrackerId}`,
+      ),
     enabled: Boolean(activeTrackerId),
   });
 
@@ -168,7 +179,9 @@ export function SchedulesClient({
   const dueQuery = useQuery({
     queryKey: ["schedules", activeTrackerId, "due"],
     queryFn: () =>
-      fetchJson<{ items: Schedule[] }>(`/api/schedules?trackerId=${activeTrackerId}&status=due`),
+      fetchJson<{ items: Schedule[] }>(
+        `/api/schedules?trackerId=${activeTrackerId}&status=due`,
+      ),
     enabled: Boolean(activeTrackerId),
   });
 
@@ -176,7 +189,7 @@ export function SchedulesClient({
     queryKey: ["schedules", activeTrackerId, "upcoming"],
     queryFn: () =>
       fetchJson<{ items: Schedule[] }>(
-        `/api/schedules?trackerId=${activeTrackerId}&status=upcoming`
+        `/api/schedules?trackerId=${activeTrackerId}&status=upcoming`,
       ),
     enabled: Boolean(activeTrackerId),
   });
@@ -185,13 +198,13 @@ export function SchedulesClient({
     queryKey: ["schedules", activeTrackerId, "inactive"],
     queryFn: () =>
       fetchJson<{ items: Schedule[] }>(
-        `/api/schedules?trackerId=${activeTrackerId}&status=inactive`
+        `/api/schedules?trackerId=${activeTrackerId}&status=inactive`,
       ),
     enabled: Boolean(activeTrackerId),
   });
 
   const filteredCategories = (categoriesQuery.data?.items || []).filter(
-    (item) => item.type === direction || item.type === "transfer"
+    (item) => item.type === direction || item.type === "transfer",
   );
 
   const createMutation = useMutation({
@@ -201,17 +214,23 @@ export function SchedulesClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Schedule gespeichert");
+      toast.success("Termin gespeichert");
       setName("");
       setAmount("");
       setCategoryId(EMPTY_SELECT_VALUE);
       setPayeeId(EMPTY_SELECT_VALUE);
       setNotesTemplate("");
-      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
-      queryClient.invalidateQueries({ queryKey: ["schedules-forecast", activeTrackerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Speichern fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
     },
   });
 
@@ -228,15 +247,23 @@ export function SchedulesClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Schedule aktualisiert");
+      toast.success("Termin aktualisiert");
       setEditingScheduleId("");
       setEditState(null);
       setReactivatingScheduleId("");
-      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
-      queryClient.invalidateQueries({ queryKey: ["schedules-forecast", activeTrackerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Aktualisierung fehlgeschlagen",
+      );
     },
   });
 
@@ -246,12 +273,18 @@ export function SchedulesClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Schedule geloescht");
-      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
-      queryClient.invalidateQueries({ queryKey: ["schedules-forecast", activeTrackerId] });
+      toast.success("Termin geloescht");
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Loeschen fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Loeschen fehlgeschlagen",
+      );
     },
   });
 
@@ -261,13 +294,21 @@ export function SchedulesClient({
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Schedule als Transaktion gebucht");
-      queryClient.invalidateQueries({ queryKey: ["schedules", activeTrackerId] });
-      queryClient.invalidateQueries({ queryKey: ["transactions", activeTrackerId] });
-      queryClient.invalidateQueries({ queryKey: ["schedules-forecast", activeTrackerId] });
+      toast.success("Termin als Transaktion gebucht");
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["transactions", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Aktion fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+      );
     },
   });
 
@@ -282,15 +323,19 @@ export function SchedulesClient({
         ["payees", activeTrackerId],
         (current) => ({
           items: sortByName([...(current?.items || []), item], locale),
-        })
+        }),
       );
-      toast.success("Payee angelegt");
+      toast.success("Einzahler angelegt");
       setPayeeId(item.id);
       setNewPayeeName("");
       setShowNewPayee(false);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Payee konnte nicht angelegt werden");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Einzahler konnte nicht angelegt werden",
+      );
     },
   });
 
@@ -309,7 +354,7 @@ export function SchedulesClient({
         ["categories", activeTrackerId],
         (current) => ({
           items: sortByName([...(current?.items || []), item], locale),
-        })
+        }),
       );
       toast.success("Kategorie angelegt");
       setCategoryId(item.id);
@@ -318,7 +363,9 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Kategorie konnte nicht angelegt werden"
+        error instanceof Error
+          ? error.message
+          : "Kategorie konnte nicht angelegt werden",
       );
     },
   });
@@ -332,7 +379,7 @@ export function SchedulesClient({
     }
 
     if (categoryId === EMPTY_SELECT_VALUE || payeeId === EMPTY_SELECT_VALUE) {
-      toast.error("Kategorie und Payee sind Pflichtfelder");
+      toast.error("Kategorie und Einzahler sind Pflichtfelder");
       return;
     }
 
@@ -357,7 +404,7 @@ export function SchedulesClient({
     }
 
     if (!newPayeeName.trim()) {
-      toast.error("Bitte einen Payee-Namen eingeben");
+      toast.error("Bitte einen Einzahler-Namen eingeben");
       return;
     }
 
@@ -418,7 +465,9 @@ export function SchedulesClient({
       editState.categoryId === EMPTY_SELECT_VALUE ||
       editState.payeeId === EMPTY_SELECT_VALUE
     ) {
-      toast.error("Name, Betrag, Datum, Kategorie und Payee sind Pflichtfelder");
+      toast.error(
+        "Name, Betrag, Datum, Kategorie und Einzahler sind Pflichtfelder",
+      );
       return;
     }
 
@@ -480,12 +529,21 @@ export function SchedulesClient({
           const isOwnSchedule = item.createdByUserId === currentUserId;
 
           return (
-            <div key={item.id} className="rounded-2xl border border-border/60 p-4">
+            <div
+              key={item.id}
+              className="rounded-2xl border border-border/60 p-4"
+            >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-medium">{item.name}</h3>
-                    <Badge variant={item.direction === "expense" ? "destructive" : "secondary"}>
+                    <Badge
+                      variant={
+                        item.direction === "expense"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                    >
                       {item.direction === "expense" ? "Ausgabe" : "Einnahme"}
                     </Badge>
                     <Badge variant={getStatusVariant(item.status)}>
@@ -493,7 +551,10 @@ export function SchedulesClient({
                     </Badge>
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>{item.payeeName || "Payee fehlt"} | {item.categoryName || "Kategorie fehlt"}</p>
+                    <p>
+                      {item.payeeName || "Einzahler fehlt"} |{" "}
+                      {item.categoryName || "Kategorie fehlt"}
+                    </p>
                     <p>
                       Naechster Termin {item.nextDueDate} |{" "}
                       {getFrequencyLabel(item.frequency, item.intervalValue)}
@@ -502,9 +563,14 @@ export function SchedulesClient({
                       <p>Zuletzt gebucht am {item.lastCompletedDate}</p>
                     ) : null}
                     {!item.isComplete ? (
-                      <p>Dieser Legacy-Schedule braucht noch Payee und Kategorie.</p>
+                      <p>
+                        Dieser Legacy-Termin braucht noch Einzahler und
+                        Kategorie.
+                      </p>
                     ) : null}
-                    {isOwnSchedule ? <p className="text-xs">Von dir erstellt</p> : null}
+                    {isOwnSchedule ? (
+                      <p className="text-xs">Von dir erstellt</p>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
@@ -577,14 +643,18 @@ export function SchedulesClient({
                   <Input
                     type="date"
                     value={reactivationDate}
-                    onChange={(event) => setReactivationDate(event.target.value)}
+                    onChange={(event) =>
+                      setReactivationDate(event.target.value)
+                    }
                   />
                   <Button
                     type="button"
                     onClick={() => submitReactivate(item.id)}
                     disabled={updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? "Speichert..." : "Jetzt reaktivieren"}
+                    {updateMutation.isPending
+                      ? "Speichert..."
+                      : "Jetzt reaktivieren"}
                   </Button>
                   <Button
                     type="button"
@@ -603,7 +673,9 @@ export function SchedulesClient({
                       value={editState.name}
                       onChange={(event) =>
                         setEditState((current) =>
-                          current ? { ...current, name: event.target.value } : current
+                          current
+                            ? { ...current, name: event.target.value }
+                            : current,
                         )
                       }
                       placeholder="Name"
@@ -612,7 +684,9 @@ export function SchedulesClient({
                       value={editState.amount}
                       onChange={(event) =>
                         setEditState((current) =>
-                          current ? { ...current, amount: event.target.value } : current
+                          current
+                            ? { ...current, amount: event.target.value }
+                            : current,
                         )
                       }
                       placeholder="12,50"
@@ -624,8 +698,11 @@ export function SchedulesClient({
                       onValueChange={(value) =>
                         setEditState((current) =>
                           current
-                            ? { ...current, direction: value as "expense" | "income" }
-                            : current
+                            ? {
+                                ...current,
+                                direction: value as "expense" | "income",
+                              }
+                            : current,
                         )
                       }
                     >
@@ -644,9 +721,12 @@ export function SchedulesClient({
                           current
                             ? {
                                 ...current,
-                                frequency: value as "monthly" | "yearly" | "custom_days",
+                                frequency: value as
+                                  | "monthly"
+                                  | "yearly"
+                                  | "custom_days",
                               }
-                            : current
+                            : current,
                         )
                       }
                     >
@@ -663,7 +743,9 @@ export function SchedulesClient({
                       value={editState.intervalValue}
                       onChange={(event) =>
                         setEditState((current) =>
-                          current ? { ...current, intervalValue: event.target.value } : current
+                          current
+                            ? { ...current, intervalValue: event.target.value }
+                            : current,
                         )
                       }
                       placeholder="Intervall"
@@ -674,7 +756,7 @@ export function SchedulesClient({
                       value={editState.categoryId}
                       onValueChange={(value) =>
                         setEditState((current) =>
-                          current ? { ...current, categoryId: value } : current
+                          current ? { ...current, categoryId: value } : current,
                         )
                       }
                     >
@@ -682,11 +764,14 @@ export function SchedulesClient({
                         <SelectValue placeholder="Kategorie waehlen" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>Bitte waehlen</SelectItem>
+                        <SelectItem value={EMPTY_SELECT_VALUE}>
+                          Bitte waehlen
+                        </SelectItem>
                         {(categoriesQuery.data?.items || [])
                           .filter(
                             (entry) =>
-                              entry.type === editState.direction || entry.type === "transfer"
+                              entry.type === editState.direction ||
+                              entry.type === "transfer",
                           )
                           .map((entry) => (
                             <SelectItem key={entry.id} value={entry.id}>
@@ -699,15 +784,17 @@ export function SchedulesClient({
                       value={editState.payeeId}
                       onValueChange={(value) =>
                         setEditState((current) =>
-                          current ? { ...current, payeeId: value } : current
+                          current ? { ...current, payeeId: value } : current,
                         )
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Payee waehlen" />
+                        <SelectValue placeholder="Einzahler wählen" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>Bitte waehlen</SelectItem>
+                        <SelectItem value={EMPTY_SELECT_VALUE}>
+                          Bitte wählen
+                        </SelectItem>
                         {(payeesQuery.data?.items || []).map((entry) => (
                           <SelectItem key={entry.id} value={entry.id}>
                             {entry.name}
@@ -721,7 +808,9 @@ export function SchedulesClient({
                     value={editState.nextDueDate}
                     onChange={(event) =>
                       setEditState((current) =>
-                        current ? { ...current, nextDueDate: event.target.value } : current
+                        current
+                          ? { ...current, nextDueDate: event.target.value }
+                          : current,
                       )
                     }
                   />
@@ -729,13 +818,19 @@ export function SchedulesClient({
                     value={editState.notesTemplate}
                     onChange={(event) =>
                       setEditState((current) =>
-                        current ? { ...current, notesTemplate: event.target.value } : current
+                        current
+                          ? { ...current, notesTemplate: event.target.value }
+                          : current,
                       )
                     }
                     placeholder="Notizvorlage"
                   />
                   <div className="flex flex-wrap justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={cancelEdit}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={cancelEdit}
+                    >
                       Abbrechen
                     </Button>
                     <Button
@@ -752,7 +847,9 @@ export function SchedulesClient({
           );
         })}
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Keine Eintraege in diesem Tab.</p>
+          <p className="text-sm text-muted-foreground">
+            Keine Eintraege in diesem Tab.
+          </p>
         ) : null}
       </div>
     );
@@ -762,13 +859,16 @@ export function SchedulesClient({
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <Card>
         <CardHeader>
-          <CardTitle>Neuer Schedule</CardTitle>
+          <CardTitle>Neuer Termin</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Tracker</Label>
-              <Select value={activeTrackerId} onValueChange={setSelectedTracker}>
+              <Select
+                value={activeTrackerId}
+                onValueChange={setSelectedTracker}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Tracker waehlen" />
                 </SelectTrigger>
@@ -783,7 +883,11 @@ export function SchedulesClient({
             </div>
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(event) => setName(event.target.value)} />
+              <Input
+                id="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -798,7 +902,9 @@ export function SchedulesClient({
                 <Label>Typ</Label>
                 <Select
                   value={direction}
-                  onValueChange={(value) => setDirection(value as "expense" | "income")}
+                  onValueChange={(value) =>
+                    setDirection(value as "expense" | "income")
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -816,7 +922,7 @@ export function SchedulesClient({
                 <div>
                   <Label>Kategorie</Label>
                   <p className="text-xs text-muted-foreground">
-                    Ein Schedule braucht eine feste Kategorie.
+                    Ein Termin braucht eine feste Kategorie.
                   </p>
                 </div>
                 <Button
@@ -829,12 +935,18 @@ export function SchedulesClient({
                   Neue Kategorie
                 </Button>
               </div>
-              <Select value={categoryId} onValueChange={setCategoryId} disabled={!isTrackerMutable}>
+              <Select
+                value={categoryId}
+                onValueChange={setCategoryId}
+                disabled={!isTrackerMutable}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Kategorie waehlen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>Bitte waehlen</SelectItem>
+                  <SelectItem value={EMPTY_SELECT_VALUE}>
+                    Bitte waehlen
+                  </SelectItem>
                   {filteredCategories.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.name}
@@ -853,9 +965,13 @@ export function SchedulesClient({
                   <Button
                     type="button"
                     onClick={handleCreateCategory}
-                    disabled={createCategoryMutation.isPending || !isTrackerMutable}
+                    disabled={
+                      createCategoryMutation.isPending || !isTrackerMutable
+                    }
                   >
-                    {createCategoryMutation.isPending ? "Speichert..." : "Anlegen"}
+                    {createCategoryMutation.isPending
+                      ? "Speichert..."
+                      : "Anlegen"}
                   </Button>
                   <Button
                     type="button"
@@ -874,9 +990,9 @@ export function SchedulesClient({
             <div className="space-y-3 rounded-2xl border border-border/60 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <Label>Payee</Label>
+                  <Label>Einzahler</Label>
                   <p className="text-xs text-muted-foreground">
-                    Ein Schedule braucht einen gespeicherten Payee.
+                    Ein Termin braucht einen gespeicherten Einzahler.
                   </p>
                 </div>
                 <Button
@@ -886,15 +1002,21 @@ export function SchedulesClient({
                   onClick={() => setShowNewPayee((current) => !current)}
                   disabled={!isTrackerMutable}
                 >
-                  Neuer Payee
+                  Neuer Einzahler
                 </Button>
               </div>
-              <Select value={payeeId} onValueChange={setPayeeId} disabled={!isTrackerMutable}>
+              <Select
+                value={payeeId}
+                onValueChange={setPayeeId}
+                disabled={!isTrackerMutable}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Payee waehlen" />
+                  <SelectValue placeholder="Einzahler wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>Bitte waehlen</SelectItem>
+                  <SelectItem value={EMPTY_SELECT_VALUE}>
+                    Bitte wählen
+                  </SelectItem>
                   {(payeesQuery.data?.items || []).map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.name}
@@ -908,12 +1030,14 @@ export function SchedulesClient({
                     value={newPayeeName}
                     onChange={(event) => setNewPayeeName(event.target.value)}
                     disabled={!isTrackerMutable}
-                    placeholder="Neuer Payee"
+                    placeholder="Neuer Einzahler"
                   />
                   <Button
                     type="button"
                     onClick={handleCreatePayee}
-                    disabled={createPayeeMutation.isPending || !isTrackerMutable}
+                    disabled={
+                      createPayeeMutation.isPending || !isTrackerMutable
+                    }
                   >
                     {createPayeeMutation.isPending ? "Speichert..." : "Anlegen"}
                   </Button>
@@ -979,12 +1103,16 @@ export function SchedulesClient({
                 onChange={(event) => setNextDueDate(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Die erste Faelligkeit wird aus Startdatum plus Intervall berechnet.
+                Die erste Faelligkeit wird aus Startdatum plus Intervall
+                berechnet.
               </p>
             </div>
 
-            <Button className="w-full" disabled={createMutation.isPending || !isTrackerMutable}>
-              {createMutation.isPending ? "Speichere..." : "Schedule anlegen"}
+            <Button
+              className="w-full"
+              disabled={createMutation.isPending || !isTrackerMutable}
+            >
+              {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
             </Button>
             {!canCreateContent ? (
               <p className="text-sm text-muted-foreground">
@@ -993,7 +1121,8 @@ export function SchedulesClient({
             ) : null}
             {tracker && !tracker.isActive ? (
               <p className="text-sm text-muted-foreground">
-                Dieser Tracker ist archiviert. Schedules koennen nicht bearbeitet werden.
+                Dieser Tracker ist archiviert. Termine koennen nicht bearbeitet
+                werden.
               </p>
             ) : null}
           </form>
@@ -1011,7 +1140,9 @@ export function SchedulesClient({
               <TabsTrigger value="upcoming">Demnaechst</TabsTrigger>
               <TabsTrigger value="inactive">Abgeschlossen</TabsTrigger>
             </TabsList>
-            <TabsContent value="due">{renderItems(dueQuery.data?.items || [])}</TabsContent>
+            <TabsContent value="due">
+              {renderItems(dueQuery.data?.items || [])}
+            </TabsContent>
             <TabsContent value="upcoming">
               {renderItems(upcomingQuery.data?.items || [])}
             </TabsContent>

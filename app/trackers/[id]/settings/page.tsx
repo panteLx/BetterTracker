@@ -14,7 +14,9 @@ export default async function TrackerSettingsPage({
   const user = await requireUser();
   await ensureBootstrapForUser(user.id);
   const { id } = await params;
-  const access = await getTrackerAccessForUser(id, user.id, { includeHidden: true });
+  const access = await getTrackerAccessForUser(id, user.id, {
+    includeHidden: true,
+  });
   if (!access?.canManageTracker) {
     redirect("/");
   }
@@ -23,7 +25,7 @@ export default async function TrackerSettingsPage({
     <PageContainer
       user={user}
       title="Tracker-Settings"
-      description="Tracker-Stammdaten bearbeiten sowie Kategorien und Payees gesammelt verwalten."
+      description="Tracker-Stammdaten bearbeiten sowie Kategorien und Einzahler gesammelt verwalten."
     >
       <TrackerSettingsClient initialTrackerId={id} locale={env.defaultLocale} />
     </PageContainer>

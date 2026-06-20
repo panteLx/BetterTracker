@@ -415,7 +415,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           items: sortByName([...(current?.items || []), item], locale),
         }),
       );
-      toast.success("Payee angelegt");
+      toast.success("Einzahler angelegt");
       setPayeeId(item.id);
       setCustomPayeeName("");
       setNewPayeeName("");
@@ -425,7 +425,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Payee konnte nicht angelegt werden",
+          : "Einzahler konnte nicht angelegt werden",
       );
     },
   });
@@ -561,7 +561,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     }
 
     if (!newPayeeName.trim()) {
-      toast.error("Bitte einen Payee-Namen eingeben");
+      toast.error("Bitte einen Einzahler-Namen eingeben");
       return;
     }
 
@@ -676,7 +676,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               <CardDescription className="max-w-2xl">
                 {hasTrackers
                   ? "Transaktionen fuer den aktiven Tracker erfassen und die letzten Eintraege direkt daneben pruefen."
-                  : "Lege deinen ersten Tracker an, bevor du Buchungen, Kategorien und Schedules erfasst."}
+                  : "Lege deinen ersten Tracker an, bevor du Buchungen, Kategorien und Termine erfasst."}
               </CardDescription>
             </div>
 
@@ -824,7 +824,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/45 to-background/80 p-3">
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Payees
+                        Einzahler
                       </p>
                       <p className="mt-2 text-xl font-semibold">
                         {payeesQuery.data?.items.length ?? 0}
@@ -846,7 +846,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     <Link href="/transactions">Alle Transaktionen</Link>
                   </Button>
                   <Button variant="ghost" asChild className="flex-1">
-                    <Link href="/schedules">Schedules</Link>
+                    <Link href="/schedules">Termine</Link>
                   </Button>
                 </div>
               </div>
@@ -917,7 +917,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           {!hasTrackers ? (
             <TrackerCreateForm
               title="Ersten Tracker anlegen"
-              description="Sobald der erste Tracker erstellt ist, kannst du sofort Buchungen, Kategorien und Schedules erfassen."
+              description="Sobald der erste Tracker erstellt ist, kannst du sofort Buchungen, Kategorien und Termine erfassen."
               name={newTrackerName}
               color={newTrackerColor}
               currency={newTrackerCurrency}
@@ -942,7 +942,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 <div>
                   <p className="text-sm font-semibold">Neue Buchung</p>
                   <p className="text-sm text-muted-foreground">
-                    Betrag, Kategorie, Payee und Notiz ohne Umwege eintragen.
+                    Betrag, Kategorie, Einzahler und Notiz eintragen.
                   </p>
                 </div>
                 <div className="inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
@@ -1005,8 +1005,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     <div>
                       <Label>Kategorie</Label>
                       <p className="text-xs text-muted-foreground">
-                        Passende Kategorien fuer den aktuellen Buchungstyp.
-                        Pflichtfeld.
+                        Passende Kategorien für den aktuellen Buchungstyp.
                       </p>
                     </div>
                     <Button
@@ -1089,9 +1088,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/70 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <Label>Payee</Label>
+                      <Label>Einzahler</Label>
                       <p className="text-xs text-muted-foreground">
-                        Vorhandenen Payee waehlen oder direkt neu anlegen.
+                        Vorhandenen Einzahler wählen oder direkt neu anlegen.
                       </p>
                     </div>
                     <Button
@@ -1102,7 +1101,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       disabled={!isTrackerMutable}
                     >
                       <Plus className="h-4 w-4" />
-                      Neuer Payee
+                      Neuer Einzahler
                     </Button>
                   </div>
 
@@ -1118,7 +1117,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     disabled={!isTrackerMutable}
                   >
                     <SelectTrigger className="bg-background/80">
-                      <SelectValue placeholder="Payee waehlen" />
+                      <SelectValue placeholder="Einzahler wählen" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={EMPTY_SELECT_VALUE}>Anonym</SelectItem>
@@ -1218,7 +1217,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 {tracker && !tracker.isActive ? (
                   <p className="text-sm text-muted-foreground">
                     Dieser Tracker ist archiviert. Neue Eintraege, Kategorien
-                    und Payees sind gesperrt.
+                    und Einzahler sind gesperrt.
                   </p>
                 ) : null}
               </form>
@@ -1231,7 +1230,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold">Naechste Schedules</p>
+                  <p className="text-sm font-semibold">Nächste Termine</p>
                   <p className="text-sm text-muted-foreground">
                     Aktive Faelligkeiten der naechsten {forecast.days} Tage.
                   </p>
@@ -1285,7 +1284,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   ))
                 ) : (
                   <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
-                    Keine aktiven Schedule-Buchungen in den naechsten{" "}
+                    Keine aktiven Termin-Buchungen in den naechsten{" "}
                     {forecast.days} Tagen.
                   </div>
                 )}
@@ -1302,7 +1301,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 <p className="text-sm text-muted-foreground">
                   {hasTrackers
                     ? "Die letzten Eintraege fuer den aktiven Tracker."
-                    : "Nach dem ersten Tracker kannst du sofort Ausgaben, Einnahmen, Kategorien und Schedules verwalten."}
+                    : "Nach dem ersten Tracker kannst du sofort Ausgaben, Einnahmen, Kategorien und Termine verwalten."}
                 </p>
               </div>
               {hasTrackers ? (

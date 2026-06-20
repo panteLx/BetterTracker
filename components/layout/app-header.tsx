@@ -47,7 +47,7 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
             <Button variant="ghost" asChild>
               <Link href="/schedules">
                 <TimerReset className="mr-2 h-4 w-4" />
-                Schedules
+                Termine
               </Link>
             </Button>
             {user.role === "admin" || user.role === "superadmin" ? (

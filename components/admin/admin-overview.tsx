@@ -23,7 +23,7 @@ export function AdminOverview() {
     { label: "Benutzer", value: stats?.users ?? 0 },
     { label: "Tracker", value: stats?.trackers ?? 0 },
     { label: "Transaktionen", value: stats?.transactions ?? 0 },
-    { label: "Schedules", value: stats?.schedules ?? 0 },
+    { label: "Termine", value: stats?.schedules ?? 0 },
   ];
 
   return (
@@ -32,9 +32,13 @@ export function AdminOverview() {
         {cards.map((card) => (
           <Card key={card.label}>
             <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">{card.label}</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {card.label}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold">{card.value}</CardContent>
+            <CardContent className="text-3xl font-semibold">
+              {card.value}
+            </CardContent>
           </Card>
         ))}
       </div>
@@ -44,13 +48,17 @@ export function AdminOverview() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Einnahmen</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Einnahmen
+            </p>
             <p className="mt-2 text-2xl font-semibold">
               {formatCurrency(stats?.totals.incomeCents ?? 0)}
             </p>
           </div>
           <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Ausgaben</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Ausgaben
+            </p>
             <p className="mt-2 text-2xl font-semibold">
               {formatCurrency(stats?.totals.expenseCents ?? 0)}
             </p>

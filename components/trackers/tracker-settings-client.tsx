@@ -11,9 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
@@ -257,19 +270,22 @@ export function TrackerSettingsClient({
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
-      toast.success("Payee geloescht");
+      toast.success("Einzahler gelöscht");
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Payee konnte nicht geloescht werden",
+          : "Einzahler konnte nicht gelöscht werden",
       );
     },
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: (payload: { userId: string; permission: "admin" | "write" | "read" }) =>
+    mutationFn: (payload: {
+      userId: string;
+      permission: "admin" | "write" | "read";
+    }) =>
       fetchJson(`/api/trackers/${activeTrackerId}/members`, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -284,7 +300,9 @@ export function TrackerSettingsClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Freigabe konnte nicht erstellt werden",
+        error instanceof Error
+          ? error.message
+          : "Freigabe konnte nicht erstellt werden",
       );
     },
   });
@@ -310,7 +328,9 @@ export function TrackerSettingsClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Freigabe konnte nicht aktualisiert werden",
+        error instanceof Error
+          ? error.message
+          : "Freigabe konnte nicht aktualisiert werden",
       );
     },
   });
@@ -329,7 +349,9 @@ export function TrackerSettingsClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Freigabe konnte nicht entfernt werden",
+        error instanceof Error
+          ? error.message
+          : "Freigabe konnte nicht entfernt werden",
       );
     },
   });
@@ -375,7 +397,7 @@ export function TrackerSettingsClient({
   }
 
   function handleDeletePayee(id: string, name: string) {
-    if (!window.confirm(`Payee "${name}" wirklich loeschen?`)) {
+    if (!window.confirm(`Einzahler "${name}" wirklich loeschen?`)) {
       return;
     }
 
@@ -619,7 +641,9 @@ export function TrackerSettingsClient({
                     <Select
                       value={newMemberPermission}
                       onValueChange={(value) =>
-                        setNewMemberPermission(value as "admin" | "write" | "read")
+                        setNewMemberPermission(
+                          value as "admin" | "write" | "read",
+                        )
                       }
                     >
                       <SelectTrigger>
@@ -663,7 +687,8 @@ export function TrackerSettingsClient({
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Gib mindestens zwei Zeichen ein, um bestehende Benutzer zu suchen.
+                      Gib mindestens zwei Zeichen ein, um bestehende Benutzer zu
+                      suchen.
                     </p>
                   )}
                 </div>
@@ -697,7 +722,10 @@ export function TrackerSettingsClient({
                                 onValueChange={(value) =>
                                   updateMemberMutation.mutate({
                                     memberId: member.id,
-                                    permission: value as "admin" | "write" | "read",
+                                    permission: value as
+                                      | "admin"
+                                      | "write"
+                                      | "read",
                                   })
                                 }
                               >
@@ -723,7 +751,10 @@ export function TrackerSettingsClient({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>
-                                  handleRemoveMember(member.id, member.userEmail)
+                                  handleRemoveMember(
+                                    member.id,
+                                    member.userEmail,
+                                  )
                                 }
                                 disabled={removeMemberMutation.isPending}
                               >
@@ -755,15 +786,22 @@ export function TrackerSettingsClient({
                   <TableBody>
                     {categories.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.name}
+                        </TableCell>
                         <TableCell>{item.type}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteCategory(item.id, item.name)}
-                            disabled={deleteCategoryMutation.isPending || !tracker.isActive}
+                            onClick={() =>
+                              handleDeleteCategory(item.id, item.name)
+                            }
+                            disabled={
+                              deleteCategoryMutation.isPending ||
+                              !tracker.isActive
+                            }
                           >
                             <Trash2 className="h-4 w-4" />
                             Loeschen
@@ -783,7 +821,7 @@ export function TrackerSettingsClient({
 
             <Card>
               <CardHeader>
-                <CardTitle>Payees</CardTitle>
+                <CardTitle>Einzahler</CardTitle>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <Table>
@@ -796,14 +834,20 @@ export function TrackerSettingsClient({
                   <TableBody>
                     {payees.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.name}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeletePayee(item.id, item.name)}
-                            disabled={deletePayeeMutation.isPending || !tracker.isActive}
+                            onClick={() =>
+                              handleDeletePayee(item.id, item.name)
+                            }
+                            disabled={
+                              deletePayeeMutation.isPending || !tracker.isActive
+                            }
                           >
                             <Trash2 className="h-4 w-4" />
                             Loeschen
@@ -815,7 +859,7 @@ export function TrackerSettingsClient({
                 </Table>
                 {payees.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Fuer diesen Tracker sind noch keine Payees vorhanden.
+                    Fuer diesen Tracker sind noch keine Einzahler vorhanden.
                   </p>
                 ) : null}
               </CardContent>
