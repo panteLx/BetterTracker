@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
+import { cn } from "@/lib/utils";
 
 type Tracker = {
   id: string;
@@ -421,360 +421,348 @@ export function TrackerSettingsClient({
 
   if (!trackersQuery.isLoading && !tracker) {
     return (
-      <Card>
-        <CardContent className="flex min-h-56 flex-col items-center justify-center gap-4 text-center">
-          <div className="rounded-2xl bg-muted p-3">
-            <Settings2 className="h-5 w-5" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium">Kein Tracker verfügbar</p>
-            <p className="text-sm text-muted-foreground">
-              Lege zuerst einen Tracker an, bevor du die Settings verwaltest.
-            </p>
-          </div>
-          <Button asChild variant="outline">
-              <Link href="/">Zurück zu den Buchungen</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-xl border border-border/60 bg-card p-8 text-center">
+        <div className="rounded-xl bg-muted p-3">
+          <Settings2 className="h-5 w-5" />
+        </div>
+        <div className="space-y-1">
+          <p className="font-medium">Kein Tracker verfügbar</p>
+          <p className="text-sm text-muted-foreground">
+            Lege zuerst einen Tracker an, bevor du die Settings verwaltest.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/">Zurück zu den Buchungen</Link>
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="gap-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Tracker wählen</CardTitle>
-            </div>
-            <Button asChild variant="outline">
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4" />
-                Zurück zu den Buchungen
-              </Link>
-            </Button>
-          </div>
-          <Select value={activeTrackerId} onValueChange={handleTrackerChange}>
-            <SelectTrigger className="max-w-xl">
-              <SelectValue placeholder="Tracker wählen" />
-            </SelectTrigger>
-            <SelectContent>
-              {trackers.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardHeader>
-      </Card>
+    <div className="space-y-4">
+      {/* Tracker selector */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Select value={activeTrackerId} onValueChange={handleTrackerChange}>
+          <SelectTrigger className="sm:max-w-xs">
+            <SelectValue placeholder="Tracker wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {trackers.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4" />
+            Zurück
+          </Link>
+        </Button>
+      </div>
 
       {tracker ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tracker-Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleTrackerSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-name">Name</Label>
-                  <Input
-                    id="tracker-name"
-                    value={trackerDraft.name}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+          {/* Left: tracker form */}
+          <div className="rounded-xl border border-border/60 bg-card p-4">
+            <p className="mb-4 text-sm font-semibold">Tracker-Settings</p>
+            <form onSubmit={handleTrackerSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="tracker-name">Name</Label>
+                <Input
+                  id="tracker-name"
+                  value={trackerDraft.name}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-description">Beschreibung</Label>
-                  <Textarea
-                    id="tracker-description"
-                    value={trackerDraft.description}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
-                    }
-                    rows={4}
-                    placeholder="Optionaler Kontext für diesen Tracker"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tracker-description">Beschreibung</Label>
+                <Textarea
+                  id="tracker-description"
+                  value={trackerDraft.description}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                  placeholder="Optionaler Kontext für diesen Tracker"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-color">Farbe</Label>
-                  <TrackerColorPicker
-                    id="tracker-color"
-                    value={trackerDraft.color}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        color: value,
-                      }))
-                    }
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tracker-color">Farbe</Label>
+                <TrackerColorPicker
+                  id="tracker-color"
+                  value={trackerDraft.color}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      color: value,
+                    }))
+                  }
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-currency">Waehrung</Label>
-                  <Input
-                    id="tracker-currency"
-                    value={trackerDraft.currency}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        currency: event.target.value.toUpperCase(),
-                      }))
-                    }
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tracker-currency">Währung</Label>
+                <Input
+                  id="tracker-currency"
+                  value={trackerDraft.currency}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      currency: event.target.value.toUpperCase(),
+                    }))
+                  }
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-webhook">Discord Webhook URL</Label>
-                  <Input
-                    id="tracker-webhook"
-                    value={trackerDraft.discordWebhookUrl}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        discordWebhookUrl: event.target.value,
-                      }))
-                    }
-                    placeholder="https://discord.com/api/webhooks/..."
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tracker-webhook">Discord Webhook URL</Label>
+                <Input
+                  id="tracker-webhook"
+                  value={trackerDraft.discordWebhookUrl}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      discordWebhookUrl: event.target.value,
+                    }))
+                  }
+                  placeholder="https://discord.com/api/webhooks/..."
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tracker-role">Discord Ping Role ID</Label>
-                  <Input
-                    id="tracker-role"
-                    value={trackerDraft.discordPingRoleId}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        discordPingRoleId: event.target.value,
-                      }))
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tracker-role">Discord Ping Role ID</Label>
+                <Input
+                  id="tracker-role"
+                  value={trackerDraft.discordPingRoleId}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      discordPingRoleId: event.target.value,
+                    }))
+                  }
+                  placeholder="Optional"
+                />
+              </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-                    <div>
-                      <p className="text-sm font-medium">Discord Debug</p>
-                      <p className="text-xs text-muted-foreground">
-                        Zusatzinfos in Benachrichtigungen mitsenden.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={trackerDraft.discordDebugEnabled}
-                      onCheckedChange={(value) =>
-                        setDraft((current) => ({
-                          ...current,
-                          discordDebugEnabled: value,
-                        }))
-                      }
-                    />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                  <div>
+                    <p className="text-sm font-medium">Discord Debug</p>
+                    <p className="text-xs text-muted-foreground">
+                      Zusatzinfos mitsenden.
+                    </p>
                   </div>
-
-                  <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-                    <div>
-                      <p className="text-sm font-medium">Tracker aktiv</p>
-                      <p className="text-xs text-muted-foreground">
-                        Deaktivierte Tracker sind im Alltag gesperrt.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={trackerDraft.isActive}
-                      onCheckedChange={(value) =>
-                        setDraft((current) => ({
-                          ...current,
-                          isActive: value,
-                        }))
-                      }
-                    />
-                  </div>
+                  <Switch
+                    checked={trackerDraft.discordDebugEnabled}
+                    onCheckedChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        discordDebugEnabled: value,
+                      }))
+                    }
+                  />
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={updateTrackerMutation.isPending}
-                >
-                  {updateTrackerMutation.isPending
-                    ? "Speichert..."
-                    : "Tracker speichern"}
-                </Button>
-
-                {!tracker.isActive ? (
-                  <p className="text-sm text-muted-foreground">
-                    Dieser Tracker ist archiviert. Falls die API nur eine
-                    Reaktivierung zulaesst, wird der Rest beim Speichern
-                    abgewiesen.
-                  </p>
-                ) : null}
-              </form>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Freigaben</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-3 rounded-2xl border border-border/60 p-4">
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
-                    <Input
-                      value={memberSearch}
-                      onChange={(event) => setMemberSearch(event.target.value)}
-                      placeholder="Benutzer per Name oder E-Mail suchen"
-                    />
-                    <Select
-                      value={newMemberPermission}
-                      onValueChange={(value) =>
-                        setNewMemberPermission(
-                          value as "admin" | "write" | "read",
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="read">Read</SelectItem>
-                        <SelectItem value="write">Write</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                  <div>
+                    <p className="text-sm font-medium">Tracker aktiv</p>
+                    <p className="text-xs text-muted-foreground">
+                      Archivierte Tracker sind gesperrt.
+                    </p>
                   </div>
-                  {candidateSearch.length >= 2 ? (
-                    <div className="grid gap-2">
-                      {(candidatesQuery.data?.items || []).map((candidate) => (
-                        <div
-                          key={candidate.id}
-                          className="flex flex-col gap-3 rounded-2xl border border-border/60 p-3 md:flex-row md:items-center md:justify-between"
+                  <Switch
+                    checked={trackerDraft.isActive}
+                    onCheckedChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        isActive: value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={updateTrackerMutation.isPending}
+              >
+                {updateTrackerMutation.isPending
+                  ? "Speichert..."
+                  : "Tracker speichern"}
+              </Button>
+
+              {!tracker.isActive ? (
+                <p className="text-xs text-muted-foreground">
+                  Dieser Tracker ist archiviert. Falls die API nur eine
+                  Reaktivierung zulässt, wird der Rest beim Speichern
+                  abgewiesen.
+                </p>
+              ) : null}
+            </form>
+          </div>
+
+          {/* Right: members, categories, payees */}
+          <div className="space-y-4">
+            {/* Members */}
+            <div className="rounded-xl border border-border/60 bg-card p-4">
+              <p className="mb-4 text-sm font-semibold">Freigaben</p>
+
+              <div className="mb-4 space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
+                  <Input
+                    value={memberSearch}
+                    onChange={(event) => setMemberSearch(event.target.value)}
+                    placeholder="Name oder E-Mail suchen"
+                  />
+                  <Select
+                    value={newMemberPermission}
+                    onValueChange={(value) =>
+                      setNewMemberPermission(
+                        value as "admin" | "write" | "read",
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="read">Read</SelectItem>
+                      <SelectItem value="write">Write</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {candidateSearch.length >= 2 ? (
+                  <div className="grid gap-2">
+                    {(candidatesQuery.data?.items || []).map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {candidate.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {candidate.email} · {candidate.role}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleAddMember(candidate.id)}
+                          disabled={addMemberMutation.isPending}
                         >
+                          Freigeben
+                        </Button>
+                      </div>
+                    ))}
+                    {(candidatesQuery.data?.items || []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Keine passenden Benutzer gefunden.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Mindestens 2 Zeichen eingeben.
+                  </p>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Benutzer</TableHead>
+                      <TableHead>Rolle</TableHead>
+                      <TableHead className="text-right">Aktion</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(membersQuery.data?.items || []).map((member) => (
+                      <TableRow key={member.id}>
+                        <TableCell>
                           <div>
-                            <p className="font-medium">{candidate.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {candidate.email} | {candidate.role}
+                            <p className="text-sm font-medium">
+                              {member.userName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {member.userEmail}
                             </p>
                           </div>
-                          <Button
-                            type="button"
-                            onClick={() => handleAddMember(candidate.id)}
-                            disabled={addMemberMutation.isPending}
-                          >
-                            Freigeben
-                          </Button>
-                        </div>
-                      ))}
-                      {candidateSearch.length >= 2 &&
-                      (candidatesQuery.data?.items || []).length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Keine passenden registrierten Benutzer gefunden.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Gib mindestens zwei Zeichen ein, um bestehende Benutzer zu
-                      suchen.
-                    </p>
-                  )}
-                </div>
-
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Benutzer</TableHead>
-                        <TableHead>Rolle</TableHead>
-                        <TableHead className="text-right">Aktion</TableHead>
+                        </TableCell>
+                        <TableCell>
+                          {member.permission === "owner" ? (
+                            <span className="text-sm font-medium">Owner</span>
+                          ) : (
+                            <Select
+                              value={member.permission}
+                              onValueChange={(value) =>
+                                updateMemberMutation.mutate({
+                                  memberId: member.id,
+                                  permission: value as
+                                    | "admin"
+                                    | "write"
+                                    | "read",
+                                })
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="read">Read</SelectItem>
+                                <SelectItem value="write">Write</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {member.permission === "owner" ? (
+                            <span className="text-xs text-muted-foreground">
+                              Owner
+                            </span>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() =>
+                                handleRemoveMember(member.id, member.userEmail)
+                              }
+                              disabled={removeMemberMutation.isPending}
+                            >
+                              Entfernen
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(membersQuery.data?.items || []).map((member) => (
-                        <TableRow key={member.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{member.userName}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {member.userEmail} | {member.userRole}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {member.permission === "owner" ? (
-                              <span className="text-sm font-medium">Owner</span>
-                            ) : (
-                              <Select
-                                value={member.permission}
-                                onValueChange={(value) =>
-                                  updateMemberMutation.mutate({
-                                    memberId: member.id,
-                                    permission: value as
-                                      | "admin"
-                                      | "write"
-                                      | "read",
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="w-40">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="read">Read</SelectItem>
-                                  <SelectItem value="write">Write</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {member.permission === "owner" ? (
-                              <span className="text-sm text-muted-foreground">
-                                Nicht entfernbar
-                              </span>
-                            ) : (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleRemoveMember(
-                                    member.id,
-                                    member.userEmail,
-                                  )
-                                }
-                                disabled={removeMemberMutation.isPending}
-                              >
-                                Entfernen
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Kategorien</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
+            {/* Categories */}
+            <div className="rounded-xl border border-border/60 bg-card p-4">
+              <p className="mb-3 text-sm font-semibold">Kategorien</p>
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -786,15 +774,29 @@ export function TrackerSettingsClient({
                   <TableBody>
                     {categories.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="text-sm font-medium">
                           {item.name}
                         </TableCell>
-                        <TableCell>{item.type}</TableCell>
+                        <TableCell>
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              item.type === "expense"
+                                ? "bg-rose-500/10 text-rose-700"
+                                : item.type === "income"
+                                  ? "bg-emerald-500/10 text-emerald-700"
+                                  : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {item.type}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
                             onClick={() =>
                               handleDeleteCategory(item.id, item.name)
                             }
@@ -803,7 +805,7 @@ export function TrackerSettingsClient({
                               !tracker.isActive
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             Löschen
                           </Button>
                         </TableCell>
@@ -812,18 +814,17 @@ export function TrackerSettingsClient({
                   </TableBody>
                 </Table>
                 {categories.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Fuer diesen Tracker sind noch keine Kategorien vorhanden.
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Noch keine Kategorien vorhanden.
                   </p>
                 ) : null}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Einzahler</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
+            {/* Payees */}
+            <div className="rounded-xl border border-border/60 bg-card p-4">
+              <p className="mb-3 text-sm font-semibold">Einzahler</p>
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -834,7 +835,7 @@ export function TrackerSettingsClient({
                   <TableBody>
                     {payees.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="text-sm font-medium">
                           {item.name}
                         </TableCell>
                         <TableCell className="text-right">
@@ -842,6 +843,7 @@ export function TrackerSettingsClient({
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
                             onClick={() =>
                               handleDeletePayee(item.id, item.name)
                             }
@@ -849,7 +851,7 @@ export function TrackerSettingsClient({
                               deletePayeeMutation.isPending || !tracker.isActive
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             Löschen
                           </Button>
                         </TableCell>
@@ -858,12 +860,12 @@ export function TrackerSettingsClient({
                   </TableBody>
                 </Table>
                 {payees.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Fuer diesen Tracker sind noch keine Einzahler vorhanden.
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Noch keine Einzahler vorhanden.
                   </p>
                 ) : null}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
