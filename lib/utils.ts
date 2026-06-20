@@ -54,6 +54,3 @@ export function toDateInputValue(date: Date | string) {
   return `${year}-${month}-${day}`;
 }
 
-export function getBaseUrl() {
-  return process.env.BETTER_AUTH_URL || "http://localhost:3000";
-}
