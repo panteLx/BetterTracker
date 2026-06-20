@@ -9,20 +9,12 @@ import {
   Landmark,
   Settings2,
   Plus,
-  Sparkles,
   Tags,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,12 +26,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
@@ -188,16 +179,18 @@ function TrackerCreateForm({
   return (
     <div
       className={cn(
-        "rounded-[1.6rem] border border-border/60 bg-background/78 p-4 shadow-sm backdrop-blur-sm",
+        "rounded-xl border border-border/60 bg-background/78 p-4 shadow-sm backdrop-blur-sm",
         className,
       )}
     >
-      <div className="space-y-1">
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+      {title ? (
+        <div className="mb-4 space-y-1">
+          <p className="text-sm font-semibold">{title}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+      ) : null}
 
-      <form onSubmit={onSubmit} className="mt-4 space-y-3">
+      <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-2">
           <Label htmlFor="new-tracker-name">Name</Label>
           <Input
@@ -244,7 +237,7 @@ function TrackerCreateForm({
             placeholder="Optional"
           />
         </div>
-        <div className="flex items-center justify-between rounded-2xl border border-border/60 p-3">
+        <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
           <div>
             <p className="text-sm font-medium">Discord Debug</p>
             <p className="text-xs text-muted-foreground">
@@ -271,6 +264,7 @@ type DashboardClientProps = {
 export function DashboardClient({ locale }: DashboardClientProps) {
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<"expense" | "income">("expense");
@@ -282,6 +276,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const [newPayeeName, setNewPayeeName] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newTrackerSheetOpen, setNewTrackerSheetOpen] = useState(false);
   const [newTrackerName, setNewTrackerName] = useState("");
   const [newTrackerColor, setNewTrackerColor] = useState(DEFAULT_TRACKER_COLOR);
   const [newTrackerCurrency, setNewTrackerCurrency] = useState("EUR");
@@ -291,6 +286,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     useState("");
   const [newTrackerDiscordDebugEnabled, setNewTrackerDiscordDebugEnabled] =
     useState(false);
+
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
@@ -362,14 +358,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     scheduledExpenseCents: 0,
     items: [],
   };
-  const latestTransaction = transactionsQuery.data?.items[0];
   const recentTransactions = (transactionsQuery.data?.items || []).slice(0, 6);
   const upcomingScheduledItems = forecast.items;
-  const latestTransactionLabel = latestTransaction
-    ? latestTransaction.payeeName ||
-      latestTransaction.customPayeeName ||
-      "Anonym"
-    : "Noch keine Buchung";
+
   const effectiveCategoryId = filteredCategories.some(
     (item) => item.id === categoryId,
   )
@@ -387,6 +378,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       setAmount("");
       setNotes("");
       setCustomPayeeName("");
+      setSheetOpen(false);
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
@@ -513,6 +505,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       );
       toast.success("Tracker angelegt");
       setSelectedTracker(item.id);
+      setNewTrackerSheetOpen(false);
       setNewTrackerName("");
       setNewTrackerColor(DEFAULT_TRACKER_COLOR);
       setNewTrackerCurrency("EUR");
@@ -690,233 +683,118 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   ];
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-muted/55 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.5)]">
-      <CardHeader className="gap-6 border-b border-border/50 bg-gradient-to-r from-primary/8 via-background/60 to-transparent backdrop-blur-sm">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl tracking-tight">
-                {hasTrackers ? "Buchungen" : "Willkommen"}
-              </CardTitle>
-              <CardDescription className="max-w-2xl">
-                {hasTrackers
-                  ? "Transaktionen für den aktiven Tracker erfassen und die letzten Einträge direkt daneben prüfen."
-                  : "Lege deinen ersten Tracker an, bevor du Buchungen, Kategorien und Termine erfasst."}
-              </CardDescription>
+    <>
+      {!hasTrackers ? (
+        <TrackerCreateForm
+          title="Ersten Tracker anlegen"
+          description="Sobald der erste Tracker erstellt ist, kannst du sofort Buchungen, Kategorien und Termine erfassen."
+          name={newTrackerName}
+          color={newTrackerColor}
+          currency={newTrackerCurrency}
+          discordWebhookUrl={newTrackerDiscordWebhookUrl}
+          discordDebugEnabled={newTrackerDiscordDebugEnabled}
+          discordPingRoleId={newTrackerDiscordPingRoleId}
+          isPending={createTrackerMutation.isPending}
+          submitLabel="Jetzt starten"
+          onNameChange={setNewTrackerName}
+          onColorChange={setNewTrackerColor}
+          onCurrencyChange={setNewTrackerCurrency}
+          onDiscordWebhookUrlChange={setNewTrackerDiscordWebhookUrl}
+          onDiscordPingRoleIdChange={setNewTrackerDiscordPingRoleId}
+          onDiscordDebugEnabledChange={setNewTrackerDiscordDebugEnabled}
+          onSubmit={handleCreateTracker}
+          className="max-w-md"
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Tracker selector + actions */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              {trackers.map((item) => {
+                const isActive = item.id === activeTrackerId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleTrackerSelect(item.id)}
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                      isActive
+                        ? "border-transparent bg-foreground text-background shadow-sm"
+                        : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
+                    )}
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color || "#0f172a" }}
+                    />
+                    {item.name}
+                    {!item.isActive ? " (Archiv)" : ""}
+                  </button>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setNewTrackerSheetOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Neuer Tracker</span>
+              </Button>
             </div>
 
-            {hasTrackers ? (
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  {trackers.map((item) => {
-                    const isActive = item.id === activeTrackerId;
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleTrackerSelect(item.id)}
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
-                          isActive
-                            ? "border-transparent bg-foreground text-background shadow-sm"
-                            : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                        )}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: item.color || "#0f172a" }}
-                        />
-                        {item.name}
-                        {!item.isActive ? " (Archiv)" : ""}
-                      </button>
-                    );
-                  })}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Neuer Tracker
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-96 p-3">
-                      <DropdownMenuLabel className="px-0">
-                        Neuen Tracker anlegen
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <TrackerCreateForm
-                        title="Neuer Tracker"
-                        description="Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt Discord."
-                        name={newTrackerName}
-                        color={newTrackerColor}
-                        currency={newTrackerCurrency}
-                        discordWebhookUrl={newTrackerDiscordWebhookUrl}
-                        discordDebugEnabled={newTrackerDiscordDebugEnabled}
-                        discordPingRoleId={newTrackerDiscordPingRoleId}
-                        isPending={createTrackerMutation.isPending}
-                        submitLabel="Tracker anlegen"
-                        className="border-0 bg-transparent p-0 shadow-none"
-                        onNameChange={setNewTrackerName}
-                        onColorChange={setNewTrackerColor}
-                        onCurrencyChange={setNewTrackerCurrency}
-                        onDiscordWebhookUrlChange={
-                          setNewTrackerDiscordWebhookUrl
-                        }
-                        onDiscordPingRoleIdChange={
-                          setNewTrackerDiscordPingRoleId
-                        }
-                        onDiscordDebugEnabledChange={
-                          setNewTrackerDiscordDebugEnabled
-                        }
-                        onSubmit={handleCreateTracker}
-                      />
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {tracker && canManageTracker ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  asChild
+                >
+                  <Link href={`/trackers/${tracker.id}/settings`}>
+                    <Settings2 className="h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                onClick={() => setSheetOpen(true)}
+                disabled={!isTrackerMutable}
+              >
+                <Plus className="h-4 w-4" />
+                Neue Buchung
+              </Button>
+            </div>
           </div>
 
-          <div className="w-full xl:max-w-sm">
-            {hasTrackers ? (
-              <div className="rounded-[1.6rem] border border-border/60 bg-background/78 p-4 shadow-sm backdrop-blur-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                      Tracker
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {tracker?.name || "Kein Tracker aktiv"}
-                    </p>
-                    {tracker && !tracker.isActive ? (
-                      <p className="text-xs text-muted-foreground">
-                        Archiviert
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div
-                      className="h-10 w-10 rounded-2xl border border-border/60 shadow-inner"
-                      style={{ backgroundColor: tracker?.color || "#0f172a" }}
-                    />
-                    {tracker && canManageTracker ? (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-2xl"
-                        asChild
-                      >
-                        <Link href={`/trackers/${tracker.id}/settings`}>
-                          <Settings2 className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                  <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/55 to-background/80 p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      Letzte Buchung
-                    </p>
-                    <p className="mt-2 text-sm font-medium">
-                      {latestTransactionLabel}
-                    </p>
-                    <p className="mt-1 text-lg font-semibold tracking-tight">
-                      {latestTransaction
-                        ? `${latestTransaction.direction === "expense" ? "-" : "+"}${formatCurrency(
-                            latestTransaction.amountCents,
-                            tracker?.currency || "EUR",
-                            locale,
-                          )}`
-                        : formatCurrency(0, tracker?.currency || "EUR", locale)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {latestTransaction
-                        ? `${latestTransaction.date} - ${
-                            latestTransaction.direction === "expense"
-                              ? "Ausgabe"
-                              : "Einnahme"
-                          }`
-                        : "Neue Einträge erscheinen sofort hier."}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/45 to-background/80 p-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Einzahler
-                      </p>
-                      <p className="mt-2 text-xl font-semibold">
-                        {payeesQuery.data?.items.length ?? 0}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/45 to-background/80 p-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Transaktionen
-                      </p>
-                      <p className="mt-2 text-xl font-semibold">
-                        {transactionCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button variant="outline" asChild className="flex-1">
-                    <Link href="/transactions">Alle Transaktionen</Link>
-                  </Button>
-                  <Button variant="ghost" asChild className="flex-1">
-                    <Link href="/schedules">Termine</Link>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-[1.6rem] border border-primary/20 bg-primary/8 p-5 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-primary/12 p-2 text-primary">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold">Erster Schritt</p>
-                    <p className="text-sm text-muted-foreground">
-                      Starte mit einem Tracker für deinen Haushalt, Urlaub oder
-                      ein gemeinsames Projekt.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {hasTrackers ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {statCards.map((item) => {
               const Icon = item.icon;
-
               return (
                 <div
                   key={item.label}
                   className={cn(
-                    "rounded-[1.35rem] border border-border/60 bg-gradient-to-br p-4 shadow-sm",
+                    "rounded-xl border border-border/60 bg-gradient-to-br p-3",
                     item.surface,
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-xs text-muted-foreground">
                         {item.label}
                       </p>
-                      <p className="text-2xl font-semibold tracking-tight">
+                      <p
+                        className={cn(
+                          "text-xl font-semibold tracking-tight",
+                          item.tone,
+                        )}
+                      >
                         {item.value}
                       </p>
                       {"secondaryValue" in item && item.secondaryValue ? (
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-xs font-medium text-muted-foreground">
                           {item.secondaryValue}
                         </p>
                       ) : null}
@@ -926,23 +804,190 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                         </p>
                       ) : null}
                     </div>
-                    <div className="rounded-2xl border border-border/60 bg-background/80 p-2.5">
-                      <Icon className={cn("h-4 w-4", item.tone)} />
+                    <div className="shrink-0 rounded-lg border border-border/60 bg-background/80 p-2">
+                      <Icon className={cn("h-3.5 w-3.5", item.tone)} />
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : null}
-      </CardHeader>
 
-      <CardContent className="grid gap-6 border-t border-transparent px-6 pb-6 pt-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-        <div className="space-y-4">
-          {!hasTrackers ? (
+          {/* Main 2-col layout */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* Upcoming schedules */}
+            <div className="rounded-xl border border-border/60 bg-card p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Nächste Termine</p>
+                  <p className="text-xs text-muted-foreground">
+                    Fälligkeiten der nächsten {forecast.days} Tage.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-border/60 bg-background/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {forecast.items.length} geplant
+                </span>
+              </div>
+              <div className="space-y-2">
+                {upcomingScheduledItems.length > 0 ? (
+                  upcomingScheduledItems.map((item) => (
+                    <div
+                      key={item.occurrenceKey}
+                      className="rounded-xl border border-border/60 bg-background/80 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Badge
+                              variant={getScheduleForecastStatusVariant(
+                                item.status,
+                              )}
+                              className="text-xs"
+                            >
+                              {getScheduleForecastStatusLabel(item.status)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {item.date}
+                            </span>
+                          </div>
+                          <p className="truncate text-sm font-medium">
+                            {item.payeeName}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {item.categoryName} · {item.name}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p
+                            className={cn(
+                              "text-sm font-semibold",
+                              item.direction === "expense"
+                                ? "text-rose-600"
+                                : "text-emerald-600",
+                            )}
+                          >
+                            {item.direction === "expense" ? "-" : "+"}
+                            {formatCurrency(
+                              item.amountCents,
+                              tracker?.currency || "EUR",
+                              locale,
+                            )}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-1.5 h-7 text-xs"
+                            onClick={() =>
+                              createScheduleTransactionMutation.mutate(
+                                item.scheduleId,
+                              )
+                            }
+                            disabled={
+                              createScheduleTransactionMutation.isPending ||
+                              !tracker?.isActive
+                            }
+                          >
+                            Buchen
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border/70 p-5 text-sm text-muted-foreground">
+                    Keine Termine in den nächsten {forecast.days} Tagen.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent transactions */}
+            <div className="rounded-xl border border-border/60 bg-card p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Letzte Transaktionen</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aktuelle Einträge im Überblick.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-border/60 bg-background/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {transactionCount} gesamt
+                </span>
+              </div>
+              <div className="space-y-2">
+                {recentTransactions.length > 0 ? (
+                  recentTransactions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5"
+                    >
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant={
+                              item.direction === "expense"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {item.direction === "expense"
+                              ? "Ausgabe"
+                              : "Einnahme"}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {item.date}
+                          </span>
+                        </div>
+                        <p className="truncate text-sm font-medium">
+                          {item.payeeName || item.customPayeeName || "Anonym"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {item.categoryName || "Ohne Kategorie"}
+                        </p>
+                      </div>
+                      <p
+                        className={cn(
+                          "shrink-0 text-sm font-semibold",
+                          item.direction === "expense"
+                            ? "text-rose-600"
+                            : "text-emerald-600",
+                        )}
+                      >
+                        {item.direction === "expense" ? "-" : "+"}
+                        {formatCurrency(
+                          item.amountCents,
+                          tracker?.currency || "EUR",
+                          locale,
+                        )}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border/70 p-5 text-sm text-muted-foreground">
+                    Noch keine Transaktionen vorhanden.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New tracker sheet */}
+      <Sheet open={newTrackerSheetOpen} onOpenChange={setNewTrackerSheetOpen}>
+        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+          <div className="shrink-0 border-b border-border/60 p-5 pr-12">
+            <SheetTitle>Neuer Tracker</SheetTitle>
+            <SheetDescription>
+              Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt Discord.
+            </SheetDescription>
+          </div>
+          <div className="flex-1 overflow-y-auto p-5">
             <TrackerCreateForm
-              title="Ersten Tracker anlegen"
-              description="Sobald der erste Tracker erstellt ist, kannst du sofort Buchungen, Kategorien und Termine erfassen."
+              title=""
+              description=""
               name={newTrackerName}
               color={newTrackerColor}
               currency={newTrackerCurrency}
@@ -950,7 +995,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               discordDebugEnabled={newTrackerDiscordDebugEnabled}
               discordPingRoleId={newTrackerDiscordPingRoleId}
               isPending={createTrackerMutation.isPending}
-              submitLabel="Jetzt starten"
+              submitLabel="Tracker anlegen"
+              className="border-0 bg-transparent p-0 shadow-none"
               onNameChange={setNewTrackerName}
               onColorChange={setNewTrackerColor}
               onCurrencyChange={setNewTrackerCurrency}
@@ -959,468 +1005,294 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               onDiscordDebugEnabledChange={setNewTrackerDiscordDebugEnabled}
               onSubmit={handleCreateTracker}
             />
-          ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
 
-          {hasTrackers ? (
-            <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
-              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">Neue Buchung</p>
-                    <p className="text-sm text-muted-foreground">
-                    Betrag, Kategorie, Einzahler und Notiz eintragen.
-                  </p>
-                </div>
-                <div className="inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setDirection("expense")}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-sm font-medium transition",
-                      direction === "expense"
-                        ? "bg-rose-600 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Ausgabe
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirection("income")}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-sm font-medium transition",
-                      direction === "income"
-                        ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Einnahme
-                  </button>
-                </div>
-              </div>
+      {/* Booking sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+          <div className="flex shrink-0 items-start gap-3 border-b border-border/60 p-5 pr-12">
+            <div className="flex-1 min-w-0 space-y-1">
+              <SheetTitle>Neue Buchung</SheetTitle>
+              <SheetDescription>für {tracker?.name}</SheetDescription>
+            </div>
+            <div className="shrink-0 inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => setDirection("expense")}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                  direction === "expense"
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Ausgabe
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirection("income")}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                  direction === "income"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Einnahme
+              </button>
+            </div>
+          </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-date">Datum</Label>
-                    <Input
-                      id="entry-date"
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      disabled={!isTrackerMutable}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-amount">Betrag</Label>
-                    <Input
-                      id="entry-amount"
-                      inputMode="decimal"
-                      placeholder="12,50"
-                      value={amount}
-                      onChange={(event) => setAmount(event.target.value)}
-                      disabled={!isTrackerMutable}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/70 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <Label>Kategorie</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Passende Kategorien für den aktuellen Buchungstyp.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowNewCategory((current) => !current)}
-                      disabled={!isTrackerMutable}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Neue Kategorie
-                    </Button>
-                  </div>
-
-                  <Select
-                    value={
-                      effectiveCategoryId === EMPTY_SELECT_VALUE
-                        ? undefined
-                        : effectiveCategoryId
-                    }
-                    onValueChange={(value) => {
-                      setCategoryId(value);
-                      if (value !== EMPTY_SELECT_VALUE) {
-                        setShowNewCategory(false);
-                      }
-                    }}
-                    disabled={!isTrackerMutable}
-                  >
-                    <SelectTrigger className="bg-background/80">
-                      <SelectValue placeholder="Kategorie wählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredCategories.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {showNewCategory ? (
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                      <Input
-                        value={newCategoryName}
-                        onChange={(event) =>
-                          setNewCategoryName(event.target.value)
-                        }
-                        disabled={!isTrackerMutable}
-                        placeholder={
-                          direction === "expense"
-                            ? "z. B. Tanken"
-                            : "z. B. Gehalt"
-                        }
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCreateCategory}
-                        disabled={
-                          createCategoryMutation.isPending || !isTrackerMutable
-                        }
-                      >
-                        {createCategoryMutation.isPending
-                          ? "Speichert..."
-                          : "Anlegen"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setShowNewCategory(false);
-                          setNewCategoryName("");
-                        }}
-                      >
-                        Abbrechen
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/70 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <Label>Einzahler</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Vorhandenen Einzahler wählen oder direkt neu anlegen.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowNewPayee((current) => !current)}
-                      disabled={!isTrackerMutable}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Neuer Einzahler
-                    </Button>
-                  </div>
-
-                  <Select
-                    value={payeeId}
-                    onValueChange={(value) => {
-                      setPayeeId(value);
-                      if (value !== EMPTY_SELECT_VALUE) {
-                        setCustomPayeeName("");
-                        setShowNewPayee(false);
-                      }
-                    }}
-                    disabled={!isTrackerMutable}
-                  >
-                    <SelectTrigger className="bg-background/80">
-                      <SelectValue placeholder="Einzahler wählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>Anonym</SelectItem>
-                      {(payeesQuery.data?.items || []).map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {showNewPayee ? (
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                      <Input
-                        value={newPayeeName}
-                        onChange={(event) =>
-                          setNewPayeeName(event.target.value)
-                        }
-                        disabled={!isTrackerMutable}
-                        placeholder="z. B. Bäckerei"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCreatePayee}
-                        disabled={
-                          createPayeeMutation.isPending || !isTrackerMutable
-                        }
-                      >
-                        {createPayeeMutation.isPending
-                          ? "Speichert..."
-                          : "Anlegen"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setShowNewPayee(false);
-                          setNewPayeeName("");
-                        }}
-                      >
-                        Abbrechen
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-payee">
-                        Oder einmaliger Freitext
-                      </Label>
-                      <Input
-                        id="custom-payee"
-                        value={customPayeeName}
-                        onChange={(event) => {
-                          setCustomPayeeName(event.target.value);
-                          if (event.target.value.trim()) {
-                            setPayeeId(EMPTY_SELECT_VALUE);
-                          }
-                        }}
-                        disabled={!isTrackerMutable}
-                        placeholder="z. B. Wochenmarkt"
-                      />
-                    </div>
-                  )}
-                </div>
-
+          <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="entry-notes">Notizen</Label>
-                  <Textarea
-                    id="entry-notes"
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
+                  <Label htmlFor="entry-date">Datum</Label>
+                  <Input
+                    id="entry-date"
+                    type="date"
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
                     disabled={!isTrackerMutable}
-                    placeholder="Kurzer Kontext für die Buchung"
-                    rows={4}
+                    required
                   />
                 </div>
-
-                <Button
-                  className="w-full rounded-2xl"
-                  size="lg"
-                  disabled={
-                    createTransactionMutation.isPending ||
-                    !activeTrackerId ||
-                    !date ||
-                    !isTrackerMutable ||
-                    effectiveCategoryId === EMPTY_SELECT_VALUE
-                  }
-                >
-                  {createTransactionMutation.isPending
-                    ? "Speichere..."
-                    : "Eintrag speichern"}
-                </Button>
-                {!canCreateContent ? (
-                  <p className="text-sm text-muted-foreground">
-                    Du hast nur Leserechte für diesen Tracker.
-                  </p>
-                ) : null}
-                {tracker && !tracker.isActive ? (
-                  <p className="text-sm text-muted-foreground">
-                    Dieser Tracker ist archiviert. Neue Einträge, Kategorien
-                    und Einzahler sind gesperrt.
-                  </p>
-                ) : null}
-              </form>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="space-y-4">
-          {hasTrackers ? (
-            <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">Nächste Termine</p>
-                  <p className="text-sm text-muted-foreground">
-                    Aktive Fälligkeiten der nächsten {forecast.days} Tage direkt
-                    aus dem Dashboard buchen.
-                  </p>
-                </div>
-                <div className="rounded-full border border-border/60 bg-background/75 px-3 py-1 text-xs font-medium text-muted-foreground">
-                  {forecast.items.length} geplant
+                <div className="space-y-2">
+                  <Label htmlFor="entry-amount">Betrag</Label>
+                  <Input
+                    id="entry-amount"
+                    inputMode="decimal"
+                    placeholder="12,50"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    disabled={!isTrackerMutable}
+                    required
+                  />
                 </div>
               </div>
 
-              <div className="mt-5 space-y-3">
-                {upcomingScheduledItems.length > 0 ? (
-                  upcomingScheduledItems.map((item) => (
-                    <div
-                      key={item.occurrenceKey}
-                      className="flex flex-col gap-3 rounded-[1.4rem] border border-border/60 bg-background/75 p-4"
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Kategorie</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() =>
+                      setShowNewCategory((current) => !current)
+                    }
+                    disabled={!isTrackerMutable}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Neu
+                  </Button>
+                </div>
+                <Select
+                  value={
+                    effectiveCategoryId === EMPTY_SELECT_VALUE
+                      ? undefined
+                      : effectiveCategoryId
+                  }
+                  onValueChange={(value) => {
+                    setCategoryId(value);
+                    if (value !== EMPTY_SELECT_VALUE) {
+                      setShowNewCategory(false);
+                    }
+                  }}
+                  disabled={!isTrackerMutable}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kategorie wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredCategories.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showNewCategory ? (
+                  <div className="flex gap-2">
+                    <Input
+                      className="flex-1"
+                      value={newCategoryName}
+                      onChange={(event) =>
+                        setNewCategoryName(event.target.value)
+                      }
+                      disabled={!isTrackerMutable}
+                      placeholder={
+                        direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"
+                      }
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateCategory}
+                      disabled={
+                        createCategoryMutation.isPending || !isTrackerMutable
+                      }
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              variant={getScheduleForecastStatusVariant(
-                                item.status,
-                              )}
-                            >
-                              {getScheduleForecastStatusLabel(item.status)}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {item.date}
-                            </span>
-                          </div>
-                          <p className="font-medium">{item.payeeName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.categoryName} - {item.name}
-                          </p>
-                        </div>
-                        <div
-                          className={cn(
-                            "text-lg font-semibold tracking-tight",
-                            item.direction === "expense"
-                              ? "text-rose-600"
-                              : "text-emerald-600",
-                          )}
-                        >
-                          {item.direction === "expense" ? "-" : "+"}
-                          {formatCurrency(
-                            item.amountCents,
-                            tracker?.currency || "EUR",
-                            locale,
-                          )}
-                        </div>
-                      </div>
+                      {createCategoryMutation.isPending ? "..." : "Anlegen"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2"
+                      onClick={() => {
+                        setShowNewCategory(false);
+                        setNewCategoryName("");
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-xs text-muted-foreground">
-                          Die Buchung wird mit dem heutigen Datum erzeugt und
-                          der nächste Termin wie gewohnt weitergeschoben.
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() =>
-                            createScheduleTransactionMutation.mutate(
-                              item.scheduleId,
-                            )
-                          }
-                          disabled={
-                            createScheduleTransactionMutation.isPending ||
-                            !tracker?.isActive
-                          }
-                        >
-                          Jetzt buchen
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Einzahler</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => setShowNewPayee((current) => !current)}
+                    disabled={!isTrackerMutable}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Neu
+                  </Button>
+                </div>
+                <Select
+                  value={payeeId}
+                  onValueChange={(value) => {
+                    setPayeeId(value);
+                    if (value !== EMPTY_SELECT_VALUE) {
+                      setCustomPayeeName("");
+                      setShowNewPayee(false);
+                    }
+                  }}
+                  disabled={!isTrackerMutable}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Einzahler wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>Anonym</SelectItem>
+                    {(payeesQuery.data?.items || []).map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showNewPayee ? (
+                  <div className="flex gap-2">
+                    <Input
+                      className="flex-1"
+                      value={newPayeeName}
+                      onChange={(event) =>
+                        setNewPayeeName(event.target.value)
+                      }
+                      disabled={!isTrackerMutable}
+                      placeholder="z. B. Bäckerei"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreatePayee}
+                      disabled={
+                        createPayeeMutation.isPending || !isTrackerMutable
+                      }
+                    >
+                      {createPayeeMutation.isPending ? "..." : "Anlegen"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2"
+                      onClick={() => {
+                        setShowNewPayee(false);
+                        setNewPayeeName("");
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
-                    Keine aktiven Termin-Buchungen in den nächsten{" "}
-                    {forecast.days} Tagen.
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="custom-payee"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Oder einmaliger Freitext
+                    </Label>
+                    <Input
+                      id="custom-payee"
+                      value={customPayeeName}
+                      onChange={(event) => {
+                        setCustomPayeeName(event.target.value);
+                        if (event.target.value.trim()) {
+                          setPayeeId(EMPTY_SELECT_VALUE);
+                        }
+                      }}
+                      disabled={!isTrackerMutable}
+                      placeholder="z. B. Wochenmarkt"
+                    />
                   </div>
                 )}
               </div>
-            </div>
-          ) : null}
 
-          <div className="rounded-[1.8rem] border border-border/60 bg-gradient-to-br from-background/92 via-background/88 to-muted/30 p-5 shadow-sm backdrop-blur-sm sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">
-                  {hasTrackers ? "Letzte Transaktionen" : "Was danach kommt"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {hasTrackers
-                    ? "Die letzten Einträge für den aktiven Tracker."
-                    : "Nach dem ersten Tracker kannst du sofort Ausgaben, Einnahmen, Kategorien und Termine verwalten."}
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="entry-notes">Notizen</Label>
+                <Textarea
+                  id="entry-notes"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  disabled={!isTrackerMutable}
+                  placeholder="Kurzer Kontext für die Buchung"
+                  rows={3}
+                />
               </div>
-              {hasTrackers ? (
-                <div className="rounded-full border border-border/60 bg-background/75 px-3 py-1 text-xs font-medium text-muted-foreground">
-                  {transactionCount} gesamt
-                </div>
-              ) : null}
-            </div>
 
-            <div className="mt-5 space-y-3">
-              {hasTrackers && recentTransactions.length > 0 ? (
-                recentTransactions.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col gap-3 rounded-[1.4rem] border border-border/60 bg-background/75 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant={
-                            item.direction === "expense"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {item.direction === "expense"
-                            ? "Ausgabe"
-                            : "Einnahme"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {item.date}
-                        </span>
-                      </div>
-                      <p className="font-medium">
-                        {item.payeeName || item.customPayeeName || "Anonym"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {item.categoryName || "Ohne Kategorie"}
-                        {item.notes ? ` - ${item.notes}` : ""}
-                      </p>
-                    </div>
-                    <div
-                      className={cn(
-                        "text-lg font-semibold tracking-tight",
-                        item.direction === "expense"
-                          ? "text-rose-600"
-                          : "text-emerald-600",
-                      )}
-                    >
-                      {item.direction === "expense" ? "-" : "+"}
-                      {formatCurrency(
-                        item.amountCents,
-                        tracker?.currency || "EUR",
-                        locale,
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-[1.4rem] border border-dashed border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
-                  {hasTrackers
-                    ? "Noch keine Transaktionen vorhanden."
-                    : "Sobald du den ersten Tracker angelegt hast, startet hier dein persönliches Onboarding im eigentlichen Produktfluss."}
-                </div>
-              )}
-            </div>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={
+                  createTransactionMutation.isPending ||
+                  !activeTrackerId ||
+                  !date ||
+                  !isTrackerMutable ||
+                  effectiveCategoryId === EMPTY_SELECT_VALUE
+                }
+              >
+                {createTransactionMutation.isPending
+                  ? "Speichere..."
+                  : "Eintrag speichern"}
+              </Button>
+
+              {!canCreateContent ? (
+                <p className="text-xs text-muted-foreground">
+                  Du hast nur Leserechte für diesen Tracker.
+                </p>
+              ) : null}
+              {tracker && !tracker.isActive ? (
+                <p className="text-xs text-muted-foreground">
+                  Dieser Tracker ist archiviert.
+                </p>
+              ) : null}
+            </form>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

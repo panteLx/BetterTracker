@@ -3,17 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { formatCurrency, toDateInputValue } from "@/lib/utils";
+import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -31,6 +31,7 @@ const EMPTY_SELECT_VALUE = "none";
 type Tracker = {
   id: string;
   name: string;
+  color?: string;
   currency: string;
   isActive: boolean;
   permission?: "owner" | "admin" | "write" | "read";
@@ -132,6 +133,7 @@ export function SchedulesClient({
 }: SchedulesClientProps) {
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<"expense" | "income">("expense");
@@ -227,6 +229,7 @@ export function SchedulesClient({
       }),
     onSuccess: () => {
       toast.success("Termin gespeichert");
+      setSheetOpen(false);
       setName("");
       setAmount("");
       setCategoryId(EMPTY_SELECT_VALUE);
@@ -531,6 +534,10 @@ export function SchedulesClient({
   }
 
   const currency = tracker?.currency || "EUR";
+  const trackers = trackersQuery.data?.items || [];
+  const dueCount = dueQuery.data?.items.length ?? 0;
+  const upcomingCount = upcomingQuery.data?.items.length ?? 0;
+  const inactiveCount = inactiveQuery.data?.items.length ?? 0;
 
   function renderItems(items: Schedule[]) {
     return (
@@ -543,7 +550,7 @@ export function SchedulesClient({
           return (
             <div
               key={item.id}
-              className="rounded-[1.45rem] border border-border/60 bg-background/78 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur-sm"
+              className="rounded-xl border border-border/60 bg-card p-4"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
@@ -586,7 +593,7 @@ export function SchedulesClient({
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <div className="mr-2 rounded-full border border-border/60 bg-muted/35 px-3 py-1 text-base font-semibold">
+                  <div className="mr-1 rounded-full border border-border/60 bg-muted/35 px-3 py-1 text-base font-semibold">
                     {formatCurrency(item.amountCents, currency, locale)}
                   </div>
                   {item.isActive ? (
@@ -651,7 +658,7 @@ export function SchedulesClient({
               </div>
 
               {isReactivating ? (
-                <div className="mt-4 grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                <div className="mt-4 grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
                   <Input
                     type="date"
                     value={reactivationDate}
@@ -679,7 +686,7 @@ export function SchedulesClient({
               ) : null}
 
               {isEditing && editState ? (
-                <div className="mt-4 grid gap-4 rounded-[1.2rem] border border-border/60 bg-muted/20 p-4">
+                <div className="mt-4 grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Input
                       value={editState.name}
@@ -841,12 +848,14 @@ export function SchedulesClient({
                     <Button
                       type="button"
                       variant="outline"
+                      size="sm"
                       onClick={cancelEdit}
                     >
                       Abbrechen
                     </Button>
                     <Button
                       type="button"
+                      size="sm"
                       onClick={() => submitEdit(item.id)}
                       disabled={updateMutation.isPending}
                     >
@@ -859,7 +868,7 @@ export function SchedulesClient({
           );
         })}
         {items.length === 0 ? (
-          <p className="rounded-[1.2rem] border border-dashed border-border/70 bg-background/55 p-5 text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-border/70 bg-card p-5 text-sm text-muted-foreground">
             Keine Einträge in diesem Tab.
           </p>
         ) : null}
@@ -868,97 +877,114 @@ export function SchedulesClient({
   }
 
   return (
-    <div className="grid gap-6">
-      <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/35 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.45)]">
-        <CardHeader className="gap-5 border-b border-border/50 bg-gradient-to-r from-primary/8 via-background/80 to-transparent">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl tracking-tight">
-                Schedules verwalten
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-sm">
-                Wiederkehrende Buchungen strukturiert anlegen, sauber zuordnen
-                und bei Bedarf direkt auslösen.
-              </CardDescription>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Fällig
-                </p>
-                <p className="mt-1 text-xl font-semibold">
-                  {dueQuery.data?.items.length ?? 0}
-                </p>
-              </div>
-              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Demnächst
-                </p>
-                <p className="mt-1 text-xl font-semibold">
-                  {upcomingQuery.data?.items.length ?? 0}
-                </p>
-              </div>
-              <div className="rounded-[1.2rem] border border-border/60 bg-background/80 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Abgeschlossen
-                </p>
-                <p className="mt-1 text-xl font-semibold">
-                  {inactiveQuery.data?.items.length ?? 0}
-                </p>
-              </div>
-            </div>
+    <div className="space-y-4">
+      {/* Tracker pills + action */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {trackers.map((item) => {
+            const isActive = item.id === activeTrackerId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedTracker(item.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                  isActive
+                    ? "border-transparent bg-foreground text-background shadow-sm"
+                    : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
+                )}
+              >
+                {item.color ? (
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                ) : null}
+                {item.name}
+                {!item.isActive ? " (Archiv)" : ""}
+              </button>
+            );
+          })}
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setSheetOpen(true)}
+          disabled={!isTrackerMutable}
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          Neuer Termin
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-rose-500/12 via-rose-500/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Fällig</p>
+          <p className="mt-1 text-xl font-semibold">{dueCount}</p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-amber-500/12 via-amber-500/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Demnächst</p>
+          <p className="mt-1 text-xl font-semibold">{upcomingCount}</p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/12 via-primary/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Abgeschlossen</p>
+          <p className="mt-1 text-xl font-semibold">{inactiveCount}</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="due">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="due">
+            Fällig
+            {dueCount > 0 ? (
+              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
+                {dueCount}
+              </span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="upcoming">
+            Demnächst
+            {upcomingCount > 0 ? (
+              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
+                {upcomingCount}
+              </span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="inactive">
+            Abgeschlossen
+            {inactiveCount > 0 ? (
+              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
+                {inactiveCount}
+              </span>
+            ) : null}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="due" className="mt-4">
+          {renderItems(dueQuery.data?.items || [])}
+        </TabsContent>
+        <TabsContent value="upcoming" className="mt-4">
+          {renderItems(upcomingQuery.data?.items || [])}
+        </TabsContent>
+        <TabsContent value="inactive" className="mt-4">
+          {renderItems(inactiveQuery.data?.items || [])}
+        </TabsContent>
+      </Tabs>
+
+      {/* New schedule sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-lg">
+          <div className="shrink-0 border-b border-border/60 p-5 pr-12">
+            <SheetTitle>Neuer Termin</SheetTitle>
+            <SheetDescription>für {tracker?.name}</SheetDescription>
           </div>
-        </CardHeader>
-        <CardContent className="grid gap-6 px-6 py-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.92fr)]">
-          <div className="space-y-4">
-            <div className="rounded-[1.45rem] border border-primary/15 bg-primary/7 p-4">
-              <p className="text-sm font-medium">Neuer Termin</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Erfasse Grunddaten, Zuordnung und Rhythmus in einer kompakten
-                Eingabefläche.
-              </p>
-            </div>
-
-            <form onSubmit={onSubmit} className="space-y-5">
-              <section className="space-y-4 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
-                <div>
-                  <p className="text-sm font-semibold">Grunddaten</p>
-                  <p className="text-sm text-muted-foreground">
-                    Tracker, Name, Betrag und Richtung des Termins.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)]">
-                  <div>
-                    <Label>Tracker</Label>
-                    <Select
-                      value={activeTrackerId}
-                      onValueChange={setSelectedTracker}
-                    >
-                      <SelectTrigger className="mt-2 bg-background/90">
-                        <SelectValue placeholder="Tracker wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(trackersQuery.data?.items || []).map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-border/60 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">
-                      {direction === "expense" ? "Ausgabe" : "Einnahme"}
-                    </p>
-                    <p className="mt-1">
-                      {amount.trim()
-                        ? `${amount} ${tracker?.currency || "EUR"}`
-                        : "Betrag noch nicht gesetzt"}
-                    </p>
-                  </div>
-                </div>
-
+          <div className="flex-1 overflow-y-auto">
+            <form onSubmit={onSubmit} className="space-y-5 p-5">
+              {/* Basic data */}
+              <div className="space-y-4">
+                <p className="text-sm font-semibold">Grunddaten</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
@@ -979,193 +1005,177 @@ export function SchedulesClient({
                     />
                   </div>
                 </div>
-
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => setDirection("expense")}
-                    className={`rounded-[1.2rem] border px-4 py-3 text-left transition ${
+                    className={cn(
+                      "rounded-lg border px-4 py-3 text-left transition",
                       direction === "expense"
-                        ? "border-rose-300 bg-rose-50 text-rose-700"
-                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
-                    }`}
+                        ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+                    )}
                   >
                     <p className="font-medium">Ausgabe</p>
-                    <p className="mt-1 text-sm">Für Abos, Miete oder Fixkosten.</p>
+                    <p className="mt-1 text-sm">Abos, Miete, Fixkosten</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => setDirection("income")}
-                    className={`rounded-[1.2rem] border px-4 py-3 text-left transition ${
+                    className={cn(
+                      "rounded-lg border px-4 py-3 text-left transition",
                       direction === "income"
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
-                    }`}
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+                    )}
                   >
                     <p className="font-medium">Einnahme</p>
-                    <p className="mt-1 text-sm">
-                      Für Gehalt, Rückzahlungen oder Gutschriften.
-                    </p>
+                    <p className="mt-1 text-sm">Gehalt, Gutschriften</p>
                   </button>
                 </div>
-              </section>
+              </div>
 
-              <section className="grid gap-5 lg:grid-cols-2">
-                <div className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold">Kategorie</p>
-                      <p className="text-sm text-muted-foreground">
-                        Feste Zuordnung für spätere Buchungen.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowNewCategory((current) => !current)}
-                      disabled={!isTrackerMutable}
-                    >
-                      Neue Kategorie
-                    </Button>
-                  </div>
-                  <Select
-                    value={categoryId}
-                    onValueChange={setCategoryId}
+              {/* Category */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Kategorie</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setShowNewCategory((current) => !current)}
                     disabled={!isTrackerMutable}
                   >
-                    <SelectTrigger className="bg-background/90">
-                      <SelectValue placeholder="Kategorie wählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        Bitte wählen
-                      </SelectItem>
-                      {filteredCategories.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {showNewCategory ? (
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                      <Input
-                        value={newCategoryName}
-                        onChange={(event) =>
-                          setNewCategoryName(event.target.value)
-                        }
-                        disabled={!isTrackerMutable}
-                        placeholder="Neue Kategorie"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCreateCategory}
-                        disabled={
-                          createCategoryMutation.isPending || !isTrackerMutable
-                        }
-                      >
-                        {createCategoryMutation.isPending
-                          ? "Speichert..."
-                          : "Anlegen"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setShowNewCategory(false);
-                          setNewCategoryName("");
-                        }}
-                      >
-                        Abbrechen
-                      </Button>
-                    </div>
-                  ) : null}
+                    Neu
+                  </Button>
                 </div>
-
-                <div className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold">Einzahler</p>
-                      <p className="text-sm text-muted-foreground">
-                        Gespeicherter Partner für den Termin.
-                      </p>
-                    </div>
+                <Select
+                  value={categoryId}
+                  onValueChange={setCategoryId}
+                  disabled={!isTrackerMutable}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kategorie wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>
+                      Bitte wählen
+                    </SelectItem>
+                    {filteredCategories.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showNewCategory ? (
+                  <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
+                    <Input
+                      value={newCategoryName}
+                      onChange={(event) =>
+                        setNewCategoryName(event.target.value)
+                      }
+                      disabled={!isTrackerMutable}
+                      placeholder="Neue Kategorie"
+                    />
                     <Button
                       type="button"
-                      variant="outline"
                       size="sm"
-                      onClick={() => setShowNewPayee((current) => !current)}
-                      disabled={!isTrackerMutable}
+                      onClick={handleCreateCategory}
+                      disabled={
+                        createCategoryMutation.isPending || !isTrackerMutable
+                      }
                     >
-                      Neuer Einzahler
+                      {createCategoryMutation.isPending ? "..." : "Anlegen"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setShowNewCategory(false);
+                        setNewCategoryName("");
+                      }}
+                    >
+                      Abbrechen
                     </Button>
                   </div>
-                  <Select
-                    value={payeeId}
-                    onValueChange={setPayeeId}
+                ) : null}
+              </div>
+
+              {/* Payee */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Einzahler</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setShowNewPayee((current) => !current)}
                     disabled={!isTrackerMutable}
                   >
-                    <SelectTrigger className="bg-background/90">
-                      <SelectValue placeholder="Einzahler wählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        Bitte wählen
+                    Neu
+                  </Button>
+                </div>
+                <Select
+                  value={payeeId}
+                  onValueChange={setPayeeId}
+                  disabled={!isTrackerMutable}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Einzahler wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>
+                      Bitte wählen
+                    </SelectItem>
+                    {(payeesQuery.data?.items || []).map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
                       </SelectItem>
-                      {(payeesQuery.data?.items || []).map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {showNewPayee ? (
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                      <Input
-                        value={newPayeeName}
-                        onChange={(event) =>
-                          setNewPayeeName(event.target.value)
-                        }
-                        disabled={!isTrackerMutable}
-                        placeholder="Neuer Einzahler"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCreatePayee}
-                        disabled={
-                          createPayeeMutation.isPending || !isTrackerMutable
-                        }
-                      >
-                        {createPayeeMutation.isPending
-                          ? "Speichert..."
-                          : "Anlegen"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setShowNewPayee(false);
-                          setNewPayeeName("");
-                        }}
-                      >
-                        Abbrechen
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              </section>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showNewPayee ? (
+                  <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
+                    <Input
+                      value={newPayeeName}
+                      onChange={(event) => setNewPayeeName(event.target.value)}
+                      disabled={!isTrackerMutable}
+                      placeholder="Neuer Einzahler"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreatePayee}
+                      disabled={
+                        createPayeeMutation.isPending || !isTrackerMutable
+                      }
+                    >
+                      {createPayeeMutation.isPending ? "..." : "Anlegen"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setShowNewPayee(false);
+                        setNewPayeeName("");
+                      }}
+                    >
+                      Abbrechen
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
 
-              <section className="space-y-4 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
-                <div>
-                  <p className="text-sm font-semibold">Rhythmus</p>
-                  <p className="text-sm text-muted-foreground">
-                    Lege Wiederholung und Start des Termins fest.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_140px_180px]">
-                  <div>
+              {/* Frequency */}
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">Rhythmus</p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-2 sm:col-span-1">
                     <Label>Frequenz</Label>
                     <Select
                       value={frequency}
@@ -1175,15 +1185,13 @@ export function SchedulesClient({
                         )
                       }
                     >
-                      <SelectTrigger className="mt-2 bg-background/90">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="monthly">Monatlich</SelectItem>
                         <SelectItem value="yearly">Jährlich</SelectItem>
-                        <SelectItem value="custom_days">
-                          Alle X Tage
-                        </SelectItem>
+                        <SelectItem value="custom_days">Alle X Tage</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1206,96 +1214,34 @@ export function SchedulesClient({
                     />
                   </div>
                 </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <div className="rounded-[1.2rem] border border-border/60 bg-muted/25 p-4 text-sm text-muted-foreground">
-                      Die erste Fälligkeit wird aus Startdatum plus Intervall
-                      berechnet.
-                    </div>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-border/60 bg-background/60 p-4 text-sm">
-                    <p className="text-muted-foreground">Ergebnis</p>
-                    <p className="mt-1 font-medium text-foreground">
-                      {getFrequencyLabel(frequency, normalizedIntervalValue)}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3 rounded-[1.55rem] border border-border/60 bg-background/78 p-5 shadow-sm">
-                <div>
-                  <p className="text-sm font-semibold">Zusatz</p>
-                  <p className="text-sm text-muted-foreground">
-                    Optionale Notiz, die beim Buchen übernommen wird.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notesTemplate">Notizvorlage</Label>
-                  <Textarea
-                    id="notesTemplate"
-                    value={notesTemplate}
-                    onChange={(event) => setNotesTemplate(event.target.value)}
-                    placeholder="Wird beim Buchen übernommen"
-                    rows={3}
-                  />
-                </div>
-              </section>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  {!canCreateContent ? (
-                    <p className="text-sm text-muted-foreground">
-                      Du hast nur Leserechte für diesen Tracker.
-                    </p>
-                  ) : null}
-                  {tracker && !tracker.isActive ? (
-                    <p className="text-sm text-muted-foreground">
-                      Dieser Tracker ist archiviert. Termine können nicht
-                      bearbeitet werden.
-                    </p>
-                  ) : null}
-                </div>
-                <Button
-                  className="min-w-44 rounded-2xl"
-                  size="lg"
-                  disabled={createMutation.isPending || !isTrackerMutable}
-                >
-                  {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {getFrequencyLabel(frequency, normalizedIntervalValue)}
+                </p>
               </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notesTemplate">Notizvorlage (optional)</Label>
+                <Textarea
+                  id="notesTemplate"
+                  value={notesTemplate}
+                  onChange={(event) => setNotesTemplate(event.target.value)}
+                  placeholder="Wird beim Buchen übernommen"
+                  rows={3}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={createMutation.isPending || !isTrackerMutable}
+              >
+                {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
+              </Button>
             </form>
           </div>
-
-          <Card className="border-border/60 bg-gradient-to-br from-background via-background to-muted/25 shadow-sm">
-            <CardHeader className="border-b border-border/50 pb-4">
-              <CardTitle>Fälligkeiten</CardTitle>
-              <CardDescription>
-                Fällige, kommende und abgeschlossene Termine mit derselben
-                Buchungsmechanik wie im Dashboard.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <Tabs defaultValue="due">
-                <TabsList className="mb-5 grid w-full grid-cols-3 rounded-[1rem] bg-muted/50 p-1">
-                  <TabsTrigger value="due">Fällig</TabsTrigger>
-                  <TabsTrigger value="upcoming">Demnächst</TabsTrigger>
-                  <TabsTrigger value="inactive">Abgeschlossen</TabsTrigger>
-                </TabsList>
-                <TabsContent value="due">
-                  {renderItems(dueQuery.data?.items || [])}
-                </TabsContent>
-                <TabsContent value="upcoming">
-                  {renderItems(upcomingQuery.data?.items || [])}
-                </TabsContent>
-                <TabsContent value="inactive">
-                  {renderItems(inactiveQuery.data?.items || [])}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </CardContent>
-      </Card>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

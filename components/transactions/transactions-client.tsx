@@ -4,9 +4,8 @@ import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -31,6 +30,7 @@ const EMPTY_SELECT_VALUE = "none";
 type Tracker = {
   id: string;
   name: string;
+  color?: string;
   currency: string;
   isActive: boolean;
   permission?: "owner" | "admin" | "write" | "read";
@@ -208,12 +208,10 @@ export function TransactionsClient({
     incomeCents: 0,
     expenseCents: 0,
   };
+  const balance = totals.incomeCents - totals.expenseCents;
 
   const editCategories = useMemo(() => {
-    if (!editState) {
-      return [];
-    }
-
+    if (!editState) return [];
     return (categoriesQuery.data?.items || []).filter(
       (item) => item.type === editState.direction || item.type === "transfer",
     );
@@ -255,9 +253,7 @@ export function TransactionsClient({
   }
 
   function submitEdit(id: string) {
-    if (!editState) {
-      return;
-    }
+    if (!editState) return;
 
     if (!editState.date || !editState.amount.trim() || !editState.categoryId) {
       toast.error("Datum, Betrag und Kategorie sind Pflichtfelder");
@@ -279,137 +275,148 @@ export function TransactionsClient({
     });
   }
 
+  const trackers = trackersQuery.data?.items || [];
+  const transactionItems = transactionsQuery.data?.items || [];
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="gap-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <CardTitle>Filter</CardTitle>
-            </div>
-            <Button
-              variant="outline"
-              onClick={resetFilters}
-              className="md:self-end"
-            >
-              Filter zuruecksetzen
-            </Button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <Select value={activeTrackerId} onValueChange={handleTrackerChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tracker" />
-              </SelectTrigger>
-              <SelectContent>
-                {(trackersQuery.data?.items || []).map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="space-y-4">
+      {/* Tracker pills */}
+      {trackers.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {trackers.map((item) => {
+            const isActive = item.id === activeTrackerId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleTrackerChange(item.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                  isActive
+                    ? "border-transparent bg-foreground text-background shadow-sm"
+                    : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
+                )}
+              >
+                {item.color ? (
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                ) : null}
+                {item.name}
+                {!item.isActive ? " (Archiv)" : ""}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
-            <Input
-              placeholder="Suche nach Einzahler, Kategorie, Notiz oder Konto"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-
-            <Select value={direction} onValueChange={setDirection}>
-              <SelectTrigger>
-                <SelectValue placeholder="Alle Typen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>Alle Typen</SelectItem>
-                <SelectItem value="expense">Ausgaben</SelectItem>
-                <SelectItem value="income">Einnahmen</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Alle Kategorien" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>
-                  Alle Kategorien
-                </SelectItem>
-                {(categoriesQuery.data?.items || []).map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={payeeId} onValueChange={setPayeeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Alle Einzahler" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
-                {(payeesQuery.data?.items || []).map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input
-                type="date"
-                value={from}
-                onChange={(event) => setFrom(event.target.value)}
-              />
-              <Input
-                type="date"
-                value={to}
-                onChange={(event) => setTo(event.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Einnahmen
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {formatCurrency(totals.incomeCents, currency, locale)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Ausgaben
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {formatCurrency(totals.expenseCents, currency, locale)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Saldo
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {formatCurrency(
-                totals.incomeCents - totals.expenseCents,
-                currency,
-                locale,
-              )}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle>Historie</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {(transactionsQuery.data?.items || []).length} Treffer
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-emerald-500/12 via-emerald-500/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Einnahmen</p>
+          <p className="mt-1 text-xl font-semibold text-emerald-600">
+            {formatCurrency(totals.incomeCents, currency, locale)}
           </p>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-rose-500/12 via-rose-500/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Ausgaben</p>
+          <p className="mt-1 text-xl font-semibold text-rose-600">
+            {formatCurrency(totals.expenseCents, currency, locale)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/12 via-primary/6 to-transparent p-3">
+          <p className="text-xs text-muted-foreground">Saldo</p>
+          <p
+            className={cn(
+              "mt-1 text-xl font-semibold",
+              balance >= 0 ? "text-foreground" : "text-rose-600",
+            )}
+          >
+            {formatCurrency(balance, currency, locale)}
+          </p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-xl border border-border/60 bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-semibold">Filter</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="h-7 text-xs"
+          >
+            Zurücksetzen
+          </Button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Input
+            placeholder="Suche nach Einzahler, Kategorie, Notiz"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <Select value={direction} onValueChange={setDirection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Alle Typen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Typen</SelectItem>
+              <SelectItem value="expense">Ausgaben</SelectItem>
+              <SelectItem value="income">Einnahmen</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Alle Kategorien" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
+              {(categoriesQuery.data?.items || []).map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={payeeId} onValueChange={setPayeeId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Alle Einzahler" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
+              {(payeesQuery.data?.items || []).map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-2">
+            <Input
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+            <Input
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction table */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <p className="text-sm font-semibold">Historie</p>
+          <span className="text-xs text-muted-foreground">
+            {transactionItems.length} Treffer
+          </span>
+        </div>
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -422,40 +429,52 @@ export function TransactionsClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(transactionsQuery.data?.items || []).map((item) => {
+              {transactionItems.map((item) => {
                 const isEditing = editingTransactionId === item.id;
                 const isOwnEntry = item.createdByUserId === currentUserId;
 
                 return (
                   <Fragment key={item.id}>
                     <TableRow>
-                      <TableCell>{item.date}</TableCell>
+                      <TableCell className="text-sm">{item.date}</TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <div>
+                        <div className="space-y-0.5">
+                          <p className="text-sm">
                             {item.payeeName || item.customPayeeName || "Anonym"}
-                          </div>
+                          </p>
                           {isOwnEntry ? (
-                            <div className="text-xs text-muted-foreground">
-                              Von dir erstellt
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Von dir
+                            </p>
                           ) : null}
                         </div>
                       </TableCell>
-                      <TableCell>{item.categoryName || "-"}</TableCell>
-                      <TableCell className="max-w-sm truncate">
+                      <TableCell className="text-sm">
+                        {item.categoryName || "-"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
                         {item.notes || "-"}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {item.direction === "expense" ? "-" : "+"}
-                        {formatCurrency(item.amountCents, currency, locale)}
+                      <TableCell className="text-right">
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            item.direction === "expense"
+                              ? "text-rose-600"
+                              : "text-emerald-600",
+                          )}
+                        >
+                          {item.direction === "expense" ? "-" : "+"}
+                          {formatCurrency(item.amountCents, currency, locale)}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
                           {item.canEdit ? (
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-7 text-xs"
                               onClick={() => startEdit(item)}
                               disabled={
                                 updateMutation.isPending || !tracker?.isActive
@@ -468,6 +487,7 @@ export function TransactionsClient({
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
                               onClick={() => deleteMutation.mutate(item.id)}
                               disabled={
                                 deleteMutation.isPending || !tracker?.isActive
@@ -481,8 +501,8 @@ export function TransactionsClient({
                     </TableRow>
                     {isEditing && editState ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="bg-muted/20">
-                          <div className="grid gap-4 rounded-2xl border border-border/60 bg-background p-4">
+                        <TableCell colSpan={6} className="bg-muted/20 p-0">
+                          <div className="grid gap-4 rounded-xl border border-border/60 bg-background m-3 p-4">
                             <div className="grid gap-4 md:grid-cols-3">
                               <Input
                                 type="date"
@@ -490,7 +510,10 @@ export function TransactionsClient({
                                 onChange={(event) =>
                                   setEditState((current) =>
                                     current
-                                      ? { ...current, date: event.target.value }
+                                      ? {
+                                          ...current,
+                                          date: event.target.value,
+                                        }
                                       : current,
                                   )
                                 }
@@ -625,19 +648,27 @@ export function TransactionsClient({
                               onChange={(event) =>
                                 setEditState((current) =>
                                   current
-                                    ? { ...current, notes: event.target.value }
+                                    ? {
+                                        ...current,
+                                        notes: event.target.value,
+                                      }
                                     : current,
                                 )
                               }
-                              rows={3}
+                              rows={2}
                               placeholder="Notizen"
                             />
 
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <Button variant="outline" onClick={cancelEdit}>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelEdit}
+                              >
                                 Abbrechen
                               </Button>
                               <Button
+                                size="sm"
                                 onClick={() => submitEdit(item.id)}
                                 disabled={updateMutation.isPending}
                               >
@@ -655,19 +686,19 @@ export function TransactionsClient({
               })}
             </TableBody>
           </Table>
-          {(transactionsQuery.data?.items || []).length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
+          {transactionItems.length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground">
               Keine Transaktionen für die aktuellen Filter gefunden.
-            </p>
+            </div>
           ) : null}
           {tracker && !tracker.isActive ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Dieser Tracker ist archiviert. Transaktionen koennen nicht
-              geändert oder gelöscht werden.
-            </p>
+            <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+              Dieser Tracker ist archiviert. Transaktionen können nicht geändert
+              oder gelöscht werden.
+            </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
