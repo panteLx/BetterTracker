@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -41,6 +42,7 @@ const EMPTY_SELECT_VALUE = "none";
 type Tracker = {
   id: string;
   name: string;
+  description?: string | null;
   color: string;
   currency: string;
   discordWebhookUrl: string;
@@ -361,6 +363,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const recentTransactions = (transactionsQuery.data?.items || []).slice(0, 6);
   const upcomingScheduledItems = forecast.items;
 
+  // Used only for form submission validation — checks that the selected category
+  // matches the current direction (expense/income) to block cross-type submissions.
   const effectiveCategoryId = filteredCategories.some(
     (item) => item.id === categoryId,
   )
@@ -682,6 +686,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
   ];
 
+  if (trackersQuery.isPending) {
+    return null;
+  }
+
   return (
     <>
       {!hasTrackers ? (
@@ -767,6 +775,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               </Button>
             </div>
           </div>
+
+          {tracker?.description ? (
+            <p className="text-sm text-muted-foreground">{tracker.description}</p>
+          ) : null}
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -1020,7 +1032,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             <div className="shrink-0 inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
               <button
                 type="button"
-                onClick={() => setDirection("expense")}
+                onClick={() => {
+                  setDirection("expense");
+                  setCategoryId(EMPTY_SELECT_VALUE);
+                }}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition",
                   direction === "expense"
@@ -1032,7 +1047,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setDirection("income")}
+                onClick={() => {
+                  setDirection("income");
+                  setCategoryId(EMPTY_SELECT_VALUE);
+                }}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition",
                   direction === "income"
@@ -1050,13 +1068,11 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="entry-date">Datum</Label>
-                  <Input
+                  <DatePicker
                     id="entry-date"
-                    type="date"
                     value={date}
-                    onChange={(event) => setDate(event.target.value)}
+                    onChange={setDate}
                     disabled={!isTrackerMutable}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -1091,11 +1107,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   </Button>
                 </div>
                 <Select
-                  value={
-                    effectiveCategoryId === EMPTY_SELECT_VALUE
-                      ? undefined
-                      : effectiveCategoryId
-                  }
+                  value={categoryId}
                   onValueChange={(value) => {
                     setCategoryId(value);
                     if (value !== EMPTY_SELECT_VALUE) {
@@ -1108,6 +1120,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     <SelectValue placeholder="Kategorie wählen" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>
+                      Bitte wählen
+                    </SelectItem>
                     {filteredCategories.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.name}

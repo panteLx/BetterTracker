@@ -23,6 +23,7 @@ const trackerSelect = {
   discordPingRoleId: trackers.discordPingRoleId,
   isActive: trackers.isActive,
   isHidden: trackers.isHidden,
+  isPublic: trackers.isPublic,
   sortOrder: trackers.sortOrder,
   createdAt: trackers.createdAt,
   updatedAt: trackers.updatedAt,

@@ -1,7 +1,7 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte } from "drizzle-orm";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { auditLogs } from "@/lib/db/schema";
+import { auditLogs, user } from "@/lib/db/schema";
 import { ok, serverError } from "@/lib/http";
 
 export async function GET(request: Request) {
@@ -14,15 +14,31 @@ export async function GET(request: Request) {
     const severity = searchParams.get("severity");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const actor = searchParams.get("actor");
+
     const filters = [];
-    if (action) filters.push(eq(auditLogs.action, action));
+    if (action) filters.push(like(auditLogs.action, `%${action}%`));
     if (severity) filters.push(eq(auditLogs.severity, severity as typeof auditLogs.severity.enumValues[number]));
     if (from) filters.push(gte(auditLogs.createdAt, new Date(from)));
-    if (to) filters.push(lte(auditLogs.createdAt, new Date(to)));
+    if (to) filters.push(lte(auditLogs.createdAt, new Date(`${to}T23:59:59`)));
+    if (actor) filters.push(like(user.email, `%${actor}%`));
 
     const items = await db
-      .select()
+      .select({
+        id: auditLogs.id,
+        actorUserId: auditLogs.actorUserId,
+        actorUserName: user.name,
+        actorUserEmail: user.email,
+        action: auditLogs.action,
+        resourceType: auditLogs.resourceType,
+        resourceId: auditLogs.resourceId,
+        severity: auditLogs.severity,
+        metadataJson: auditLogs.metadataJson,
+        ipAddress: auditLogs.ipAddress,
+        createdAt: auditLogs.createdAt,
+      })
       .from(auditLogs)
+      .leftJoin(user, eq(user.id, auditLogs.actorUserId))
       .where(filters.length ? and(...filters) : undefined)
       .orderBy(desc(auditLogs.createdAt))
       .limit(500);
@@ -38,13 +54,7 @@ export async function DELETE(request: Request) {
   if (access.response) return access.response;
 
   try {
-    const { searchParams } = new URL(request.url);
-    const before = searchParams.get("before");
-    if (before) {
-      await db.delete(auditLogs).where(lte(auditLogs.createdAt, new Date(before)));
-    } else {
-      await db.delete(auditLogs);
-    }
+    await db.delete(auditLogs);
     return ok({ success: true });
   } catch (error) {
     return serverError(error);

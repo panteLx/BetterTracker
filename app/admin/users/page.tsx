@@ -17,7 +17,7 @@ export default async function AdminUsersPage() {
       description="Benutzerrollen, Bans und grundlegende Identitätsverwaltung."
     >
       <AdminNav />
-      <AdminUsersClient currentRole={user.role || "user"} />
+      <AdminUsersClient currentRole={user.role || "user"} currentUserId={user.id} />
     </PageContainer>
   );
 }

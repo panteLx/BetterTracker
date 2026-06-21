@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Copy, Globe, Settings2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
@@ -42,6 +42,8 @@ type Tracker = {
   discordPingRoleId: string;
   isActive: boolean;
   isHidden?: boolean;
+  isPublic?: boolean;
+  slug?: string;
   permission?: "owner" | "admin" | "write" | "read";
 };
 
@@ -109,6 +111,7 @@ export function TrackerSettingsClient({
     discordPingRoleId?: string;
     discordDebugEnabled?: boolean;
     isActive?: boolean;
+    isPublic?: boolean;
   }>({});
 
   const trackersQuery = useQuery({
@@ -169,6 +172,7 @@ export function TrackerSettingsClient({
     discordDebugEnabled:
       draft.discordDebugEnabled ?? tracker?.discordDebugEnabled ?? false,
     isActive: draft.isActive ?? tracker?.isActive ?? true,
+    isPublic: draft.isPublic ?? tracker?.isPublic ?? false,
   };
 
   const categories = useMemo(
@@ -191,6 +195,7 @@ export function TrackerSettingsClient({
       discordPingRoleId: string;
       discordDebugEnabled: boolean;
       isActive: boolean;
+      isPublic: boolean;
     }) =>
       fetchJson<{ item: Tracker }>(`/api/trackers/${payload.id}`, {
         method: "PATCH",
@@ -203,6 +208,7 @@ export function TrackerSettingsClient({
           discordPingRoleId: payload.discordPingRoleId,
           discordDebugEnabled: payload.discordDebugEnabled,
           isActive: payload.isActive,
+          isPublic: payload.isPublic,
         }),
       }),
     onSuccess: ({ item }) => {
@@ -225,6 +231,33 @@ export function TrackerSettingsClient({
         error instanceof Error
           ? error.message
           : "Tracker konnte nicht gespeichert werden",
+      );
+    },
+  });
+
+  const hideTrackerMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetchJson<{ item: Tracker }>(`/api/trackers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isHidden: true }),
+      }),
+    onSuccess: () => {
+      queryClient.setQueryData<{ items: Tracker[] } | undefined>(
+        ["trackers"],
+        (current) => ({
+          items: (current?.items || []).filter(
+            (entry) => entry.id !== activeTrackerId,
+          ),
+        }),
+      );
+      toast.success("Tracker ausgeblendet");
+      router.push("/");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Tracker konnte nicht ausgeblendet werden",
       );
     },
   });
@@ -385,6 +418,7 @@ export function TrackerSettingsClient({
       discordPingRoleId: trackerDraft.discordPingRoleId.trim(),
       discordDebugEnabled: trackerDraft.discordDebugEnabled,
       isActive: trackerDraft.isActive,
+      isPublic: trackerDraft.isPublic,
     });
   }
 
@@ -463,10 +497,10 @@ export function TrackerSettingsClient({
       </div>
 
       {tracker ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           {/* Left: tracker form */}
           <div className="rounded-xl border border-border/60 bg-card p-4">
-            <p className="mb-4 text-sm font-semibold">Tracker-Settings</p>
+            <p className="mb-4 text-sm font-semibold">Tracker-Einstellungen</p>
             <form onSubmit={handleTrackerSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="tracker-name">Name</Label>
@@ -577,22 +611,30 @@ export function TrackerSettingsClient({
 
                 <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
                   <div>
-                    <p className="text-sm font-medium">Tracker aktiv</p>
+                    <p className="text-sm font-medium">Tracker archivieren</p>
                     <p className="text-xs text-muted-foreground">
-                      Archivierte Tracker sind gesperrt.
+                      Es können keine neuen Buchungen angelegt werden.
                     </p>
                   </div>
                   <Switch
-                    checked={trackerDraft.isActive}
+                    checked={!trackerDraft.isActive}
                     onCheckedChange={(value) =>
                       setDraft((current) => ({
                         ...current,
-                        isActive: value,
+                        isActive: !value,
                       }))
                     }
                   />
                 </div>
               </div>
+
+              <PublicShareToggle
+                isPublic={trackerDraft.isPublic}
+                slug={tracker?.slug ?? ""}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, isPublic: value }))
+                }
+              />
 
               <Button
                 type="submit"
@@ -603,19 +645,41 @@ export function TrackerSettingsClient({
                   ? "Speichert..."
                   : "Tracker speichern"}
               </Button>
-
-              {!tracker.isActive ? (
-                <p className="text-xs text-muted-foreground">
-                  Dieser Tracker ist archiviert. Falls die API nur eine
-                  Reaktivierung zulässt, wird der Rest beim Speichern
-                  abgewiesen.
-                </p>
-              ) : null}
             </form>
+
+            {tracker.permission === "owner" ? (
+              <div className="mt-4 border-t border-border/60 pt-4">
+                <p className="mb-4 mt-4 text-sm font-semibold">Gefahrenzone</p>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={hideTrackerMutation.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Tracker "${tracker.name}" wirklich für löschen? Er kann nur von einem Administrator wiederhergestellt werden.`,
+                      )
+                    ) {
+                      hideTrackerMutation.mutate(tracker.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {hideTrackerMutation.isPending
+                    ? "Wird gelöscht…"
+                    : "Tracker löschen"}
+                </Button>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Diese Aktion kann durch User nicht rückgängig gemacht werden.
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {/* Right: members, categories, payees */}
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             {/* Members */}
             <div className="rounded-xl border border-border/60 bg-card p-4">
               <p className="mb-4 text-sm font-semibold">Freigaben</p>
@@ -695,12 +759,12 @@ export function TrackerSettingsClient({
                   <TableBody>
                     {(membersQuery.data?.items || []).map((member) => (
                       <TableRow key={member.id}>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">
+                        <TableCell className="min-w-0">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">
                               {member.userName}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="truncate text-xs text-muted-foreground">
                               {member.userEmail}
                             </p>
                           </div>
@@ -867,6 +931,65 @@ export function TrackerSettingsClient({
               </div>
             </div>
           </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PublicShareToggle({
+  isPublic,
+  slug,
+  onChange,
+}: {
+  isPublic: boolean;
+  slug: string;
+  onChange: (value: boolean) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function copyLink() {
+    const url = `${window.location.origin}/t/${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+        <div className="flex items-center gap-2.5">
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium">Öffentlich freigeben</p>
+            <p className="text-xs text-muted-foreground">
+              Lesezugriff für Gäste ohne Anmeldung.
+            </p>
+          </div>
+        </div>
+        <Switch checked={isPublic} onCheckedChange={onChange} />
+      </div>
+
+      {isPublic && slug ? (
+        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2.5">
+          <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+            {typeof window !== "undefined"
+              ? `${window.location.origin}/t/${slug}`
+              : `/t/${slug}`}
+          </p>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="shrink-0 rounded-md p-1 hover:bg-muted"
+            aria-label="Link kopieren"
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
         </div>
       ) : null}
     </div>

@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdmin, requireSuperAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema";
-import { badRequest, notFound, ok, serverError } from "@/lib/http";
+import { badRequest, forbidden, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 
@@ -54,6 +54,41 @@ export async function PATCH(
     });
 
     return ok({ item: updated });
+  } catch (error) {
+    return serverError(error);
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const access = await requireSuperAdmin(request.headers);
+  if (access.response) return access.response;
+
+  if (access.user!.id === id) {
+    return forbidden("Cannot delete your own account");
+  }
+
+  try {
+    const existingRows = await db.select().from(user).where(eq(user.id, id)).limit(1);
+    const existing = existingRows[0];
+    if (!existing) return notFound("User not found");
+
+    await db.delete(user).where(eq(user.id, id));
+
+    await logAuditEvent({
+      actorUserId: access.user!.id,
+      action: "admin_user_deleted",
+      resourceType: "user",
+      resourceId: id,
+      metadata: { name: existing.name, email: existing.email },
+      severity: "warning",
+      ...(await getRequestAuditContext()),
+    });
+
+    return ok({ success: true });
   } catch (error) {
     return serverError(error);
   }

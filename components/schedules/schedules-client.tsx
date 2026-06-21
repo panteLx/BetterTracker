@@ -8,6 +8,7 @@ import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -659,12 +660,9 @@ export function SchedulesClient({
 
               {isReactivating ? (
                 <div className="mt-4 grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={reactivationDate}
-                    onChange={(event) =>
-                      setReactivationDate(event.target.value)
-                    }
+                    onChange={setReactivationDate}
                   />
                   <Button
                     type="button"
@@ -822,14 +820,11 @@ export function SchedulesClient({
                       </SelectContent>
                     </Select>
                   </div>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={editState.nextDueDate}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       setEditState((current) =>
-                        current
-                          ? { ...current, nextDueDate: event.target.value }
-                          : current,
+                        current ? { ...current, nextDueDate: value } : current,
                       )
                     }
                   />
@@ -1206,11 +1201,10 @@ export function SchedulesClient({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nextDueDate">Startdatum</Label>
-                    <Input
+                    <DatePicker
                       id="nextDueDate"
-                      type="date"
                       value={nextDueDate}
-                      onChange={(event) => setNextDueDate(event.target.value)}
+                      onChange={setNextDueDate}
                     />
                   </div>
                 </div>

@@ -16,7 +16,7 @@ type AdminUser = {
   banned: boolean;
 };
 
-export function AdminUsersClient({ currentRole }: { currentRole: string }) {
+export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: string; currentUserId: string }) {
   const queryClient = useQueryClient();
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
@@ -53,6 +53,34 @@ export function AdminUsersClient({ currentRole }: { currentRole: string }) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetchJson(`/api/admin/users/${id}`, { method: "DELETE" }),
+    onSuccess: (_, id) => {
+      toast.success("Benutzer gelöscht");
+      queryClient.setQueryData<{ items: AdminUser[] } | undefined>(
+        ["admin-users"],
+        (current) =>
+          current
+            ? { items: current.items.filter((u) => u.id !== id) }
+            : current,
+      );
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen");
+    },
+  });
+
+  function handleDelete(item: AdminUser) {
+    if (
+      window.confirm(
+        `Benutzer "${item.name}" (${item.email}) wirklich löschen?\n\nAlle Buchungen, Schedules und Tracker-Mitgliedschaften dieses Benutzers werden unwiderruflich gelöscht.`,
+      )
+    ) {
+      deleteMutation.mutate(item.id);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -82,7 +110,7 @@ export function AdminUsersClient({ currentRole }: { currentRole: string }) {
                         patchMutation.mutate({ id: item.id, payload: { role: value } })
                       }
                     >
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-36">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -95,22 +123,36 @@ export function AdminUsersClient({ currentRole }: { currentRole: string }) {
                     item.role
                   )}
                 </TableCell>
-                <TableCell>{item.banned ? "Banned" : "Aktiv"}</TableCell>
+                <TableCell>{item.banned ? "Gesperrt" : "Aktiv"}</TableCell>
                 <TableCell className="text-right">
-                  {currentRole === "superadmin" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        banMutation.mutate({
-                          id: item.id,
-                          action: item.banned ? "unban" : "ban",
-                        })
-                      }
-                    >
-                      {item.banned ? "Unban" : "Ban"}
-                    </Button>
-                  ) : null}
+                  <div className="flex items-center justify-end gap-2">
+                    {currentRole === "superadmin" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          banMutation.mutate({
+                            id: item.id,
+                            action: item.banned ? "unban" : "ban",
+                          })
+                        }
+                        disabled={banMutation.isPending}
+                      >
+                        {item.banned ? "Entsperren" : "Sperren"}
+                      </Button>
+                    ) : null}
+                    {currentRole === "superadmin" && item.id !== currentUserId ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleDelete(item)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        Löschen
+                      </Button>
+                    ) : null}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
