@@ -18,7 +18,7 @@ export default async function AdminLogsPage() {
       description="Audit-Log mit den letzten System- und Mutationsereignissen."
     >
       <AdminNav />
-      <AdminLogsClient locale={env.defaultLocale} timezone={env.timezone} />
+      <AdminLogsClient locale={env.defaultLocale} timezone={env.timezone} currentRole={user.role} />
     </PageContainer>
   );
 }

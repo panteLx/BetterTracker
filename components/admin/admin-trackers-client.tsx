@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Copy, Globe } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
@@ -11,11 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 type Tracker = {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
   color: string;
   currency: string;
   discordWebhookUrl: string;
@@ -23,19 +25,10 @@ type Tracker = {
   discordPingRoleId: string;
   isActive: boolean;
   isHidden: boolean;
+  isPublic: boolean;
 };
 
-type TrackerDraft = Pick<
-  Tracker,
-  | "name"
-  | "color"
-  | "currency"
-  | "discordWebhookUrl"
-  | "discordDebugEnabled"
-  | "discordPingRoleId"
-  | "isActive"
-  | "isHidden"
->;
+type TrackerDraft = Omit<Tracker, "id" | "slug">;
 
 export function AdminTrackersClient() {
   const queryClient = useQueryClient();
@@ -90,24 +83,23 @@ export function AdminTrackersClient() {
   function updateDraft(id: string, patch: Partial<TrackerDraft>) {
     setDrafts((current) => ({
       ...current,
-      [id]: {
-        ...current[id],
-        ...patch,
-      },
+      [id]: { ...current[id], ...patch },
     }));
   }
 
   function getDraft(item: Tracker): TrackerDraft {
+    const d = drafts[item.id] ?? {};
     return {
-      name: drafts[item.id]?.name ?? item.name,
-      color: drafts[item.id]?.color ?? item.color,
-      currency: drafts[item.id]?.currency ?? item.currency,
-      discordWebhookUrl: drafts[item.id]?.discordWebhookUrl ?? item.discordWebhookUrl,
-      discordDebugEnabled:
-        drafts[item.id]?.discordDebugEnabled ?? item.discordDebugEnabled,
-      discordPingRoleId: drafts[item.id]?.discordPingRoleId ?? item.discordPingRoleId,
-      isActive: drafts[item.id]?.isActive ?? item.isActive,
-      isHidden: drafts[item.id]?.isHidden ?? item.isHidden,
+      name: d.name ?? item.name,
+      description: d.description !== undefined ? d.description : item.description,
+      color: d.color ?? item.color,
+      currency: d.currency ?? item.currency,
+      discordWebhookUrl: d.discordWebhookUrl ?? item.discordWebhookUrl,
+      discordDebugEnabled: d.discordDebugEnabled ?? item.discordDebugEnabled,
+      discordPingRoleId: d.discordPingRoleId ?? item.discordPingRoleId,
+      isActive: d.isActive ?? item.isActive,
+      isHidden: d.isHidden ?? item.isHidden,
+      isPublic: d.isPublic ?? item.isPublic,
     };
   }
 
@@ -128,142 +120,162 @@ export function AdminTrackersClient() {
           const draft = getDraft(item);
           const isExpanded = expandedTrackers[item.id] ?? false;
 
+          const statusParts = [
+            draft.isActive ? "Aktiv" : "Archiviert",
+            draft.isHidden ? "Ausgeblendet" : "Sichtbar",
+            draft.isPublic ? "Öffentlich" : null,
+          ].filter(Boolean).join(" · ");
+
           return (
-            <div
-              key={item.id}
-              className="rounded-2xl border border-border/60"
-            >
+            <div key={item.id} className="rounded-xl border border-border/60">
+              {/* Collapsed header */}
               <button
                 type="button"
                 className="flex w-full items-center justify-between gap-3 p-4 text-left"
                 onClick={() => toggleExpanded(item.id)}
               >
-                <div className="min-w-0">
-                  <p className="font-medium">{draft.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {item.slug} | {draft.currency} | {draft.isActive ? "Aktiv" : "Archiviert"} |{" "}
-                    {draft.isHidden ? "Ausgeblendet" : "Sichtbar"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-8 w-8 rounded-xl border border-border/60"
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className="h-7 w-7 shrink-0 rounded-full border border-black/10 shadow-sm"
                     style={{ backgroundColor: draft.color }}
                   />
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{isExpanded ? "Weniger" : "Bearbeiten"}</span>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                    />
+                  <div className="min-w-0">
+                    <p className="font-medium">{draft.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.slug} · {draft.currency} · {statusParts}
+                    </p>
                   </div>
                 </div>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                />
               </button>
+
               {isExpanded ? (
-                <div className="space-y-3 border-t border-border/60 p-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`tracker-name-${item.id}`}>Name</Label>
-                    <Input
-                      id={`tracker-name-${item.id}`}
-                      value={draft.name}
-                      onChange={(e) => updateDraft(item.id, { name: e.target.value })}
-                    />
+                <div className="space-y-4 border-t border-border/60 p-4">
+                  {/* Basics */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`name-${item.id}`}>Name</Label>
+                      <Input
+                        id={`name-${item.id}`}
+                        value={draft.name}
+                        onChange={(e) => updateDraft(item.id, { name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`currency-${item.id}`}>Währung</Label>
+                      <Input
+                        id={`currency-${item.id}`}
+                        value={draft.currency}
+                        onChange={(e) =>
+                          updateDraft(item.id, { currency: e.target.value.toUpperCase() })
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`tracker-currency-${item.id}`}>Waehrung</Label>
-                    <Input
-                      id={`tracker-currency-${item.id}`}
-                      value={draft.currency}
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`description-${item.id}`}>Beschreibung</Label>
+                    <Textarea
+                      id={`description-${item.id}`}
+                      value={draft.description ?? ""}
                       onChange={(e) =>
-                        updateDraft(item.id, { currency: e.target.value.toUpperCase() })
+                        updateDraft(item.id, { description: e.target.value || null })
                       }
+                      rows={2}
+                      placeholder="Optional"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`tracker-color-${item.id}`}>Farbe</Label>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`color-${item.id}`}>Farbe</Label>
                     <TrackerColorPicker
-                      id={`tracker-color-${item.id}`}
+                      id={`color-${item.id}`}
                       value={draft.color}
                       onChange={(value) => updateDraft(item.id, { color: value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`tracker-role-${item.id}`}>Discord Ping Role ID</Label>
-                    <Input
-                      id={`tracker-role-${item.id}`}
-                      value={draft.discordPingRoleId}
-                      onChange={(e) =>
-                        updateDraft(item.id, { discordPingRoleId: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`tracker-webhook-${item.id}`}>Discord Webhook URL</Label>
-                    <Input
-                      id={`tracker-webhook-${item.id}`}
-                      value={draft.discordWebhookUrl}
-                      onChange={(e) =>
-                        updateDraft(item.id, { discordWebhookUrl: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-                    <div>
-                      <p className="font-medium">Discord Debug</p>
-                      <p className="text-sm text-muted-foreground">
-                        Zusätzliche Discord-Debugdaten für diesen Tracker senden
-                      </p>
+
+                  {/* Discord */}
+                  <div className="space-y-3 rounded-xl border border-border/60 p-3.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Discord</p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`webhook-${item.id}`}>Webhook URL</Label>
+                      <Input
+                        id={`webhook-${item.id}`}
+                        value={draft.discordWebhookUrl}
+                        onChange={(e) =>
+                          updateDraft(item.id, { discordWebhookUrl: e.target.value })
+                        }
+                      />
                     </div>
-                    <Switch
-                      checked={draft.discordDebugEnabled}
-                      onCheckedChange={(value) =>
-                        updateDraft(item.id, { discordDebugEnabled: value })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-                    <div>
-                      <p className="font-medium">Tracker aktiv</p>
-                      <p className="text-sm text-muted-foreground">
-                        Archivierte Tracker bleiben erhalten, sind aber deaktiviert
-                      </p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`role-${item.id}`}>Ping Role ID</Label>
+                      <Input
+                        id={`role-${item.id}`}
+                        value={draft.discordPingRoleId}
+                        onChange={(e) =>
+                          updateDraft(item.id, { discordPingRoleId: e.target.value })
+                        }
+                      />
                     </div>
-                    <Switch
-                      checked={draft.isActive}
-                      onCheckedChange={(value) => updateDraft(item.id, { isActive: value })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
-                    <div>
-                      <p className="font-medium">Tracker ausblenden</p>
-                      <p className="text-sm text-muted-foreground">
-                        Ausgeblendete Tracker sind für normale Benutzer nicht mehr sichtbar.
-                      </p>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5">
+                      <p className="text-sm">Discord Debug</p>
+                      <Switch
+                        checked={draft.discordDebugEnabled}
+                        onCheckedChange={(v) => updateDraft(item.id, { discordDebugEnabled: v })}
+                      />
                     </div>
-                    <Switch
-                      checked={draft.isHidden}
-                      onCheckedChange={(value) => updateDraft(item.id, { isHidden: value })}
-                    />
                   </div>
-                  <div className="flex flex-wrap gap-3">
+
+                  {/* Status toggles */}
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                      <div>
+                        <p className="text-sm font-medium">Archiviert</p>
+                        <p className="text-xs text-muted-foreground">Buchungen deaktiviert</p>
+                      </div>
+                      <Switch
+                        checked={!draft.isActive}
+                        onCheckedChange={(v) => updateDraft(item.id, { isActive: !v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                      <div>
+                        <p className="text-sm font-medium">Ausgeblendet</p>
+                        <p className="text-xs text-muted-foreground">Für alle User unsichtbar</p>
+                      </div>
+                      <Switch
+                        checked={draft.isHidden}
+                        onCheckedChange={(v) => updateDraft(item.id, { isHidden: v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                      <div>
+                        <p className="text-sm font-medium">Öffentlich</p>
+                        <p className="text-xs text-muted-foreground">Lesbar ohne Login</p>
+                      </div>
+                      <Switch
+                        checked={draft.isPublic}
+                        onCheckedChange={(v) => updateDraft(item.id, { isPublic: v })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Public link */}
+                  {draft.isPublic ? (
+                    <PublicLinkDisplay slug={item.slug} />
+                  ) : null}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
                     <Button
                       type="button"
-                      onClick={() =>
-                        patchMutation.mutate({
-                          id: item.id,
-                          payload: draft,
-                        })
-                      }
+                      onClick={() => patchMutation.mutate({ id: item.id, payload: getDraft(item) })}
                       disabled={patchMutation.isPending}
                     >
-                      Tracker speichern
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => testDiscordMutation.mutate(item.id)}
-                      disabled={testDiscordMutation.isPending}
-                    >
-                      Discord testen
+                      Speichern
                     </Button>
                     <Button
                       type="button"
@@ -273,6 +285,14 @@ export function AdminTrackersClient() {
                     >
                       Mich freigeben
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => testDiscordMutation.mutate(item.id)}
+                      disabled={testDiscordMutation.isPending}
+                    >
+                      Discord testen
+                    </Button>
                   </div>
                 </div>
               ) : null}
@@ -281,5 +301,36 @@ export function AdminTrackersClient() {
         })}
       </CardContent>
     </Card>
+  );
+}
+
+function PublicLinkDisplay({ slug }: { slug: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== "undefined" ? `${window.location.origin}/t/${slug}` : `/t/${slug}`;
+
+  function copy() {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2.5">
+      <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">{url}</p>
+      <button
+        type="button"
+        onClick={copy}
+        className="shrink-0 rounded-md p-1 hover:bg-muted"
+        aria-label="Link kopieren"
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+        ) : (
+          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+      </button>
+    </div>
   );
 }

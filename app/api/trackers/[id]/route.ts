@@ -27,6 +27,7 @@ export async function PATCH(
       discordPingRoleId?: string;
       isActive?: boolean;
       isHidden?: boolean;
+      isPublic?: boolean;
     }>(request);
 
     const currentTracker = await getTrackerById(id);
@@ -46,6 +47,7 @@ export async function PATCH(
         body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),
       isActive: body.isActive,
       isHidden: body.isHidden,
+      isPublic: body.isPublic,
       updatedAt: new Date(),
     };
 

@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
+import { canMutateTrackerResource, canWriteTracker, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, payees, schedules, transactions } from "@/lib/db/schema";
 import { addInterval, classifyScheduleStatus } from "@/lib/date";
@@ -157,7 +157,9 @@ function hydrateSchedule(
     isComplete,
     canEdit: canMutate,
     canDelete: canMutate,
-    canCreateTransaction: canMutate && schedule.isActive && isComplete,
+    // Booking creates a new transaction — any write+ member may book any active schedule,
+    // regardless of who created it.
+    canCreateTransaction: canWriteTracker(permission) && schedule.isActive && isComplete,
   };
 }
 

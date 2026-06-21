@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     "/*": ["./drizzle/**/*"],
   },
   reactCompiler: false,
-  allowedDevOrigins: ["*"],
+  allowedDevOrigins: ["192.168.*.*"],
   images: {
     qualities: [75],
   },

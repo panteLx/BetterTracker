@@ -69,7 +69,7 @@ export function TrackerColorPicker({
             <PaintBucket className="h-4 w-4" />
             Tracker-Farbe
           </div>
-          <HexColorPicker color={value} onChange={onChange} className="!h-40 !w-full" />
+          <HexColorPicker color={value} onChange={onChange} className="h-40! w-full!" />
           <div className="grid grid-cols-4 gap-2">
             {TRACKER_COLOR_PRESETS.map((preset) => (
               <button

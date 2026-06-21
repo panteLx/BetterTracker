@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -394,16 +396,8 @@ export function TransactionsClient({
             </SelectContent>
           </Select>
           <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-2">
-            <Input
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-            />
-            <Input
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-            />
+            <DatePicker value={from} onChange={setFrom} placeholder="Von" />
+            <DatePicker value={to} onChange={setTo} placeholder="Bis" />
           </div>
         </div>
       </div>
@@ -504,160 +498,183 @@ export function TransactionsClient({
                         <TableCell colSpan={6} className="bg-muted/20 p-0">
                           <div className="grid gap-4 rounded-xl border border-border/60 bg-background m-3 p-4">
                             <div className="grid gap-4 md:grid-cols-3">
-                              <Input
-                                type="date"
-                                value={editState.date}
-                                onChange={(event) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          date: event.target.value,
-                                        }
-                                      : current,
-                                  )
-                                }
-                              />
-                              <Input
-                                value={editState.amount}
-                                onChange={(event) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          amount: event.target.value,
-                                        }
-                                      : current,
-                                  )
-                                }
-                                placeholder="12,50"
-                              />
-                              <Select
-                                value={editState.direction}
-                                onValueChange={(value) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          direction: value as
-                                            | "expense"
-                                            | "income",
-                                          categoryId: "",
-                                        }
-                                      : current,
-                                  )
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="expense">
-                                    Ausgabe
-                                  </SelectItem>
-                                  <SelectItem value="income">
-                                    Einnahme
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="space-y-1.5">
+                                <Label>Datum</Label>
+                                <DatePicker
+                                  value={editState.date}
+                                  onChange={(value) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? { ...current, date: value }
+                                        : current,
+                                    )
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Betrag</Label>
+                                <Input
+                                  value={editState.amount}
+                                  onChange={(event) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            amount: event.target.value,
+                                          }
+                                        : current,
+                                    )
+                                  }
+                                  placeholder="12,50"
+                                  inputMode="decimal"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Typ</Label>
+                                <Select
+                                  value={editState.direction}
+                                  onValueChange={(value) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            direction: value as
+                                              | "expense"
+                                              | "income",
+                                            categoryId: EMPTY_SELECT_VALUE,
+                                          }
+                                        : current,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="expense">
+                                      Ausgabe
+                                    </SelectItem>
+                                    <SelectItem value="income">
+                                      Einnahme
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
-                              <Select
-                                value={editState.categoryId || undefined}
-                                onValueChange={(value) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? { ...current, categoryId: value }
-                                      : current,
-                                  )
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Kategorie wählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {editCategories.map((category) => (
-                                    <SelectItem
-                                      key={category.id}
-                                      value={category.id}
-                                    >
-                                      {category.name}
+                              <div className="space-y-1.5">
+                                <Label>Kategorie</Label>
+                                <Select
+                                  value={
+                                    editState.categoryId || EMPTY_SELECT_VALUE
+                                  }
+                                  onValueChange={(value) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? { ...current, categoryId: value }
+                                        : current,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EMPTY_SELECT_VALUE}>
+                                      Bitte wählen
                                     </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              <Select
-                                value={editState.payeeId}
-                                onValueChange={(value) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          payeeId: value,
-                                          customPayeeName:
-                                            value === EMPTY_SELECT_VALUE
-                                              ? current.customPayeeName
-                                              : "",
-                                        }
-                                      : current,
-                                  )
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Einzahler wählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value={EMPTY_SELECT_VALUE}>
-                                    Anonym / Freitext
-                                  </SelectItem>
-                                  {(payeesQuery.data?.items || []).map(
-                                    (payee) => (
+                                    {editCategories.map((category) => (
                                       <SelectItem
-                                        key={payee.id}
-                                        value={payee.id}
+                                        key={category.id}
+                                        value={category.id}
                                       >
-                                        {payee.name}
+                                        {category.name}
                                       </SelectItem>
-                                    ),
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label>Einzahler</Label>
+                                <Select
+                                  value={editState.payeeId}
+                                  onValueChange={(value) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            payeeId: value,
+                                            customPayeeName:
+                                              value === EMPTY_SELECT_VALUE
+                                                ? current.customPayeeName
+                                                : "",
+                                          }
+                                        : current,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EMPTY_SELECT_VALUE}>
+                                      Anonym / Freitext
+                                    </SelectItem>
+                                    {(payeesQuery.data?.items || []).map(
+                                      (payee) => (
+                                        <SelectItem
+                                          key={payee.id}
+                                          value={payee.id}
+                                        >
+                                          {payee.name}
+                                        </SelectItem>
+                                      ),
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
 
                             {editState.payeeId === EMPTY_SELECT_VALUE ? (
-                              <Input
-                                value={editState.customPayeeName}
+                              <div className="space-y-1.5">
+                                <Label>Einmaliger Einzahler</Label>
+                                <Input
+                                  value={editState.customPayeeName}
+                                  onChange={(event) =>
+                                    setEditState((current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            customPayeeName: event.target.value,
+                                          }
+                                        : current,
+                                    )
+                                  }
+                                  placeholder="z. B. Bäckerei Müller"
+                                />
+                              </div>
+                            ) : null}
+
+                            <div className="space-y-1.5">
+                              <Label>Notizen</Label>
+                              <Textarea
+                                value={editState.notes}
                                 onChange={(event) =>
                                   setEditState((current) =>
                                     current
                                       ? {
                                           ...current,
-                                          customPayeeName: event.target.value,
+                                          notes: event.target.value,
                                         }
                                       : current,
                                   )
                                 }
-                                placeholder="Einmaliger Einzahler"
+                                rows={2}
+                                placeholder="Optional"
                               />
-                            ) : null}
-
-                            <Textarea
-                              value={editState.notes}
-                              onChange={(event) =>
-                                setEditState((current) =>
-                                  current
-                                    ? {
-                                        ...current,
-                                        notes: event.target.value,
-                                      }
-                                    : current,
-                                )
-                              }
-                              rows={2}
-                              placeholder="Notizen"
-                            />
+                            </div>
 
                             <div className="flex justify-end gap-2">
                               <Button

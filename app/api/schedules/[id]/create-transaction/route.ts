@@ -1,5 +1,5 @@
 import { createTransactionFromSchedule } from "@/lib/services/schedule-service";
-import { canMutateTrackerResource } from "@/lib/auth/permissions";
+import { canWriteTracker } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -26,13 +26,7 @@ export async function POST(
   if (!schedule) return notFound("Schedule not found");
   const access = await requireTrackerReadAccess(request.headers, schedule.trackerId);
   if (access.response) return access.response;
-  if (
-    !canMutateTrackerResource(
-      access.trackerAccess!.permission,
-      access.user!.id,
-      schedule.createdByUserId
-    )
-  ) {
+  if (!canWriteTracker(access.trackerAccess!.permission)) {
     return forbidden();
   }
   if (!access.trackerAccess!.tracker.isActive) {
