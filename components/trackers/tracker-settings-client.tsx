@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Copy, Globe, Settings2, Trash2, Upload } from "lucide-react";
+import { Archive, ArrowLeft, Check, Copy, Globe, Settings2, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
@@ -52,11 +52,13 @@ type Category = {
   id: string;
   name: string;
   type: "expense" | "income" | "transfer";
+  isActive: boolean;
 };
 
 type Payee = {
   id: string;
   name: string;
+  isActive: boolean;
 };
 
 type TrackerMember = {
@@ -312,6 +314,54 @@ export function TrackerSettingsClient({
         error instanceof Error
           ? error.message
           : "Einzahler konnte nicht gelöscht werden",
+      );
+    },
+  });
+
+  const archiveCategoryMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      fetchJson<{ item: Category }>(`/api/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Category[] } | undefined>(
+        ["categories", activeTrackerId],
+        (current) => ({
+          items: (current?.items || []).map((entry) =>
+            entry.id === item.id ? { ...entry, ...item } : entry,
+          ),
+        }),
+      );
+      toast.success(item.isActive ? "Kategorie reaktiviert" : "Kategorie archiviert");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+      );
+    },
+  });
+
+  const archivePayeeMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      fetchJson<{ item: Payee }>(`/api/payees/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Payee[] } | undefined>(
+        ["payees", activeTrackerId],
+        (current) => ({
+          items: (current?.items || []).map((entry) =>
+            entry.id === item.id ? { ...entry, ...item } : entry,
+          ),
+        }),
+      );
+      toast.success(item.isActive ? "Einzahler reaktiviert" : "Einzahler archiviert");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
       );
     },
   });
@@ -881,9 +931,12 @@ export function TrackerSettingsClient({
                   </TableHeader>
                   <TableBody>
                     {categories.map((item) => (
-                      <TableRow key={item.id}>
+                      <TableRow key={item.id} className={cn(!item.isActive && "opacity-50")}>
                         <TableCell className="text-sm font-medium">
-                          {item.name}
+                          <span className={cn(!item.isActive && "line-through")}>{item.name}</span>
+                          {!item.isActive ? (
+                            <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Archiviert</span>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <span
@@ -900,22 +953,39 @@ export function TrackerSettingsClient({
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() =>
-                              handleDeleteCategory(item.id, item.name)
-                            }
-                            disabled={
-                              deleteCategoryMutation.isPending ||
-                              !tracker.isActive
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Löschen
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            {(tracker.permission === "owner" || tracker.permission === "admin") ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() =>
+                                  archiveCategoryMutation.mutate({ id: item.id, isActive: !item.isActive })
+                                }
+                                disabled={archiveCategoryMutation.isPending}
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                                {item.isActive ? "Archivieren" : "Reaktivieren"}
+                              </Button>
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              onClick={() =>
+                                handleDeleteCategory(item.id, item.name)
+                              }
+                              disabled={
+                                deleteCategoryMutation.isPending ||
+                                !tracker.isActive
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Löschen
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -942,26 +1012,46 @@ export function TrackerSettingsClient({
                   </TableHeader>
                   <TableBody>
                     {payees.map((item) => (
-                      <TableRow key={item.id}>
+                      <TableRow key={item.id} className={cn(!item.isActive && "opacity-50")}>
                         <TableCell className="text-sm font-medium">
-                          {item.name}
+                          <span className={cn(!item.isActive && "line-through")}>{item.name}</span>
+                          {!item.isActive ? (
+                            <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Archiviert</span>
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() =>
-                              handleDeletePayee(item.id, item.name)
-                            }
-                            disabled={
-                              deletePayeeMutation.isPending || !tracker.isActive
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Löschen
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            {(tracker.permission === "owner" || tracker.permission === "admin") ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() =>
+                                  archivePayeeMutation.mutate({ id: item.id, isActive: !item.isActive })
+                                }
+                                disabled={archivePayeeMutation.isPending}
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                                {item.isActive ? "Archivieren" : "Reaktivieren"}
+                              </Button>
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              onClick={() =>
+                                handleDeletePayee(item.id, item.name)
+                              }
+                              disabled={
+                                deletePayeeMutation.isPending || !tracker.isActive
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Löschen
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -42,11 +42,13 @@ type Category = {
   id: string;
   name: string;
   type: "expense" | "income" | "transfer";
+  isActive: boolean;
 };
 
 type Payee = {
   id: string;
   name: string;
+  isActive: boolean;
 };
 
 type Schedule = {
@@ -214,8 +216,10 @@ export function SchedulesClient({
   });
 
   const filteredCategories = (categoriesQuery.data?.items || []).filter(
-    (item) => item.type === direction || item.type === "transfer",
+    (item) => item.isActive && (item.type === direction || item.type === "transfer"),
   );
+
+  const activePayees = (payeesQuery.data?.items || []).filter((item) => item.isActive);
   const parsedIntervalValue = Number(intervalValue);
   const normalizedIntervalValue =
     Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
@@ -1126,7 +1130,7 @@ export function SchedulesClient({
                     <SelectItem value={EMPTY_SELECT_VALUE}>
                       Bitte wählen
                     </SelectItem>
-                    {(payeesQuery.data?.items || []).map((item) => (
+                    {activePayees.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.name}
                       </SelectItem>
