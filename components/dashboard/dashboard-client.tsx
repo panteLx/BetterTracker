@@ -18,14 +18,8 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Sheet,
   SheetContent,
@@ -290,6 +284,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     useState("");
   const [newTrackerDiscordDebugEnabled, setNewTrackerDiscordDebugEnabled] =
     useState(false);
+  const [draggedTrackerId, setDraggedTrackerId] = useState("");
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -342,7 +337,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const filteredCategories = useMemo(
     () =>
       (categoriesQuery.data?.items || []).filter(
-        (item) => item.isActive && (item.type === direction || item.type === "transfer"),
+        (item) =>
+          item.isActive &&
+          (item.type === direction || item.type === "transfer"),
       ),
     [categoriesQuery.data?.items, direction],
   );
@@ -350,6 +347,26 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const activePayees = useMemo(
     () => (payeesQuery.data?.items || []).filter((item) => item.isActive),
     [payeesQuery.data?.items],
+  );
+  const categoryOptions = useMemo(
+    () => [
+      { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
+      ...filteredCategories.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })),
+    ],
+    [filteredCategories],
+  );
+  const payeeOptions = useMemo(
+    () => [
+      { value: EMPTY_SELECT_VALUE, label: "Anonym" },
+      ...activePayees.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })),
+    ],
+    [activePayees],
   );
 
   const totals = transactionsQuery.data?.totals ?? {
@@ -425,6 +442,27 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+      );
+    },
+  });
+
+  const skipScheduleMutation = useMutation({
+    mutationFn: (scheduleId: string) =>
+      fetchJson(`/api/schedules/${scheduleId}/skip`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      toast.success("Termin übersprungen");
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Überspringen fehlgeschlagen",
       );
     },
   });
@@ -542,6 +580,56 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
   });
 
+  const reorderTrackersMutation = useMutation({
+    mutationFn: (trackerIds: string[]) =>
+      fetchJson<{ items: Tracker[] }>("/api/trackers", {
+        method: "PATCH",
+        body: JSON.stringify({ trackerIds }),
+      }),
+    onMutate: async (trackerIds) => {
+      await queryClient.cancelQueries({ queryKey: ["trackers"] });
+      const previous = queryClient.getQueryData<{ items: Tracker[] }>([
+        "trackers",
+      ]);
+
+      queryClient.setQueryData<{ items: Tracker[] }>(["trackers"], (current) => {
+        if (!current) return current;
+
+        const trackerMap = new Map(current.items.map((item) => [item.id, item]));
+        const reorderedItems: Tracker[] = [];
+
+        for (const [index, trackerId] of trackerIds.entries()) {
+          const trackerItem = trackerMap.get(trackerId);
+          if (!trackerItem) {
+            continue;
+          }
+
+          reorderedItems.push({ ...trackerItem, sortOrder: index });
+        }
+
+        return { items: reorderedItems };
+      });
+
+      return { previous };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["trackers"], context.previous);
+      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Tracker-Reihenfolge konnte nicht gespeichert werden",
+      );
+    },
+    onSuccess: ({ items }) => {
+      queryClient.setQueryData(["trackers"], { items });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["trackers"] });
+    },
+  });
+
   function resetEntryState() {
     setCategoryId(EMPTY_SELECT_VALUE);
     setPayeeId(EMPTY_SELECT_VALUE);
@@ -581,6 +669,26 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   function handleTrackerSelect(nextTrackerId: string) {
     setSelectedTracker(nextTrackerId);
     resetEntryState();
+  }
+
+  function moveTracker(draggedId: string, targetId: string) {
+    if (!draggedId || draggedId === targetId || reorderTrackersMutation.isPending) {
+      return;
+    }
+
+    const currentTrackers = trackersQuery.data?.items || [];
+    const draggedIndex = currentTrackers.findIndex((item) => item.id === draggedId);
+    const targetIndex = currentTrackers.findIndex((item) => item.id === targetId);
+
+    if (draggedIndex < 0 || targetIndex < 0) {
+      return;
+    }
+
+    const nextTrackers = [...currentTrackers];
+    const [draggedTracker] = nextTrackers.splice(draggedIndex, 1);
+    nextTrackers.splice(targetIndex, 0, draggedTracker);
+
+    reorderTrackersMutation.mutate(nextTrackers.map((item) => item.id));
   }
 
   function handleCreatePayee() {
@@ -731,12 +839,21 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   <button
                     key={item.id}
                     type="button"
+                    draggable
                     onClick={() => handleTrackerSelect(item.id)}
+                    onDragStart={() => setDraggedTrackerId(item.id)}
+                    onDragEnd={() => setDraggedTrackerId("")}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      moveTracker(draggedTrackerId, item.id);
+                      setDraggedTrackerId("");
+                    }}
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
                       isActive
                         ? "border-transparent bg-foreground text-background shadow-sm"
                         : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
+                      draggedTrackerId === item.id && "opacity-60",
                     )}
                   >
                     <span
@@ -784,7 +901,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           </div>
 
           {tracker?.description ? (
-            <p className="text-sm text-muted-foreground">{tracker.description}</p>
+            <p className="text-sm text-muted-foreground">
+              {tracker.description}
+            </p>
           ) : null}
 
           {/* Stats grid */}
@@ -904,10 +1023,27 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             }
                             disabled={
                               createScheduleTransactionMutation.isPending ||
+                              skipScheduleMutation.isPending ||
                               !tracker?.isActive
                             }
                           >
                             Buchen
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-1.5 h-7 text-xs"
+                            onClick={() =>
+                              skipScheduleMutation.mutate(item.scheduleId)
+                            }
+                            disabled={
+                              createScheduleTransactionMutation.isPending ||
+                              skipScheduleMutation.isPending ||
+                              !tracker?.isActive
+                            }
+                          >
+                            Skip
                           </Button>
                         </div>
                       </div>
@@ -996,11 +1132,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
 
       {/* New tracker sheet */}
       <Sheet open={newTrackerSheetOpen} onOpenChange={setNewTrackerSheetOpen}>
-        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+        <SheetContent
+          side="right"
+          className="flex flex-col gap-0 p-0 sm:max-w-md"
+        >
           <div className="shrink-0 border-b border-border/60 p-5 pr-12">
             <SheetTitle>Neuer Tracker</SheetTitle>
             <SheetDescription>
-              Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt Discord.
+              Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt
+              Discord.
             </SheetDescription>
           </div>
           <div className="flex-1 overflow-y-auto p-5">
@@ -1030,7 +1170,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
 
       {/* Booking sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+        <SheetContent
+          side="right"
+          className="flex flex-col gap-0 p-0 sm:max-w-md"
+        >
           <div className="flex shrink-0 items-start gap-3 border-b border-border/60 p-5 pr-12">
             <div className="flex-1 min-w-0 space-y-1">
               <SheetTitle>Neue Buchung</SheetTitle>
@@ -1104,16 +1247,14 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 text-xs"
-                    onClick={() =>
-                      setShowNewCategory((current) => !current)
-                    }
+                    onClick={() => setShowNewCategory((current) => !current)}
                     disabled={!isTrackerMutable}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Neu
                   </Button>
                 </div>
-                <Select
+                <SearchableSelect
                   value={categoryId}
                   onValueChange={(value) => {
                     setCategoryId(value);
@@ -1121,22 +1262,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       setShowNewCategory(false);
                     }
                   }}
+                  items={categoryOptions}
+                  placeholder="Kategorie wählen"
+                  searchPlaceholder="Kategorie suchen"
+                  emptyMessage="Keine Kategorie gefunden."
                   disabled={!isTrackerMutable}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kategorie wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_SELECT_VALUE}>
-                      Bitte wählen
-                    </SelectItem>
-                    {filteredCategories.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 {showNewCategory ? (
                   <div className="flex gap-2">
                     <Input
@@ -1147,7 +1278,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       }
                       disabled={!isTrackerMutable}
                       placeholder={
-                        direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"
+                        direction === "expense"
+                          ? "z. B. Tanken"
+                          : "z. B. Gehalt"
                       }
                     />
                     <Button
@@ -1191,7 +1324,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     Neu
                   </Button>
                 </div>
-                <Select
+                <SearchableSelect
                   value={payeeId}
                   onValueChange={(value) => {
                     setPayeeId(value);
@@ -1200,28 +1333,18 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       setShowNewPayee(false);
                     }
                   }}
+                  items={payeeOptions}
+                  placeholder="Einzahler wählen"
+                  searchPlaceholder="Einzahler suchen"
+                  emptyMessage="Kein Einzahler gefunden."
                   disabled={!isTrackerMutable}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Einzahler wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_SELECT_VALUE}>Anonym</SelectItem>
-                    {activePayees.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 {showNewPayee ? (
                   <div className="flex gap-2">
                     <Input
                       className="flex-1"
                       value={newPayeeName}
-                      onChange={(event) =>
-                        setNewPayeeName(event.target.value)
-                      }
+                      onChange={(event) => setNewPayeeName(event.target.value)}
                       disabled={!isTrackerMutable}
                       placeholder="z. B. Bäckerei"
                     />

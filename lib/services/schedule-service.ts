@@ -24,6 +24,7 @@ type ScheduleRow = {
   intervalValue: number;
   nextDueDate: string;
   lastCompletedDate: string | null;
+  lastSkippedDate: string | null;
   isActive: boolean;
   createdByUserId: string;
   categoryName: string | null;
@@ -86,6 +87,7 @@ async function getScheduleRows(trackerId: string) {
       intervalValue: schedules.intervalValue,
       nextDueDate: schedules.nextDueDate,
       lastCompletedDate: schedules.lastCompletedDate,
+      lastSkippedDate: schedules.lastSkippedDate,
       isActive: schedules.isActive,
       createdByUserId: schedules.createdByUserId,
       categoryName: categories.name,
@@ -382,6 +384,50 @@ export async function createTransactionFromSchedule(
   return transaction;
 }
 
+export async function skipSchedule(scheduleId: string, actorUserId: string) {
+  const schedule = await getScheduleRowById(scheduleId);
+
+  if (!schedule) {
+    throw new Error("Schedule not found");
+  }
+
+  if (!schedule.isActive) {
+    throw new Error("Completed schedules cannot be skipped");
+  }
+
+  const skippedDate = toDateInputValue(new Date());
+  const nextDueDate = addInterval(
+    schedule.nextDueDate,
+    schedule.frequency,
+    schedule.intervalValue
+  );
+
+  const [updated] = await db
+    .update(schedules)
+    .set({
+      lastSkippedDate: skippedDate,
+      nextDueDate,
+      updatedAt: new Date(),
+    })
+    .where(eq(schedules.id, schedule.id))
+    .returning();
+
+  await logAuditEvent({
+    actorUserId,
+    action: "schedule_skipped",
+    resourceType: "schedule",
+    resourceId: schedule.id,
+    metadata: {
+      skippedDate,
+      scheduledDate: schedule.nextDueDate,
+      nextDueDate,
+    },
+    ...(await getRequestAuditContext()),
+  });
+
+  return updated;
+}
+
 async function getScheduleRowById(scheduleId: string) {
   const rows = await db
     .select({
@@ -397,6 +443,7 @@ async function getScheduleRowById(scheduleId: string) {
       intervalValue: schedules.intervalValue,
       nextDueDate: schedules.nextDueDate,
       lastCompletedDate: schedules.lastCompletedDate,
+      lastSkippedDate: schedules.lastSkippedDate,
       isActive: schedules.isActive,
       createdByUserId: schedules.createdByUserId,
       categoryName: categories.name,

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions, user } from "@/lib/db/schema";
@@ -14,6 +14,9 @@ export async function listTransactions(
   permission: TrackerPermission
 ) {
   const parsed = transactionQuerySchema.parse(query);
+  const pageSize = 50;
+  const page = parsed.page ?? 1;
+  const offset = (page - 1) * pageSize;
   const filters = [eq(transactions.trackerId, parsed.trackerId)];
 
   if (parsed.from) filters.push(gte(transactions.date, parsed.from));
@@ -56,7 +59,9 @@ export async function listTransactions(
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
     .leftJoin(payees, eq(payees.id, transactions.payeeId))
     .where(and(...filters))
-    .orderBy(desc(transactions.date), desc(transactions.createdAt));
+    .orderBy(desc(transactions.date), desc(transactions.createdAt))
+    .limit(pageSize)
+    .offset(offset);
 
   const items = rows.map((row) => ({
     ...row,
@@ -74,9 +79,20 @@ export async function listTransactions(
     .leftJoin(payees, eq(payees.id, transactions.payeeId))
     .where(and(...filters));
 
+  const [countRow] = await db
+    .select({ value: count() })
+    .from(transactions)
+    .leftJoin(categories, eq(categories.id, transactions.categoryId))
+    .leftJoin(payees, eq(payees.id, transactions.payeeId))
+    .where(and(...filters));
+
   return {
     items,
     totals: totals[0] ?? { incomeCents: 0, expenseCents: 0 },
+    page,
+    pageSize,
+    totalCount: countRow?.value ?? 0,
+    hasMore: (countRow?.value ?? 0) > offset + items.length,
   };
 }
 

@@ -20,6 +20,7 @@ export async function GET(request: Request) {
       payeeId: searchParams.get("payeeId") || undefined,
       direction: searchParams.get("direction") || undefined,
       q: searchParams.get("q") || undefined,
+      page: searchParams.get("page") || undefined,
     }, access.user!.id, access.trackerAccess!.permission);
 
     return ok(data);
