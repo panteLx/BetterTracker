@@ -265,7 +265,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [amount, setAmount] = useState("");
-  const [direction, setDirection] = useState<"expense" | "income">("expense");
+  const [direction, setDirection] = useState<"expense" | "income">("income");
   const [categoryId, setCategoryId] = useState(EMPTY_SELECT_VALUE);
   const [payeeId, setPayeeId] = useState(EMPTY_SELECT_VALUE);
   const [customPayeeName, setCustomPayeeName] = useState("");
