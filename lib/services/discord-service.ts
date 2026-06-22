@@ -12,6 +12,7 @@ type NotifyInput = {
   createdByUserId?: string | null;
   includeDebug?: boolean;
   debugPayload?: unknown;
+  debugFields?: Array<{ name: string; value: string; inline?: boolean }>;
 };
 
 type DiscordField = {
@@ -37,6 +38,25 @@ function clampFieldValue(value: string, maxLength = 1024) {
   return `${value.slice(0, maxLength - 3)}...`;
 }
 
+function formatDebugFieldName(key: string) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildObjectDebugFields(value: unknown): DiscordField[] {
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  return Object.entries(value as Record<string, unknown>).map(([key, fieldValue]) => ({
+    name: formatDebugFieldName(key),
+    value: toDebugString(fieldValue),
+    inline: false,
+  }));
+}
+
 function buildDebugFields(input: NotifyInput, notificationEventId: string): DiscordField[] {
   const baseFields: DiscordField[] = [
     { name: "Notification Event ID", value: notificationEventId, inline: false },
@@ -45,25 +65,9 @@ function buildDebugFields(input: NotifyInput, notificationEventId: string): Disc
     { name: "Actor User ID", value: input.createdByUserId ?? "-", inline: false },
   ];
 
-  if (!input.debugPayload || typeof input.debugPayload !== "object") {
-    return baseFields;
-  }
-
-  const payload = input.debugPayload as Record<string, unknown>;
-  const extraFields: DiscordField[] = [
-    { name: "Transaction ID", value: toDebugString(payload.id), inline: false },
-    { name: "Source", value: toDebugString(payload.source), inline: true },
-    { name: "Direction", value: toDebugString(payload.direction), inline: true },
-    { name: "Amount (cents)", value: toDebugString(payload.amountCents), inline: true },
-    { name: "Date", value: toDebugString(payload.date), inline: true },
-    { name: "Account", value: toDebugString(payload.accountName), inline: true },
-    { name: "Category ID", value: toDebugString(payload.categoryId), inline: false },
-    { name: "Payee ID", value: toDebugString(payload.payeeId), inline: false },
-    { name: "Schedule ID", value: toDebugString(payload.scheduleId), inline: false },
-    { name: "Created By", value: toDebugString(payload.createdByUserId), inline: false },
-    { name: "Created At", value: toDebugString(payload.createdAt), inline: false },
-    { name: "Notes", value: toDebugString(payload.notes), inline: false },
-  ];
+  const extraFields = input.debugFields?.length
+    ? input.debugFields
+    : buildObjectDebugFields(input.debugPayload);
 
   return [...baseFields, ...extraFields]
     .filter((field) => field.value !== "-")
