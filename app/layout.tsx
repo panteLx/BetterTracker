@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "BetterTracker",
-  description: "Self-hosted expense tracker with Next.js, Drizzle and Better Auth.",
+  description:
+    "Erfasse deine Ausgaben und behalte den Überblick über deine Finanzen mit BetterTracker.",
 };
 
 export default function RootLayout({
