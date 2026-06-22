@@ -1,8 +1,8 @@
 import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
-import { categories, payees, trackers, transactions } from "@/lib/db/schema";
-import { parseAmountToCents } from "@/lib/utils";
+import { categories, payees, trackers, transactions, user } from "@/lib/db/schema";
+import { formatCurrency, parseAmountToCents } from "@/lib/utils";
 import { transactionInputSchema, transactionQuerySchema } from "@/lib/validators/transaction";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { sendDiscordNotification } from "@/lib/services/discord-service";
@@ -99,6 +99,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     .select({
       id: categories.id,
       type: categories.type,
+      name: categories.name,
     })
     .from(categories)
     .where(
@@ -118,6 +119,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
   }
 
   let resolvedPayeeId = parsed.payeeId ?? null;
+  let resolvedPayeeName: string | null = null;
   const trimmedCustomPayeeName = parsed.customPayeeName?.trim();
   let resolvedAccountName = parsed.accountName?.trim() || "";
 
@@ -131,9 +133,27 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     resolvedAccountName = trackerRow?.name || "Tracker";
   }
 
-  if (!resolvedPayeeId && trimmedCustomPayeeName) {
+  if (resolvedPayeeId) {
+    const [payee] = await db
+      .select({
+        id: payees.id,
+        name: payees.name,
+      })
+      .from(payees)
+      .where(and(eq(payees.id, resolvedPayeeId), eq(payees.trackerId, parsed.trackerId)))
+      .limit(1);
+
+    if (!payee) {
+      throw new Error("Transaction payee not found in tracker");
+    }
+
+    resolvedPayeeName = payee.name;
+  } else if (trimmedCustomPayeeName) {
     const [existingPayee] = await db
-      .select({ id: payees.id })
+      .select({
+        id: payees.id,
+        name: payees.name,
+      })
       .from(payees)
       .where(
         and(
@@ -145,6 +165,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
 
     if (existingPayee) {
       resolvedPayeeId = existingPayee.id;
+      resolvedPayeeName = existingPayee.name;
     } else {
       const [createdPayee] = await db
         .insert(payees)
@@ -152,11 +173,21 @@ export async function createTransaction(input: unknown, actorUserId: string) {
           trackerId: parsed.trackerId,
           name: trimmedCustomPayeeName,
         })
-        .returning({ id: payees.id });
+        .returning({
+          id: payees.id,
+          name: payees.name,
+        });
 
       resolvedPayeeId = createdPayee.id;
+      resolvedPayeeName = createdPayee.name;
     }
   }
+
+  const [actor] = await db
+    .select({ name: user.name })
+    .from(user)
+    .where(eq(user.id, actorUserId))
+    .limit(1);
 
   const [created] = await db
     .insert(transactions)
@@ -193,15 +224,47 @@ export async function createTransaction(input: unknown, actorUserId: string) {
   await sendDiscordNotification({
     type: "transaction_created",
     trackerId: parsed.trackerId,
-    title: "Neue Transaktion",
-    description: `Eine ${parsed.direction === "expense" ? "Ausgabe" : "Einnahme"} wurde erfasst.`,
+    title: parsed.direction === "expense" ? "Neue Ausgabe" : "Neue Einnahme",
+    description: `Im Tracker ${tracker.name} wurde eine neue Transaktion erfasst.`,
     createdByUserId: actorUserId,
     includeDebug: true,
     debugPayload: created,
+    debugFields: [
+      { name: "Transaction ID", value: created.id, inline: false },
+      { name: "Category ID", value: created.categoryId ?? "-", inline: false },
+      { name: "Payee ID", value: created.payeeId ?? "-", inline: false },
+      { name: "Schedule ID", value: created.scheduleId ?? "-", inline: false },
+      { name: "Source", value: created.source, inline: true },
+      { name: "Created At", value: created.createdAt.toISOString(), inline: false },
+    ],
     fields: [
       { name: "Datum", value: parsed.date, inline: true },
-      { name: "Betrag", value: `${amountCents / 100} EUR`, inline: true },
+      {
+        name: "Betrag",
+        value: formatCurrency(amountCents, tracker.currency),
+        inline: true,
+      },
+      {
+        name: "Richtung",
+        value: parsed.direction === "expense" ? "Ausgabe" : "Einnahme",
+        inline: true,
+      },
       { name: "Konto", value: resolvedAccountName, inline: true },
+      { name: "Kategorie", value: category.name, inline: true },
+      ...(resolvedPayeeName
+        ? [{ name: "Empfaenger", value: resolvedPayeeName, inline: true as const }]
+        : []),
+      {
+        name: "Quelle",
+        value: created.source === "schedule" ? "Termin" : "Manuell",
+        inline: true,
+      },
+      ...(actor?.name
+        ? [{ name: "Erfasst von", value: actor.name, inline: true as const }]
+        : []),
+      ...(created.notes
+        ? [{ name: "Notiz", value: created.notes, inline: false as const }]
+        : []),
     ],
   });
 
