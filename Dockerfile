@@ -13,7 +13,9 @@ RUN npm ci
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
-ENV NEXT_TELEMETRY_DISABLED=1
+ARG COMMIT_SHA
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    COMMIT_SHA=$COMMIT_SHA
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
