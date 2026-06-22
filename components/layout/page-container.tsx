@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AppHeader } from "@/components/layout/app-header";
+import { AppFooter } from "@/components/layout/app-footer";
 import { MobileNav } from "@/components/layout/mobile-nav";
 
 type PageContainerProps = {
@@ -24,7 +25,7 @@ export function PageContainer({
   return (
     <div className="relative min-h-screen overflow-x-clip">
       <AppHeader user={user} />
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 sm:px-6 md:pb-8">
+      <main className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-8 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
@@ -36,6 +37,7 @@ export function PageContainer({
         </div>
         {children}
       </main>
+      <AppFooter />
       {user ? <MobileNav role={user.role} /> : null}
     </div>
   );
