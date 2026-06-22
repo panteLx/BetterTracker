@@ -42,9 +42,10 @@ type Category = {
   id: string;
   name: string;
   type: "expense" | "income" | "transfer";
+  isActive: boolean;
 };
 
-type Payee = { id: string; name: string };
+type Payee = { id: string; name: string; isActive: boolean };
 
 type Transaction = {
   id: string;

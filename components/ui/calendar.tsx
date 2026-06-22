@@ -21,11 +21,11 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
-        months: "flex flex-col gap-2",
+        months: "relative flex flex-col gap-2",
         month: "flex flex-col gap-4",
         month_caption: "relative flex items-center justify-center pt-1",
         caption_label: "text-sm font-medium",
-        nav: "absolute inset-x-0 top-1.5 flex items-center justify-between px-1",
+        nav: "absolute inset-x-0 top-1.5 z-10 flex items-center justify-between px-1",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
