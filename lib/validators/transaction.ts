@@ -22,4 +22,5 @@ export const transactionQuerySchema = z.object({
   payeeId: z.string().optional(),
   direction: z.enum(["expense", "income"]).optional(),
   q: z.string().optional(),
+  page: z.coerce.number().int().positive().optional(),
 });

@@ -96,6 +96,7 @@ export function TransactionsClient({
   const [payeeId, setPayeeId] = useState(ALL_FILTER_VALUE);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
   const [editingTransactionId, setEditingTransactionId] = useState("");
   const [editState, setEditState] = useState<EditTransactionState | null>(null);
 
@@ -136,6 +137,7 @@ export function TransactionsClient({
       payeeId,
       from,
       to,
+      page,
     ],
     queryFn: () => {
       const params = new URLSearchParams({ trackerId: activeTrackerId });
@@ -146,10 +148,15 @@ export function TransactionsClient({
       if (payeeId !== ALL_FILTER_VALUE) params.set("payeeId", payeeId);
       if (from) params.set("from", from);
       if (to) params.set("to", to);
+      params.set("page", String(page));
 
       return fetchJson<{
         items: Transaction[];
         totals: { incomeCents: number; expenseCents: number };
+        totalCount: number;
+        page: number;
+        pageSize: number;
+        hasMore: boolean;
       }>(`/api/transactions?${params.toString()}`);
     },
     enabled: Boolean(activeTrackerId),
@@ -224,6 +231,7 @@ export function TransactionsClient({
     setSelectedTracker(nextTrackerId);
     setCategoryId(ALL_FILTER_VALUE);
     setPayeeId(ALL_FILTER_VALUE);
+    setPage(1);
     setEditingTransactionId("");
     setEditState(null);
   }
@@ -235,6 +243,7 @@ export function TransactionsClient({
     setPayeeId(ALL_FILTER_VALUE);
     setFrom("");
     setTo("");
+    setPage(1);
   }
 
   function startEdit(item: Transaction) {
@@ -280,6 +289,8 @@ export function TransactionsClient({
 
   const trackers = trackersQuery.data?.items || [];
   const transactionItems = transactionsQuery.data?.items || [];
+  const totalCount = transactionsQuery.data?.totalCount ?? transactionItems.length;
+  const hasMore = transactionsQuery.data?.hasMore ?? false;
 
   return (
     <div className="space-y-4">
@@ -358,9 +369,18 @@ export function TransactionsClient({
           <Input
             placeholder="Suche nach Einzahler, Kategorie, Notiz"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
           />
-          <Select value={direction} onValueChange={setDirection}>
+          <Select
+            value={direction}
+            onValueChange={(value) => {
+              setDirection(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Alle Typen" />
             </SelectTrigger>
@@ -370,7 +390,13 @@ export function TransactionsClient({
               <SelectItem value="income">Einnahmen</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={categoryId} onValueChange={setCategoryId}>
+          <Select
+            value={categoryId}
+            onValueChange={(value) => {
+              setCategoryId(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Alle Kategorien" />
             </SelectTrigger>
@@ -383,7 +409,13 @@ export function TransactionsClient({
               ))}
             </SelectContent>
           </Select>
-          <Select value={payeeId} onValueChange={setPayeeId}>
+          <Select
+            value={payeeId}
+            onValueChange={(value) => {
+              setPayeeId(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Alle Einzahler" />
             </SelectTrigger>
@@ -397,8 +429,22 @@ export function TransactionsClient({
             </SelectContent>
           </Select>
           <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-2">
-            <DatePicker value={from} onChange={setFrom} placeholder="Von" />
-            <DatePicker value={to} onChange={setTo} placeholder="Bis" />
+            <DatePicker
+              value={from}
+              onChange={(value) => {
+                setFrom(value);
+                setPage(1);
+              }}
+              placeholder="Von"
+            />
+            <DatePicker
+              value={to}
+              onChange={(value) => {
+                setTo(value);
+                setPage(1);
+              }}
+              placeholder="Bis"
+            />
           </div>
         </div>
       </div>
@@ -408,7 +454,7 @@ export function TransactionsClient({
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <p className="text-sm font-semibold">Historie</p>
           <span className="text-xs text-muted-foreground">
-            {transactionItems.length} Treffer
+            {totalCount} Treffer
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -707,6 +753,29 @@ export function TransactionsClient({
           {transactionItems.length === 0 ? (
             <div className="p-6 text-sm text-muted-foreground">
               Keine Transaktionen für die aktuellen Filter gefunden.
+            </div>
+          ) : null}
+          {transactionItems.length > 0 ? (
+            <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+              <p className="text-xs text-muted-foreground">Seite {page}</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page === 1 || transactionsQuery.isFetching}
+                >
+                  Zurück
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((current) => current + 1)}
+                  disabled={!hasMore || transactionsQuery.isFetching}
+                >
+                  Weiter
+                </Button>
+              </div>
             </div>
           ) : null}
           {tracker && !tracker.isActive ? (

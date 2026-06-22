@@ -201,6 +201,7 @@ export const schedules = sqliteTable(
     intervalValue: integer("interval_value").notNull().default(1),
     nextDueDate: text("next_due_date").notNull(),
     lastCompletedDate: text("last_completed_date"),
+    lastSkippedDate: text("last_skipped_date"),
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
     autoCreateDisabled: integer("auto_create_disabled", { mode: "boolean" })
       .default(true)

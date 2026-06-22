@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const EMPTY_SELECT_VALUE = "none";
 
@@ -66,6 +67,7 @@ type Schedule = {
   intervalValue: number;
   nextDueDate: string;
   lastCompletedDate: string | null;
+  lastSkippedDate: string | null;
   isActive: boolean;
   createdByUserId: string;
   status: "overdue" | "due" | "upcoming" | "completed" | "incomplete";
@@ -220,6 +222,20 @@ export function SchedulesClient({
   );
 
   const activePayees = (payeesQuery.data?.items || []).filter((item) => item.isActive);
+  const categoryOptions = [
+    { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
+    ...filteredCategories.map((item) => ({
+      value: item.id,
+      label: item.name,
+    })),
+  ];
+  const payeeOptions = [
+    { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
+    ...activePayees.map((item) => ({
+      value: item.id,
+      label: item.name,
+    })),
+  ];
   const parsedIntervalValue = Number(intervalValue);
   const normalizedIntervalValue =
     Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
@@ -328,6 +344,27 @@ export function SchedulesClient({
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+      );
+    },
+  });
+
+  const skipScheduleMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetchJson(`/api/schedules/${id}/skip`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      toast.success("Termin übersprungen");
+      queryClient.invalidateQueries({
+        queryKey: ["schedules", activeTrackerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules-forecast", activeTrackerId],
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Überspringen fehlgeschlagen",
       );
     },
   });
@@ -586,6 +623,9 @@ export function SchedulesClient({
                     {item.lastCompletedDate ? (
                       <p>Zuletzt gebucht am {item.lastCompletedDate}</p>
                     ) : null}
+                    {item.lastSkippedDate ? (
+                      <p>Zuletzt übersprungen am {item.lastSkippedDate}</p>
+                    ) : null}
                     {!item.isComplete ? (
                       <p>
                         Dieser Legacy-Termin braucht noch Einzahler und
@@ -608,11 +648,27 @@ export function SchedulesClient({
                       onClick={() => createTransactionMutation.mutate(item.id)}
                       disabled={
                         createTransactionMutation.isPending ||
+                        skipScheduleMutation.isPending ||
                         !tracker?.isActive ||
                         !item.canCreateTransaction
                       }
                     >
                       Als Transaktion buchen
+                    </Button>
+                  ) : null}
+                  {item.isActive ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => skipScheduleMutation.mutate(item.id)}
+                      disabled={
+                        createTransactionMutation.isPending ||
+                        skipScheduleMutation.isPending ||
+                        !isTrackerMutable
+                      }
+                    >
+                      Skip
                     </Button>
                   ) : null}
                   {item.isActive && item.canEdit ? (
@@ -1049,25 +1105,15 @@ export function SchedulesClient({
                     Neu
                   </Button>
                 </div>
-                <Select
+                <SearchableSelect
                   value={categoryId}
                   onValueChange={setCategoryId}
+                  items={categoryOptions}
+                  placeholder="Kategorie wählen"
+                  searchPlaceholder="Kategorie suchen"
+                  emptyMessage="Keine Kategorie gefunden."
                   disabled={!isTrackerMutable}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kategorie wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_SELECT_VALUE}>
-                      Bitte wählen
-                    </SelectItem>
-                    {filteredCategories.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 {showNewCategory ? (
                   <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
                     <Input
@@ -1118,25 +1164,15 @@ export function SchedulesClient({
                     Neu
                   </Button>
                 </div>
-                <Select
+                <SearchableSelect
                   value={payeeId}
                   onValueChange={setPayeeId}
+                  items={payeeOptions}
+                  placeholder="Einzahler wählen"
+                  searchPlaceholder="Einzahler suchen"
+                  emptyMessage="Kein Einzahler gefunden."
                   disabled={!isTrackerMutable}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Einzahler wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_SELECT_VALUE}>
-                      Bitte wählen
-                    </SelectItem>
-                    {activePayees.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 {showNewPayee ? (
                   <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
                     <Input
