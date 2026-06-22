@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Copy, Globe, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Copy, Globe, Settings2, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { CsvImportDialog } from "@/components/trackers/csv-import-dialog";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,7 @@ export function TrackerSettingsClient({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState(initialTrackerId);
+  const [importOpen, setImportOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
   const [newMemberPermission, setNewMemberPermission] = useState<
     "admin" | "write" | "read"
@@ -822,6 +824,48 @@ export function TrackerSettingsClient({
                 </Table>
               </div>
             </div>
+
+            {/* CSV Import */}
+            {(tracker.permission === "owner" || tracker.permission === "admin") && (
+              <>
+                <div className="rounded-xl border border-border/60 bg-card p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold">CSV-Import</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Transaktionen aus Actual Budget importieren.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setImportOpen(true)}
+                      disabled={!tracker.isActive}
+                    >
+                      <Upload className="h-4 w-4" />
+                      Importieren
+                    </Button>
+                  </div>
+                </div>
+                <CsvImportDialog
+                  open={importOpen}
+                  onOpenChange={setImportOpen}
+                  trackerId={activeTrackerId}
+                  onSuccess={() => {
+                    queryClient.invalidateQueries({
+                      queryKey: ["categories", activeTrackerId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["payees", activeTrackerId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["transactions", activeTrackerId],
+                    });
+                  }}
+                />
+              </>
+            )}
 
             {/* Categories */}
             <div className="rounded-xl border border-border/60 bg-card p-4">
