@@ -15,6 +15,7 @@ import {
 
 type DatePickerProps = {
   id?: string;
+  "aria-label"?: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -30,6 +31,7 @@ function toDate(value: string): Date | undefined {
 
 export function DatePicker({
   id,
+  "aria-label": ariaLabel,
   value,
   onChange,
   disabled,
@@ -44,6 +46,7 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <Button
           id={id}
+          aria-label={ariaLabel}
           type="button"
           variant="outline"
           disabled={disabled}

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { aliasedTable, and, count, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions, user } from "@/lib/db/schema";
@@ -18,6 +18,7 @@ export async function listTransactions(
   const page = parsed.page ?? 1;
   const offset = (page - 1) * pageSize;
   const filters = [eq(transactions.trackerId, parsed.trackerId)];
+  const creator = aliasedTable(user, "creator");
 
   if (parsed.from) filters.push(gte(transactions.date, parsed.from));
   if (parsed.to) filters.push(lte(transactions.date, parsed.to));
@@ -50,6 +51,7 @@ export async function listTransactions(
       notes: transactions.notes,
       source: transactions.source,
       createdByUserId: transactions.createdByUserId,
+      createdByUserName: creator.name,
       categoryName: categories.name,
       payeeName: payees.name,
       customPayeeName: transactions.customPayeeName,
@@ -58,6 +60,7 @@ export async function listTransactions(
     .from(transactions)
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
     .leftJoin(payees, eq(payees.id, transactions.payeeId))
+    .leftJoin(creator, eq(creator.id, transactions.createdByUserId))
     .where(and(...filters))
     .orderBy(desc(transactions.date), desc(transactions.createdAt))
     .limit(pageSize)

@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ type Transaction = {
   notes?: string | null;
   source: "manual" | "schedule";
   createdByUserId: string;
+  createdByUserName?: string | null;
   canEdit: boolean;
   canDelete: boolean;
 };
@@ -99,6 +101,7 @@ export function TransactionsClient({
   const [page, setPage] = useState(1);
   const [editingTransactionId, setEditingTransactionId] = useState("");
   const [editState, setEditState] = useState<EditTransactionState | null>(null);
+  const [filterExpanded, setFilterExpanded] = useState(true);
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -227,6 +230,15 @@ export function TransactionsClient({
     );
   }, [categoriesQuery.data?.items, editState]);
 
+  const activeFilterCount = [
+    query.trim(),
+    direction !== ALL_FILTER_VALUE ? direction : "",
+    categoryId !== ALL_FILTER_VALUE ? categoryId : "",
+    payeeId !== ALL_FILTER_VALUE ? payeeId : "",
+    from,
+    to,
+  ].filter(Boolean).length;
+
   function handleTrackerChange(nextTrackerId: string) {
     setSelectedTracker(nextTrackerId);
     setCategoryId(ALL_FILTER_VALUE);
@@ -287,9 +299,176 @@ export function TransactionsClient({
     });
   }
 
+  function renderEditForm(itemId: string) {
+    if (!editState) return null;
+    return (
+      <div className="grid gap-4 rounded-xl border border-border/60 bg-background p-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label>Datum</Label>
+            <DatePicker
+              value={editState.date}
+              onChange={(value) =>
+                setEditState((current) =>
+                  current ? { ...current, date: value } : current,
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Betrag</Label>
+            <Input
+              value={editState.amount}
+              onChange={(event) =>
+                setEditState((current) =>
+                  current
+                    ? { ...current, amount: event.target.value }
+                    : current,
+                )
+              }
+              placeholder="12,50"
+              inputMode="decimal"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Typ</Label>
+            <Select
+              value={editState.direction}
+              onValueChange={(value) =>
+                setEditState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        direction: value as "expense" | "income",
+                        categoryId: EMPTY_SELECT_VALUE,
+                      }
+                    : current,
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">Ausgabe</SelectItem>
+                <SelectItem value="income">Einnahme</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Kategorie</Label>
+            <Select
+              value={editState.categoryId || EMPTY_SELECT_VALUE}
+              onValueChange={(value) =>
+                setEditState((current) =>
+                  current ? { ...current, categoryId: value } : current,
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={EMPTY_SELECT_VALUE}>Bitte wählen</SelectItem>
+                {editCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Einzahler</Label>
+            <Select
+              value={editState.payeeId}
+              onValueChange={(value) =>
+                setEditState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        payeeId: value,
+                        customPayeeName:
+                          value === EMPTY_SELECT_VALUE
+                            ? current.customPayeeName
+                            : "",
+                      }
+                    : current,
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={EMPTY_SELECT_VALUE}>
+                  Anonym / Freitext
+                </SelectItem>
+                {(payeesQuery.data?.items || []).map((payee) => (
+                  <SelectItem key={payee.id} value={payee.id}>
+                    {payee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {editState.payeeId === EMPTY_SELECT_VALUE ? (
+          <div className="space-y-1.5">
+            <Label>Einmaliger Einzahler</Label>
+            <Input
+              value={editState.customPayeeName}
+              onChange={(event) =>
+                setEditState((current) =>
+                  current
+                    ? { ...current, customPayeeName: event.target.value }
+                    : current,
+                )
+              }
+              placeholder="z. B. Bäckerei Müller"
+            />
+          </div>
+        ) : null}
+
+        <div className="space-y-1.5">
+          <Label>Notizen</Label>
+          <Textarea
+            value={editState.notes}
+            onChange={(event) =>
+              setEditState((current) =>
+                current ? { ...current, notes: event.target.value } : current,
+              )
+            }
+            rows={2}
+            placeholder="Optional"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={cancelEdit}>
+            Abbrechen
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => submitEdit(itemId)}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? "Speichert..." : "Speichern"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const trackers = trackersQuery.data?.items || [];
   const transactionItems = transactionsQuery.data?.items || [];
-  const totalCount = transactionsQuery.data?.totalCount ?? transactionItems.length;
+  const totalCount =
+    transactionsQuery.data?.totalCount ?? transactionItems.length;
   const hasMore = transactionsQuery.data?.hasMore ?? false;
 
   return (
@@ -353,103 +532,165 @@ export function TransactionsClient({
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl border border-border/60 bg-card p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold">Filter</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetFilters}
-            className="h-7 text-xs"
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
+        <div className="flex w-full items-center justify-between px-4 py-3">
+          <button
+            type="button"
+            className="flex items-center gap-2"
+            onClick={() => setFilterExpanded((v) => !v)}
           >
-            Zurücksetzen
-          </Button>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Input
-            placeholder="Suche nach Einzahler, Kategorie, Notiz"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setPage(1);
-            }}
-          />
-          <Select
-            value={direction}
-            onValueChange={(value) => {
-              setDirection(value);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Alle Typen" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Typen</SelectItem>
-              <SelectItem value="expense">Ausgaben</SelectItem>
-              <SelectItem value="income">Einnahmen</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={categoryId}
-            onValueChange={(value) => {
-              setCategoryId(value);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Alle Kategorien" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
-              {(categoriesQuery.data?.items || []).map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={payeeId}
-            onValueChange={(value) => {
-              setPayeeId(value);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Alle Einzahler" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
-              {(payeesQuery.data?.items || []).map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-2">
-            <DatePicker
-              value={from}
-              onChange={(value) => {
-                setFrom(value);
-                setPage(1);
-              }}
-              placeholder="Von"
-            />
-            <DatePicker
-              value={to}
-              onChange={(value) => {
-                setTo(value);
-                setPage(1);
-              }}
-              placeholder="Bis"
-            />
+            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">Filter</span>
+            {activeFilterCount > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </button>
+          <div className="flex items-center gap-1">
+            {activeFilterCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={resetFilters}
+              >
+                <X className="h-3 w-3" />
+                Zurücksetzen
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => setFilterExpanded((v) => !v)}
+            >
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                  filterExpanded && "rotate-180",
+                )}
+              />
+            </Button>
           </div>
         </div>
+
+        {filterExpanded ? (
+          <div className="border-t border-border/60 p-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="filter-search">Suche</Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="filter-search"
+                    className="pl-9"
+                    placeholder="Einzahler, Kategorie, Notiz"
+                    aria-label="Freitext-Suche nach Einzahler, Kategorie oder Notiz"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Typ</Label>
+                <Select
+                  value={direction}
+                  onValueChange={(value) => {
+                    setDirection(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger aria-label="Nach Typ filtern">
+                    <SelectValue placeholder="Alle Typen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_FILTER_VALUE}>Alle Typen</SelectItem>
+                    <SelectItem value="expense">Ausgaben</SelectItem>
+                    <SelectItem value="income">Einnahmen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Kategorie</Label>
+                <Select
+                  value={categoryId}
+                  onValueChange={(value) => {
+                    setCategoryId(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger aria-label="Nach Kategorie filtern">
+                    <SelectValue placeholder="Alle Kategorien" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_FILTER_VALUE}>
+                      Alle Kategorien
+                    </SelectItem>
+                    {(categoriesQuery.data?.items || []).map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Einzahler</Label>
+                <Select
+                  value={payeeId}
+                  onValueChange={(value) => {
+                    setPayeeId(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger aria-label="Nach Einzahler filtern">
+                    <SelectValue placeholder="Alle Einzahler" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_FILTER_VALUE}>
+                      Alle Einzahler
+                    </SelectItem>
+                    {(payeesQuery.data?.items || []).map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+                <Label>Zeitraum</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <DatePicker
+                    value={from}
+                    onChange={(value) => {
+                      setFrom(value);
+                      setPage(1);
+                    }}
+                    placeholder="Von"
+                    aria-label="Startdatum für Datumsfilter"
+                  />
+                  <DatePicker
+                    value={to}
+                    onChange={(value) => {
+                      setTo(value);
+                      setPage(1);
+                    }}
+                    placeholder="Bis"
+                    aria-label="Enddatum für Datumsfilter"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {/* Transaction table */}
+      {/* Transaction list */}
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <p className="text-sm font-semibold">Historie</p>
@@ -457,7 +698,100 @@ export function TransactionsClient({
             {totalCount} Treffer
           </span>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile card view */}
+        <div className="sm:hidden">
+          {transactionItems.length === 0 ? (
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              Keine Transaktionen für die aktuellen Filter gefunden.
+            </div>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {transactionItems.map((item) => {
+                const isEditing = editingTransactionId === item.id;
+                const isOwnEntry = item.createdByUserId === currentUserId;
+                return (
+                  <Fragment key={item.id}>
+                    <div className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "text-sm font-semibold",
+                                item.direction === "expense"
+                                  ? "text-rose-600"
+                                  : "text-emerald-600",
+                              )}
+                            >
+                              {item.direction === "expense" ? "-" : "+"}
+                              {formatCurrency(
+                                item.amountCents,
+                                currency,
+                                locale,
+                              )}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {item.date}
+                            </span>
+                          </div>
+                          <p className="truncate text-sm font-medium">
+                            {item.payeeName || item.customPayeeName || "Anonym"}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {item.categoryName || "Ohne Kategorie"}
+                            {item.notes ? ` · ${item.notes}` : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isOwnEntry
+                              ? "Eingetragen von dir"
+                              : `Eingetragen von ${item.createdByUserName ?? "Unbekannt"}`}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          {item.canEdit ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => startEdit(item)}
+                              disabled={
+                                updateMutation.isPending || !tracker?.isActive
+                              }
+                            >
+                              Bearbeiten
+                            </Button>
+                          ) : null}
+                          {item.canDelete ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              onClick={() => deleteMutation.mutate(item.id)}
+                              disabled={
+                                deleteMutation.isPending || !tracker?.isActive
+                              }
+                            >
+                              Löschen
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                    {isEditing ? (
+                      <div className="bg-muted/20 px-4 pb-4 pt-3">
+                        {renderEditForm(item.id)}
+                      </div>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden overflow-x-auto sm:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -465,6 +799,7 @@ export function TransactionsClient({
                 <TableHead>Einzahler</TableHead>
                 <TableHead>Kategorie</TableHead>
                 <TableHead>Notizen</TableHead>
+                <TableHead>Erfasst von</TableHead>
                 <TableHead className="text-right">Betrag</TableHead>
                 <TableHead className="text-right">Aktion</TableHead>
               </TableRow>
@@ -478,23 +813,19 @@ export function TransactionsClient({
                   <Fragment key={item.id}>
                     <TableRow>
                       <TableCell className="text-sm">{item.date}</TableCell>
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <p className="text-sm">
-                            {item.payeeName || item.customPayeeName || "Anonym"}
-                          </p>
-                          {isOwnEntry ? (
-                            <p className="text-xs text-muted-foreground">
-                              Von dir
-                            </p>
-                          ) : null}
-                        </div>
+                      <TableCell className="text-sm">
+                        {item.payeeName || item.customPayeeName || "Anonym"}
                       </TableCell>
                       <TableCell className="text-sm">
                         {item.categoryName || "-"}
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
                         {item.notes || "-"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {isOwnEntry
+                          ? "Dir"
+                          : (item.createdByUserName ?? "Unbekannt")}
                       </TableCell>
                       <TableCell className="text-right">
                         <span
@@ -540,208 +871,10 @@ export function TransactionsClient({
                         </div>
                       </TableCell>
                     </TableRow>
-                    {isEditing && editState ? (
+                    {isEditing ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="bg-muted/20 p-0">
-                          <div className="grid gap-4 rounded-xl border border-border/60 bg-background m-3 p-4">
-                            <div className="grid gap-4 md:grid-cols-3">
-                              <div className="space-y-1.5">
-                                <Label>Datum</Label>
-                                <DatePicker
-                                  value={editState.date}
-                                  onChange={(value) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? { ...current, date: value }
-                                        : current,
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label>Betrag</Label>
-                                <Input
-                                  value={editState.amount}
-                                  onChange={(event) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? {
-                                            ...current,
-                                            amount: event.target.value,
-                                          }
-                                        : current,
-                                    )
-                                  }
-                                  placeholder="12,50"
-                                  inputMode="decimal"
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label>Typ</Label>
-                                <Select
-                                  value={editState.direction}
-                                  onValueChange={(value) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? {
-                                            ...current,
-                                            direction: value as
-                                              | "expense"
-                                              | "income",
-                                            categoryId: EMPTY_SELECT_VALUE,
-                                          }
-                                        : current,
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="expense">
-                                      Ausgabe
-                                    </SelectItem>
-                                    <SelectItem value="income">
-                                      Einnahme
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <div className="space-y-1.5">
-                                <Label>Kategorie</Label>
-                                <Select
-                                  value={
-                                    editState.categoryId || EMPTY_SELECT_VALUE
-                                  }
-                                  onValueChange={(value) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? { ...current, categoryId: value }
-                                        : current,
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={EMPTY_SELECT_VALUE}>
-                                      Bitte wählen
-                                    </SelectItem>
-                                    {editCategories.map((category) => (
-                                      <SelectItem
-                                        key={category.id}
-                                        value={category.id}
-                                      >
-                                        {category.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-1.5">
-                                <Label>Einzahler</Label>
-                                <Select
-                                  value={editState.payeeId}
-                                  onValueChange={(value) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? {
-                                            ...current,
-                                            payeeId: value,
-                                            customPayeeName:
-                                              value === EMPTY_SELECT_VALUE
-                                                ? current.customPayeeName
-                                                : "",
-                                          }
-                                        : current,
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={EMPTY_SELECT_VALUE}>
-                                      Anonym / Freitext
-                                    </SelectItem>
-                                    {(payeesQuery.data?.items || []).map(
-                                      (payee) => (
-                                        <SelectItem
-                                          key={payee.id}
-                                          value={payee.id}
-                                        >
-                                          {payee.name}
-                                        </SelectItem>
-                                      ),
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            {editState.payeeId === EMPTY_SELECT_VALUE ? (
-                              <div className="space-y-1.5">
-                                <Label>Einmaliger Einzahler</Label>
-                                <Input
-                                  value={editState.customPayeeName}
-                                  onChange={(event) =>
-                                    setEditState((current) =>
-                                      current
-                                        ? {
-                                            ...current,
-                                            customPayeeName: event.target.value,
-                                          }
-                                        : current,
-                                    )
-                                  }
-                                  placeholder="z. B. Bäckerei Müller"
-                                />
-                              </div>
-                            ) : null}
-
-                            <div className="space-y-1.5">
-                              <Label>Notizen</Label>
-                              <Textarea
-                                value={editState.notes}
-                                onChange={(event) =>
-                                  setEditState((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          notes: event.target.value,
-                                        }
-                                      : current,
-                                  )
-                                }
-                                rows={2}
-                                placeholder="Optional"
-                              />
-                            </div>
-
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={cancelEdit}
-                              >
-                                Abbrechen
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => submitEdit(item.id)}
-                                disabled={updateMutation.isPending}
-                              >
-                                {updateMutation.isPending
-                                  ? "Speichert..."
-                                  : "Speichern"}
-                              </Button>
-                            </div>
-                          </div>
+                        <TableCell colSpan={7} className="bg-muted/20 p-0">
+                          <div className="m-3">{renderEditForm(item.id)}</div>
                         </TableCell>
                       </TableRow>
                     ) : null}
@@ -751,40 +884,41 @@ export function TransactionsClient({
             </TableBody>
           </Table>
           {transactionItems.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               Keine Transaktionen für die aktuellen Filter gefunden.
             </div>
           ) : null}
-          {transactionItems.length > 0 ? (
-            <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
-              <p className="text-xs text-muted-foreground">Seite {page}</p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={page === 1 || transactionsQuery.isFetching}
-                >
-                  Zurück
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((current) => current + 1)}
-                  disabled={!hasMore || transactionsQuery.isFetching}
-                >
-                  Weiter
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {tracker && !tracker.isActive ? (
-            <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-              Dieser Tracker ist archiviert. Transaktionen können nicht geändert
-              oder gelöscht werden.
-            </div>
-          ) : null}
         </div>
+
+        {transactionItems.length > 0 ? (
+          <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Seite {page}</p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page === 1 || transactionsQuery.isFetching}
+              >
+                Zurück
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => current + 1)}
+                disabled={!hasMore || transactionsQuery.isFetching}
+              >
+                Weiter
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {tracker && !tracker.isActive ? (
+          <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+            Dieser Tracker ist archiviert. Transaktionen können nicht geändert
+            oder gelöscht werden.
+          </div>
+        ) : null}
       </div>
     </div>
   );

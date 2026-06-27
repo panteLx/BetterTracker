@@ -745,160 +745,189 @@ export function SchedulesClient({
 
               {isEditing && editState ? (
                 <div className="mt-4 grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Input
-                      value={editState.name}
-                      onChange={(event) =>
-                        setEditState((current) =>
-                          current
-                            ? { ...current, name: event.target.value }
-                            : current,
-                        )
-                      }
-                      placeholder="Name"
-                    />
-                    <Input
-                      value={editState.amount}
-                      onChange={(event) =>
-                        setEditState((current) =>
-                          current
-                            ? { ...current, amount: event.target.value }
-                            : current,
-                        )
-                      }
-                      placeholder="12,50"
-                    />
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Select
-                      value={editState.direction}
-                      onValueChange={(value) =>
-                        setEditState((current) =>
-                          current
-                            ? {
-                                ...current,
-                                direction: value as "expense" | "income",
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="expense">Ausgabe</SelectItem>
-                        <SelectItem value="income">Einnahme</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={editState.frequency}
-                      onValueChange={(value) =>
-                        setEditState((current) =>
-                          current
-                            ? {
-                                ...current,
-                                frequency: value as
-                                  | "monthly"
-                                  | "yearly"
-                                  | "custom_days",
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monthly">Monatlich</SelectItem>
-                        <SelectItem value="yearly">Jährlich</SelectItem>
-                        <SelectItem value="custom_days">Alle X Tage</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      value={editState.intervalValue}
-                      onChange={(event) =>
-                        setEditState((current) =>
-                          current
-                            ? { ...current, intervalValue: event.target.value }
-                            : current,
-                        )
-                      }
-                      placeholder="Intervall"
-                    />
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Select
-                      value={editState.categoryId}
-                      onValueChange={(value) =>
-                        setEditState((current) =>
-                          current ? { ...current, categoryId: value } : current,
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Kategorie wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>
-                          Bitte wählen
-                        </SelectItem>
-                        {(categoriesQuery.data?.items || [])
-                          .filter(
-                            (entry) =>
-                              entry.type === editState.direction ||
-                              entry.type === "transfer",
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Name</Label>
+                      <Input
+                        value={editState.name}
+                        onChange={(event) =>
+                          setEditState((current) =>
+                            current
+                              ? { ...current, name: event.target.value }
+                              : current,
                           )
-                          .map((entry) => (
+                        }
+                        placeholder="z. B. Miete"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Betrag</Label>
+                      <Input
+                        value={editState.amount}
+                        onChange={(event) =>
+                          setEditState((current) =>
+                            current
+                              ? { ...current, amount: event.target.value }
+                              : current,
+                          )
+                        }
+                        placeholder="12,50"
+                        inputMode="decimal"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <Label>Typ</Label>
+                      <Select
+                        value={editState.direction}
+                        onValueChange={(value) =>
+                          setEditState((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  direction: value as "expense" | "income",
+                                }
+                              : current,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="expense">Ausgabe</SelectItem>
+                          <SelectItem value="income">Einnahme</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Frequenz</Label>
+                      <Select
+                        value={editState.frequency}
+                        onValueChange={(value) =>
+                          setEditState((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  frequency: value as
+                                    | "monthly"
+                                    | "yearly"
+                                    | "custom_days",
+                                }
+                              : current,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monatlich</SelectItem>
+                          <SelectItem value="yearly">Jährlich</SelectItem>
+                          <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Intervall</Label>
+                      <Input
+                        value={editState.intervalValue}
+                        onChange={(event) =>
+                          setEditState((current) =>
+                            current
+                              ? { ...current, intervalValue: event.target.value }
+                              : current,
+                          )
+                        }
+                        placeholder="1"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Kategorie</Label>
+                      <Select
+                        value={editState.categoryId}
+                        onValueChange={(value) =>
+                          setEditState((current) =>
+                            current ? { ...current, categoryId: value } : current,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kategorie wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT_VALUE}>
+                            Bitte wählen
+                          </SelectItem>
+                          {(categoriesQuery.data?.items || [])
+                            .filter(
+                              (entry) =>
+                                entry.type === editState.direction ||
+                                entry.type === "transfer",
+                            )
+                            .map((entry) => (
+                              <SelectItem key={entry.id} value={entry.id}>
+                                {entry.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Einzahler</Label>
+                      <Select
+                        value={editState.payeeId}
+                        onValueChange={(value) =>
+                          setEditState((current) =>
+                            current ? { ...current, payeeId: value } : current,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Einzahler wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT_VALUE}>
+                            Bitte wählen
+                          </SelectItem>
+                          {(payeesQuery.data?.items || []).map((entry) => (
                             <SelectItem key={entry.id} value={entry.id}>
                               {entry.name}
                             </SelectItem>
                           ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={editState.payeeId}
-                      onValueChange={(value) =>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Nächster Termin</Label>
+                    <DatePicker
+                      value={editState.nextDueDate}
+                      onChange={(value) =>
                         setEditState((current) =>
-                          current ? { ...current, payeeId: value } : current,
+                          current ? { ...current, nextDueDate: value } : current,
                         )
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Einzahler wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>
-                          Bitte wählen
-                        </SelectItem>
-                        {(payeesQuery.data?.items || []).map((entry) => (
-                          <SelectItem key={entry.id} value={entry.id}>
-                            {entry.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
-                  <DatePicker
-                    value={editState.nextDueDate}
-                    onChange={(value) =>
-                      setEditState((current) =>
-                        current ? { ...current, nextDueDate: value } : current,
-                      )
-                    }
-                  />
-                  <Input
-                    value={editState.notesTemplate}
-                    onChange={(event) =>
-                      setEditState((current) =>
-                        current
-                          ? { ...current, notesTemplate: event.target.value }
-                          : current,
-                      )
-                    }
-                    placeholder="Notizvorlage"
-                  />
+                  <div className="space-y-1.5">
+                    <Label>Notizvorlage (optional)</Label>
+                    <Input
+                      value={editState.notesTemplate}
+                      onChange={(event) =>
+                        setEditState((current) =>
+                          current
+                            ? { ...current, notesTemplate: event.target.value }
+                            : current,
+                        )
+                      }
+                      placeholder="Wird beim Buchen übernommen"
+                    />
+                  </div>
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       type="button"
