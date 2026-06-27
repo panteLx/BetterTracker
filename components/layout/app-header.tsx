@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreditCard, ReceiptText, Shield, TimerReset } from "lucide-react";
+import { BarChart2, CreditCard, ReceiptText, TimerReset } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/layout/user-menu";
 
@@ -45,14 +45,12 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
                 Termine
               </Link>
             </Button>
-            {user.role === "admin" || user.role === "superadmin" ? (
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/admin">
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </Link>
-              </Button>
-            ) : null}
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/statistics">
+                <BarChart2 className="h-4 w-4" />
+                Statistiken
+              </Link>
+            </Button>
           </nav>
         ) : null}
 

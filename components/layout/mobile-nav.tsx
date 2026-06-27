@@ -2,40 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ReceiptText, CalendarClock, Shield } from "lucide-react";
+import { BarChart2, CalendarClock, Home, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const baseItems = [
+const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/transactions", label: "Buchungen", icon: ReceiptText },
   { href: "/schedules", label: "Termine", icon: CalendarClock },
+  { href: "/statistics", label: "Statistik", icon: BarChart2 },
 ];
 
 type MobileNavProps = {
   role?: string | null;
 };
 
-export function MobileNav({ role }: MobileNavProps) {
+export function MobileNav({}: MobileNavProps) {
   const pathname = usePathname();
 
-  const items = [
-    ...baseItems,
-    ...(role === "admin" || role === "superadmin"
-      ? [{ href: "/admin", label: "Admin", icon: Shield }]
-      : []),
-  ];
+  const items = navItems;
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/60 bg-background/90 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div
-        className={cn(
-          "grid h-14",
-          items.length === 4 ? "grid-cols-4" : "grid-cols-3",
-        )}
-      >
+      <div className="grid h-14 grid-cols-4">
         {items.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
