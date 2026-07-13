@@ -6,11 +6,25 @@ function parseCsv(value?: string) {
 }
 
 const oidcScopes = parseCsv(process.env.OIDC_SCOPES);
+const authUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+function getAuthProtocol(value: string): "http" | "https" | "auto" {
+  if (value.startsWith("https://")) {
+    return "https";
+  }
+
+  if (value.startsWith("http://")) {
+    return "http";
+  }
+
+  return "auto";
+}
 
 export const env = {
   databaseUrl: process.env.DATABASE_URL || "file:./data/sqlite.db",
   authSecret: process.env.BETTER_AUTH_SECRET || "dev-secret-change-me",
-  authUrl: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  authUrl,
+  authProtocol: getAuthProtocol(authUrl),
   authAllowedHosts:
     parseCsv(process.env.BETTER_AUTH_ALLOWED_HOSTS).length > 0
       ? parseCsv(process.env.BETTER_AUTH_ALLOWED_HOSTS)

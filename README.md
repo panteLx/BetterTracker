@@ -212,7 +212,8 @@ BETTER_AUTH_TRUSTED_ORIGINS=https://tracker.example.com
 ```
 
 Better Auth derives dynamic callback URLs from the forwarded request host and
-protocol. Ensure the reverse proxy forwards `X-Forwarded-Host` and
+uses the protocol from `BETTER_AUTH_URL`. Ensure production uses an `https://`
+`BETTER_AUTH_URL`. The reverse proxy should also forward `X-Forwarded-Host` and
 `X-Forwarded-Proto`; Caddy does this by default when using `reverse_proxy`.
 
 ## GitHub Container Registry

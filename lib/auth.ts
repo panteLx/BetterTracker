@@ -27,7 +27,7 @@ export const auth = betterAuth({
   baseURL: {
     fallback: env.authUrl,
     allowedHosts: env.authAllowedHosts,
-    protocol: "auto",
+    protocol: env.authProtocol,
   },
   basePath: "/api/auth",
   trustedOrigins: env.authTrustedOrigins,
