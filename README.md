@@ -201,8 +201,19 @@ application with `docker compose down`. Do not add `--volumes` unless the
 database should also be deleted.
 
 For a deployment behind a public domain or reverse proxy, also set
-`BETTER_AUTH_ALLOWED_HOSTS` and `BETTER_AUTH_TRUSTED_ORIGINS` to the deployed
-host and origin.
+`BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`, `BETTER_AUTH_ALLOWED_HOSTS`, and
+`BETTER_AUTH_TRUSTED_ORIGINS` to the deployed HTTPS origin:
+
+```env
+BETTER_AUTH_URL=https://tracker.example.com
+NEXT_PUBLIC_APP_URL=https://tracker.example.com
+BETTER_AUTH_ALLOWED_HOSTS=tracker.example.com
+BETTER_AUTH_TRUSTED_ORIGINS=https://tracker.example.com
+```
+
+Better Auth derives dynamic callback URLs from the forwarded request host and
+protocol. Ensure the reverse proxy forwards `X-Forwarded-Host` and
+`X-Forwarded-Proto`; Caddy does this by default when using `reverse_proxy`.
 
 ## GitHub Container Registry
 
