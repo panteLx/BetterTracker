@@ -1,5 +1,7 @@
 import { PageContainer } from "@/components/layout/page-container";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionCard } from "@/components/ui/section-card";
+import { Badge } from "@/components/ui/badge";
+import { SignOutButton } from "@/components/profile/sign-out-button";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
 import { env } from "@/lib/env";
 import {
@@ -24,41 +26,67 @@ export default async function ProfilePage() {
       description="Persönliche Kontoinformationen und aktive Sessions."
     >
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>
-              <span className="font-medium">Name:</span> {userRecord?.name}
-            </p>
-            <p>
-              <span className="font-medium">E-Mail:</span> {userRecord?.email}
-            </p>
-            <p>
-              <span className="font-medium">Rolle:</span> {userRecord?.role}
-            </p>
-            <p>
-              <span className="font-medium">Status:</span>{" "}
-              {userRecord?.banned ? "Banned" : "Aktiv"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Aktive Sessions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {sessions.map((session) => (
-              <div key={session.id} className="rounded-2xl border border-border/60 p-4 text-sm">
-                <p className="font-medium">{session.userAgent || "Unbekanntes Gerät"}</p>
-                <p className="text-muted-foreground">
-                  Läuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <SectionCard
+          title="Account"
+          titleRight={
+            userRecord?.role ? (
+              <Badge variant="outline" className="text-xs">
+                {userRecord.role}
+              </Badge>
+            ) : null
+          }
+        >
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              <dt className="text-muted-foreground">Name</dt>
+              <dd className="font-medium">{userRecord?.name}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              <dt className="text-muted-foreground">E-Mail</dt>
+              <dd className="font-medium">{userRecord?.email}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              <dt className="text-muted-foreground">Status</dt>
+              <dd>
+                {userRecord?.banned ? (
+                  <Badge variant="destructive" className="text-xs">Gesperrt</Badge>
+                ) : (
+                  <Badge variant="secondary" className="border-income/30 bg-income-muted text-income text-xs">Aktiv</Badge>
+                )}
+              </dd>
+            </div>
+          </dl>
+          <div className="mt-4 pt-4 border-t border-border/60">
+            <SignOutButton />
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Aktive Sessions"
+          titleRight={
+            <span className="rounded-full border border-border/60 bg-background/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              {sessions.length} aktiv
+            </span>
+          }
+        >
+          <div className="space-y-2">
+            {sessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Keine aktiven Sessions gefunden.</p>
+            ) : (
+              sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 text-sm"
+                >
+                  <p className="font-medium">{session.userAgent || "Unbekanntes Gerät"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Läuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </SectionCard>
       </div>
     </PageContainer>
   );

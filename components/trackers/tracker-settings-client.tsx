@@ -943,9 +943,9 @@ export function TrackerSettingsClient({
                             className={cn(
                               "rounded-full px-2 py-0.5 text-xs font-medium",
                               item.type === "expense"
-                                ? "bg-rose-500/10 text-rose-700"
+                                ? "bg-expense-muted text-expense"
                                 : item.type === "income"
-                                  ? "bg-emerald-500/10 text-emerald-700"
+                                  ? "bg-income-muted text-income"
                                   : "bg-muted text-muted-foreground",
                             )}
                           >
@@ -1119,7 +1119,7 @@ function PublicShareToggle({
             aria-label="Link kopieren"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-emerald-600" />
+              <Check className="h-3.5 w-3.5 text-income" />
             ) : (
               <Copy className="h-3.5 w-3.5 text-muted-foreground" />
             )}

@@ -506,24 +506,24 @@ export function TransactionsClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-emerald-500/12 via-emerald-500/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-income-muted/60 via-income-muted/20 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Einnahmen</p>
-          <p className="mt-1 text-xl font-semibold text-emerald-600">
+          <p className="mt-1 text-xl font-semibold tabular-nums text-income">
             {formatCurrency(totals.incomeCents, currency, locale)}
           </p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-rose-500/12 via-rose-500/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Ausgaben</p>
-          <p className="mt-1 text-xl font-semibold text-rose-600">
+          <p className="mt-1 text-xl font-semibold tabular-nums text-expense">
             {formatCurrency(totals.expenseCents, currency, locale)}
           </p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/12 via-primary/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Saldo</p>
           <p
             className={cn(
-              "mt-1 text-xl font-semibold",
-              balance >= 0 ? "text-foreground" : "text-rose-600",
+              "mt-1 text-xl font-semibold tabular-nums",
+              balance >= 0 ? "text-foreground" : "text-expense",
             )}
           >
             {formatCurrency(balance, currency, locale)}
@@ -538,6 +538,8 @@ export function TransactionsClient({
             type="button"
             className="flex items-center gap-2"
             onClick={() => setFilterExpanded((v) => !v)}
+            aria-expanded={filterExpanded}
+            aria-controls="filter-panel"
           >
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Filter</span>
@@ -720,8 +722,8 @@ export function TransactionsClient({
                               className={cn(
                                 "text-sm font-semibold",
                                 item.direction === "expense"
-                                  ? "text-rose-600"
-                                  : "text-emerald-600",
+                                  ? "text-expense"
+                                  : "text-income",
                               )}
                             >
                               {item.direction === "expense" ? "-" : "+"}
@@ -830,10 +832,10 @@ export function TransactionsClient({
                       <TableCell className="text-right">
                         <span
                           className={cn(
-                            "text-sm font-semibold",
+                            "text-sm font-semibold tabular-nums",
                             item.direction === "expense"
-                              ? "text-rose-600"
-                              : "text-emerald-600",
+                              ? "text-expense"
+                              : "text-income",
                           )}
                         >
                           {item.direction === "expense" ? "-" : "+"}

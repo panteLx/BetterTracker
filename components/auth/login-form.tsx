@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth/client";
 import { OidcButton } from "@/components/auth/oidc-button";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -43,11 +43,8 @@ export function LoginForm({
   }
 
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Einloggen</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full border-border/60">
+      <CardContent className="pt-6">
         {oidcEnabled ? (
           <div className="mb-6 space-y-4">
             <OidcButton mode="login" providerName={oidcProviderName} />

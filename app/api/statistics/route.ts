@@ -14,7 +14,7 @@ async function queryCategoryBreakdown(
     .select({
       categoryId: transactions.categoryId,
       categoryName: sql<string>`coalesce(${categories.name}, 'Ohne Kategorie')`,
-      color: sql<string>`coalesce(${categories.color}, '#475569')`,
+      color: sql<string>`coalesce(${categories.color}, '#0f766e')`,
       totalCents: sql<number>`sum(${transactions.amountCents})`,
       count: sql<number>`count(*)`,
     })

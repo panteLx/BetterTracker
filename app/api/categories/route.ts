@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         trackerId: body.trackerId,
         name: body.name.trim(),
         type: body.type || "expense",
-        color: body.color || "#475569",
+        color: body.color || "#0f766e",
       })
       .returning();
 
