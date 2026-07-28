@@ -27,7 +27,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
-import { StatTile, StatTileSkeleton } from "@/components/ui/stat-tile";
+import { StatTile } from "@/components/ui/stat-tile";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
@@ -787,26 +787,6 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
   ];
 
-  if (trackersQuery.isPending) {
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-8 w-24 animate-pulse rounded-full bg-muted" />
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <StatTileSkeleton key={i} />
-          ))}
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-xl bg-muted" />
-          <div className="h-64 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
