@@ -26,7 +26,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -392,22 +391,6 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
   const hasData = (stats?.summary.transactionCount ?? 0) > 0;
   const isLoading = trackersLoading || (!!activeTrackerId && statsLoading);
 
-  if (trackersLoading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
-          ))}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-        <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-48 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
 
   if (!trackers?.length) {
     return (
@@ -464,13 +447,8 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
       </div>
 
       {isLoading ? (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
-            ))}
-          </div>
-          <Skeleton className="h-64 rounded-xl" />
+        <div className="flex items-center justify-center py-16">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-foreground" />
         </div>
       ) : !hasData ? (
         <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">

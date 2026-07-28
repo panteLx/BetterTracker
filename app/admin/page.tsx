@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { PageContainer } from "@/components/layout/page-container";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
 import { requireUser } from "@/lib/auth/session";
+import { getAdminStats } from "@/lib/services/admin-stats-service";
+import { makeQueryClient } from "@/lib/query-client";
 
 export default async function AdminPage() {
   const user = await requireUser();
@@ -12,6 +15,12 @@ export default async function AdminPage() {
     redirect("/");
   }
 
+  const queryClient = makeQueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: ["admin-stats"],
+    queryFn: getAdminStats,
+  });
+
   return (
     <PageContainer
       user={user}
@@ -19,7 +28,9 @@ export default async function AdminPage() {
       description="Systemweite Kennzahlen und Einstieg in Benutzer-, Tracker- und Settings-Verwaltung."
     >
       <AdminNav />
-      <AdminOverview />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <AdminOverview />
+      </HydrationBoundary>
     </PageContainer>
   );
 }
