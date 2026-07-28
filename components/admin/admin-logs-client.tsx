@@ -195,29 +195,44 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
       </div>
 
       {/* Log entries */}
-      <div className="rounded-xl border border-border/60 bg-card">
+      <div className="w-full overflow-x-auto rounded-xl border border-border/60 bg-card">
         {items.length === 0 && !logsQuery.isPending ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Keine Logs gefunden.
           </p>
-        ) : (
+        ) : logsQuery.isPending ? (
           <div className="divide-y divide-border/40">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex gap-4 px-4 py-3">
+                <div className="w-40 shrink-0 space-y-2">
+                  <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-16 animate-pulse rounded-full bg-muted" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full divide-y divide-border/40">
             {items.map((item) => (
-              <div key={item.id} className="grid gap-y-1 px-4 py-3 text-sm sm:grid-cols-[180px_1fr]">
+              <div key={item.id} className="flex w-full gap-4 px-4 py-3 text-sm">
                 {/* Left: time + severity */}
-                <div className="flex flex-col gap-1">
-                  <span className="font-mono text-xs text-muted-foreground">
+                <div className="w-40 shrink-0 space-y-1">
+                  <span className="block font-mono text-xs text-muted-foreground">
                     {formatDateTime(item.createdAt, locale, timezone)}
                   </span>
                   <span
-                    className={`w-fit rounded-full px-2 py-0.5 text-xs ${SEVERITY_COLORS[item.severity] ?? ""}`}
+                    className={`inline-block rounded-full px-2 py-0.5 text-xs ${SEVERITY_COLORS[item.severity] ?? ""}`}
                   >
                     {item.severity}
                   </span>
                 </div>
 
                 {/* Right: details */}
-                <div className="space-y-1 min-w-0">
+                <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <span className="font-medium">{item.action}</span>
                     <span className="text-xs text-muted-foreground">
@@ -226,7 +241,7 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
                     </span>
                   </div>
                   {item.actorUserName || item.actorUserEmail ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       {item.actorUserName}
                       {item.actorUserEmail ? ` (${item.actorUserEmail})` : ""}
                     </p>
