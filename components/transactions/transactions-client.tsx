@@ -832,10 +832,10 @@ export function TransactionsClient({
                       <TableCell className="text-right">
                         <span
                           className={cn(
-                            "text-sm font-semibold",
+                            "text-sm font-semibold tabular-nums",
                             item.direction === "expense"
-                              ? "text-rose-600"
-                              : "text-emerald-600",
+                              ? "text-expense"
+                              : "text-income",
                           )}
                         >
                           {item.direction === "expense" ? "-" : "+"}

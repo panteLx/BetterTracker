@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import React, { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -27,9 +27,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { StatTile, StatTileSkeleton } from "@/components/ui/stat-tile";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const EMPTY_SELECT_VALUE = "none";
 
@@ -261,6 +263,7 @@ type DashboardClientProps = {
 
 export function DashboardClient({ locale }: DashboardClientProps) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
@@ -744,65 +747,65 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     });
   }
 
-  const statCards = [
+  const statCards: {
+    label: string;
+    value: string;
+    icon: React.ElementType;
+    tone: "income" | "expense" | "primary" | "neutral";
+    secondaryValue?: string;
+    helperText?: string;
+  }[] = [
     {
       label: "Einnahmen",
-      value: formatCurrency(
-        totals.incomeCents,
-        tracker?.currency || "EUR",
-        locale,
-      ),
+      value: formatCurrency(totals.incomeCents, tracker?.currency || "EUR", locale),
       icon: ArrowUpRight,
-      tone: "text-income",
-      surface: "from-income-muted/60 via-income-muted/20 to-transparent",
+      tone: "income",
     },
     {
       label: "Ausgaben",
-      value: formatCurrency(
-        totals.expenseCents,
-        tracker?.currency || "EUR",
-        locale,
-      ),
+      value: formatCurrency(totals.expenseCents, tracker?.currency || "EUR", locale),
       icon: ArrowDownLeft,
-      tone: "text-expense",
-      surface: "from-expense-muted/60 via-expense-muted/20 to-transparent",
+      tone: "expense",
     },
     {
       label: "Saldo",
       value: formatCurrency(trackerBalance, tracker?.currency || "EUR", locale),
       secondaryValue: hasTrackers
-        ? `Prognose in ${forecast.days} Tagen: ${formatCurrency(
-            forecast.projectedBalanceCents,
-            tracker?.currency || "EUR",
-            locale,
-          )}`
+        ? `Prognose in ${forecast.days} Tagen: ${formatCurrency(forecast.projectedBalanceCents, tracker?.currency || "EUR", locale)}`
         : undefined,
       helperText: hasTrackers
-        ? `Geplant: +${formatCurrency(
-            forecast.scheduledIncomeCents,
-            tracker?.currency || "EUR",
-            locale,
-          )} / -${formatCurrency(
-            forecast.scheduledExpenseCents,
-            tracker?.currency || "EUR",
-            locale,
-          )}`
+        ? `Geplant: +${formatCurrency(forecast.scheduledIncomeCents, tracker?.currency || "EUR", locale)} / -${formatCurrency(forecast.scheduledExpenseCents, tracker?.currency || "EUR", locale)}`
         : undefined,
       icon: Landmark,
-      tone: trackerBalance >= 0 ? "text-foreground" : "text-expense",
-      surface: "from-primary/10 via-primary/5 to-transparent",
+      tone: trackerBalance >= 0 ? "primary" : "expense",
     },
     {
       label: "Buchungen",
       value: String(transactionCount),
       icon: Tags,
-      tone: "text-foreground",
-      surface: "from-muted/60 via-muted/20 to-transparent",
+      tone: "neutral",
     },
   ];
 
   if (trackersQuery.isPending) {
-    return null;
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-8 w-24 animate-pulse rounded-full bg-muted" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatTileSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -910,47 +913,17 @@ export function DashboardClient({ locale }: DashboardClientProps) {
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {statCards.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className={cn(
-                    "rounded-xl border border-border/60 bg-gradient-to-br p-3",
-                    item.surface,
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 space-y-1">
-                      <p className="text-xs text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p
-                        className={cn(
-                          "text-xl font-semibold tracking-tight",
-                          item.tone,
-                        )}
-                      >
-                        {item.value}
-                      </p>
-                      {"secondaryValue" in item && item.secondaryValue ? (
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {item.secondaryValue}
-                        </p>
-                      ) : null}
-                      {"helperText" in item && item.helperText ? (
-                        <p className="text-xs text-muted-foreground">
-                          {item.helperText}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="shrink-0 rounded-lg border border-border/60 bg-background/80 p-2">
-                      <Icon className={cn("h-3.5 w-3.5", item.tone)} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {statCards.map((item) => (
+              <StatTile
+                key={item.label}
+                label={item.label}
+                value={item.value}
+                icon={item.icon}
+                tone={item.tone}
+                secondaryValue={item.secondaryValue}
+                helperText={item.helperText}
+              />
+            ))}
           </div>
 
           {/* Main 2-col layout */}
@@ -1106,10 +1079,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       </div>
                       <p
                         className={cn(
-                          "shrink-0 text-sm font-semibold",
+                          "shrink-0 text-sm font-semibold tabular-nums",
                           item.direction === "expense"
-                            ? "text-rose-600"
-                            : "text-emerald-600",
+                            ? "text-expense"
+                            : "text-income",
                         )}
                       >
                         {item.direction === "expense" ? "-" : "+"}
@@ -1135,9 +1108,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       {/* New tracker sheet */}
       <Sheet open={newTrackerSheetOpen} onOpenChange={setNewTrackerSheetOpen}>
         <SheetContent
-          side="right"
+          side={isMobile ? "bottom" : "right"}
           className="flex flex-col gap-0 p-0 sm:max-w-md"
         >
+          {isMobile && (
+            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
+          )}
           <div className="shrink-0 border-b border-border/60 p-5 pr-12">
             <SheetTitle>Neuer Tracker</SheetTitle>
             <SheetDescription>
@@ -1173,9 +1149,12 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       {/* Booking sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
-          side="right"
+          side={isMobile ? "bottom" : "right"}
           className="flex flex-col gap-0 p-0 sm:max-w-md"
         >
+          {isMobile && (
+            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
+          )}
           <div className="flex shrink-0 items-start gap-3 border-b border-border/60 p-5 pr-12">
             <div className="flex-1 min-w-0 space-y-1">
               <SheetTitle>Neue Buchung</SheetTitle>

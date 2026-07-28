@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -137,6 +138,7 @@ export function SchedulesClient({
   currentUserId,
 }: SchedulesClientProps) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [name, setName] = useState("");
@@ -1004,17 +1006,17 @@ export function SchedulesClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-rose-500/12 via-rose-500/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Fällig</p>
-          <p className="mt-1 text-xl font-semibold">{dueCount}</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums">{dueCount}</p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-amber-500/12 via-amber-500/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Demnächst</p>
-          <p className="mt-1 text-xl font-semibold">{upcomingCount}</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums">{upcomingCount}</p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/12 via-primary/6 to-transparent p-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-muted/60 via-muted/20 to-transparent p-3">
           <p className="text-xs text-muted-foreground">Abgeschlossen</p>
-          <p className="mt-1 text-xl font-semibold">{inactiveCount}</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums">{inactiveCount}</p>
         </div>
       </div>
 
@@ -1059,7 +1061,10 @@ export function SchedulesClient({
 
       {/* New schedule sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-lg">
+        <SheetContent side={isMobile ? "bottom" : "right"} className="flex flex-col gap-0 p-0 sm:max-w-lg">
+          {isMobile && (
+            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
+          )}
           <div className="shrink-0 border-b border-border/60 p-5 pr-12">
             <SheetTitle>Neuer Termin</SheetTitle>
             <SheetDescription>für {tracker?.name}</SheetDescription>
