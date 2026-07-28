@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -26,31 +25,30 @@ export function AppFooter() {
     : `v${version}`;
 
   return (
-    <footer className="border-t border-border/60 py-2 mb-14 md:mb-0">
+    <footer className="border-t border-border/40 py-2 mb-14 md:mb-0">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <span className="font-mono text-xs text-muted-foreground">{label}</span>
+        <span className="font-mono text-xs text-muted-foreground/70">{label}</span>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" className="text-muted-foreground" asChild>
+          <Button variant="ghost" size="icon-sm" className="text-muted-foreground/70 hover:text-muted-foreground" asChild>
             <Link
               href="https://buymeacoffee.com/pantel"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Support on Buy Me a Coffee"
             >
-              <Coffee />
+              <Coffee className="size-3.5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon-sm" className="text-muted-foreground" asChild>
+          <Button variant="ghost" size="icon-sm" className="text-muted-foreground/70 hover:text-muted-foreground" asChild>
             <Link
               href="https://github.com/panteLx/BetterTracker"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub Repository"
             >
-              <GithubIcon className="size-4" />
+              <GithubIcon className="size-3.5" />
             </Link>
           </Button>
-          <ThemeToggle />
         </div>
       </div>
     </footer>

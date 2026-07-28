@@ -471,7 +471,7 @@ function ConfigureStep({
                             <span
                               className={cn(
                                 "font-medium",
-                                isNegative ? "text-rose-600" : "text-emerald-600",
+                                isNegative ? "text-expense" : "text-income",
                               )}
                             >
                               {value}
@@ -512,13 +512,13 @@ function ResultStep({ result }: { result: ImportResult }) {
           "flex items-start gap-3 rounded-xl border p-4",
           allFailed
             ? "border-destructive/30 bg-destructive/5"
-            : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/20",
+            : "border-income/30 bg-income-muted/40",
         )}
       >
         {allFailed ? (
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
         ) : (
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-income" />
         )}
         <div className="space-y-1">
           <p className="text-sm font-medium">

@@ -326,7 +326,7 @@ function PublicLinkDisplay({ slug }: { slug: string }) {
         aria-label="Link kopieren"
       >
         {copied ? (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <Check className="h-3.5 w-3.5 text-income" />
         ) : (
           <Copy className="h-3.5 w-3.5 text-muted-foreground" />
         )}

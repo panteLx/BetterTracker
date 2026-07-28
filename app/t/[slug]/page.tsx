@@ -1,9 +1,13 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ArrowDownLeft, ArrowUpRight, CreditCard, Landmark } from "lucide-react";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions } from "@/lib/db/schema";
 import { formatCurrency } from "@/lib/utils";
+import { StatTile } from "@/components/ui/stat-tile";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -73,24 +77,26 @@ export default async function PublicTrackerPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/60 bg-card/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <span
-              className="h-8 w-8 shrink-0 rounded-full border border-black/10 shadow-sm"
-              style={{ backgroundColor: tracker.color }}
-            />
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold">{tracker.name}</h1>
-              {tracker.description ? (
-                <p className="truncate text-sm text-muted-foreground">
-                  {tracker.description}
-                </p>
-              ) : null}
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <CreditCard className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-semibold tracking-tight">BetterTracker</span>
+            </Link>
+            <span className="text-border-strong">/</span>
+            <div className="flex items-center gap-2">
+              <span
+                className="h-5 w-5 shrink-0 rounded-full border border-black/10 shadow-sm"
+                style={{ backgroundColor: tracker.color }}
+              />
+              <span className="text-sm font-medium truncate max-w-32 sm:max-w-none">{tracker.name}</span>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-xs text-muted-foreground">
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="hidden sm:inline-flex rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-xs text-muted-foreground">
               Öffentliche Ansicht
             </span>
             <Link
@@ -104,29 +110,31 @@ export default async function PublicTrackerPage({ params }: Props) {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+        {/* Tracker info */}
+        {tracker.description ? (
+          <p className="mb-4 text-sm text-muted-foreground">{tracker.description}</p>
+        ) : null}
+
         {/* Summary cards */}
         <div className="mb-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border/60 bg-card p-4">
-            <p className="text-xs text-muted-foreground">Einnahmen</p>
-            <p className="mt-1 text-xl font-semibold text-emerald-600">
-              +{formatCurrency(totals.incomeCents, tracker.currency)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-card p-4">
-            <p className="text-xs text-muted-foreground">Ausgaben</p>
-            <p className="mt-1 text-xl font-semibold text-rose-600">
-              -{formatCurrency(totals.expenseCents, tracker.currency)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-card p-4">
-            <p className="text-xs text-muted-foreground">Saldo</p>
-            <p
-              className={`mt-1 text-xl font-semibold ${balanceCents >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-            >
-              {balanceCents >= 0 ? "+" : ""}
-              {formatCurrency(balanceCents, tracker.currency)}
-            </p>
-          </div>
+          <StatTile
+            label="Einnahmen"
+            value={`+${formatCurrency(totals.incomeCents, tracker.currency)}`}
+            icon={ArrowUpRight}
+            tone="income"
+          />
+          <StatTile
+            label="Ausgaben"
+            value={`-${formatCurrency(totals.expenseCents, tracker.currency)}`}
+            icon={ArrowDownLeft}
+            tone="expense"
+          />
+          <StatTile
+            label="Saldo"
+            value={`${balanceCents >= 0 ? "+" : ""}${formatCurrency(balanceCents, tracker.currency)}`}
+            icon={Landmark}
+            tone={balanceCents >= 0 ? "primary" : "expense"}
+          />
         </div>
 
         {/* Transaction list */}
@@ -141,23 +149,22 @@ export default async function PublicTrackerPage({ params }: Props) {
           </div>
 
           {items.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              Noch keine Buchungen vorhanden.
-            </p>
+            <EmptyState
+              title="Keine Buchungen vorhanden"
+              description="Noch keine Buchungen für diesen Tracker."
+              className="py-10"
+            />
           ) : (
             <ul className="divide-y divide-border/40">
               {items.map((item) => {
-                const payeeLabel =
-                  item.payeeName ?? item.customPayeeName ?? "Anonym";
+                const payeeLabel = item.payeeName ?? item.customPayeeName ?? "Anonym";
                 return (
                   <li
                     key={item.id}
                     className="flex items-center justify-between gap-4 px-4 py-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {payeeLabel}
-                      </p>
+                      <p className="truncate text-sm font-medium">{payeeLabel}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {item.categoryName ?? "—"}
                         {item.notes ? ` · ${item.notes}` : ""}
@@ -165,14 +172,15 @@ export default async function PublicTrackerPage({ params }: Props) {
                     </div>
                     <div className="shrink-0 text-right">
                       <p
-                        className={`text-sm font-semibold tabular-nums ${item.direction === "income" ? "text-emerald-600" : "text-rose-600"}`}
+                        className={cn(
+                          "text-sm font-semibold tabular-nums",
+                          item.direction === "income" ? "text-income" : "text-expense",
+                        )}
                       >
                         {item.direction === "income" ? "+" : "-"}
                         {formatCurrency(item.amountCents, tracker.currency)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(item.date)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDate(item.date)}</p>
                     </div>
                   </li>
                 );

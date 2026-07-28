@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { signOut } from "@/lib/auth/client";
 
 type UserMenuProps = {
@@ -23,7 +24,7 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="justify-start gap-2 rounded-full">
+        <Button variant="outline" className="justify-start gap-2 rounded-full" aria-label="Benutzermenü">
           <User2 className="h-4 w-4" />
           <span className="hidden sm:inline">{name}</span>
         </Button>
@@ -51,6 +52,11 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
             </Link>
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <span className="text-sm text-muted-foreground">Erscheinungsbild</span>
+          <ThemeToggle />
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {

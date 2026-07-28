@@ -6,37 +6,37 @@ import { FileText, LayoutDashboard, Settings, Shield, Users } from "lucide-react
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/trackers", label: "Trackers", icon: Shield },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-  { href: "/admin/logs", label: "Logs", icon: FileText },
+  { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true },
+  { href: "/admin/users", label: "Nutzer", icon: Users, exact: false },
+  { href: "/admin/trackers", label: "Tracker", icon: Shield, exact: false },
+  { href: "/admin/settings", label: "Einstellungen", icon: Settings, exact: false },
+  { href: "/admin/logs", label: "Logs", icon: FileText, exact: false },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap gap-2 rounded-[1.4rem] border border-border/50 bg-card/72 p-3 backdrop-blur-xl">
-      {adminLinks.map((link) => {
-        const Icon = link.icon;
-        const isActive =
-          pathname === link.href ||
-          (link.href !== "/admin" && pathname.startsWith(`${link.href}/`));
+    <nav className="flex flex-wrap rounded-xl border border-border/60 bg-muted/50 p-1 gap-0.5">
+      {adminLinks.map(({ href, label, icon: Icon, exact }) => {
+        const isActive = exact
+          ? pathname === href
+          : pathname.startsWith(href);
 
         return (
           <Link
-            key={link.href}
-            href={link.href}
+            key={href}
+            href={href}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-card/60 hover:text-foreground",
             )}
           >
-            <Icon className="h-4 w-4" />
-            {link.label}
+            <Icon className="h-3.5 w-3.5" />
+            {label}
           </Link>
         );
       })}

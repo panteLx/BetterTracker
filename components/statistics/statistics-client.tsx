@@ -26,6 +26,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -36,14 +37,12 @@ import {
 import { fetchJson } from "@/lib/client-fetch";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useChartColors } from "@/lib/chart-colors";
 
 const GERMAN_MONTHS = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
   "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
 ];
-
-const COLOR_EXPENSE = "oklch(64.5% 0.246 16.439)";
-const COLOR_INCOME = "oklch(79.2% 0.209 151.711)";
 
 type Tracker = {
   id: string;
@@ -114,7 +113,7 @@ function DirectionToggle({
         className={cn(
           "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
           value === "expense"
-            ? "bg-rose-500 text-white shadow-sm"
+            ? "bg-expense text-expense-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
@@ -125,7 +124,7 @@ function DirectionToggle({
         className={cn(
           "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
           value === "income"
-            ? "bg-emerald-500 text-white shadow-sm"
+            ? "bg-income text-income-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
@@ -290,7 +289,8 @@ function PayeeChart({
   currency: string;
   locale: string;
 }) {
-  const barColor = direction === "expense" ? COLOR_EXPENSE : COLOR_INCOME;
+  const chartColors = useChartColors();
+  const barColor = direction === "expense" ? chartColors.expense : chartColors.income;
   const dataKey = direction === "expense" ? "Ausgaben" : "Einnahmen";
 
   const data = items
@@ -388,21 +388,33 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
     [stats]
   );
 
+  const colors = useChartColors();
   const hasData = (stats?.summary.transactionCount ?? 0) > 0;
   const isLoading = trackersLoading || (!!activeTrackerId && statsLoading);
 
   if (trackersLoading) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-        Lade Daten…
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-64 rounded-xl" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
       </div>
     );
   }
 
   if (!trackers?.length) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
-        <BarChart2 className="h-10 w-10 opacity-40" />
+      <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
+          <BarChart2 className="h-5 w-5" />
+        </div>
         <p className="text-sm">Kein Tracker vorhanden.</p>
       </div>
     );
@@ -452,12 +464,19 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
       </div>
 
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-          Lade Statistiken…
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-64 rounded-xl" />
         </div>
       ) : !hasData ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
-          <BarChart2 className="h-10 w-10 opacity-40" />
+        <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
+            <BarChart2 className="h-5 w-5" />
+          </div>
           <p className="text-sm">Keine Buchungen für {selectedYear} gefunden.</p>
         </div>
       ) : (
@@ -468,15 +487,15 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               title="Einnahmen"
               value={formatCurrency(stats!.summary.incomeCents, currency, locale)}
               icon={TrendingUp}
-              colorClass="text-emerald-600 dark:text-emerald-400"
-              bgClass="bg-emerald-100 dark:bg-emerald-950"
+              colorClass="text-income"
+              bgClass="bg-income-muted"
             />
             <SummaryCard
               title="Ausgaben"
               value={formatCurrency(stats!.summary.expenseCents, currency, locale)}
               icon={TrendingDown}
-              colorClass="text-rose-600 dark:text-rose-400"
-              bgClass="bg-rose-100 dark:bg-rose-950"
+              colorClass="text-expense"
+              bgClass="bg-expense-muted"
             />
             <SummaryCard
               title="Saldo"
@@ -484,13 +503,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               icon={Wallet}
               colorClass={
                 stats!.summary.balanceCents >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-rose-600 dark:text-rose-400"
+                  ? "text-income"
+                  : "text-expense"
               }
               bgClass={
                 stats!.summary.balanceCents >= 0
-                  ? "bg-emerald-100 dark:bg-emerald-950"
-                  : "bg-rose-100 dark:bg-rose-950"
+                  ? "bg-income-muted"
+                  : "bg-expense-muted"
               }
             />
             <SummaryCard
@@ -547,13 +566,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   />
                   <Bar
                     dataKey="Einnahmen"
-                    fill={COLOR_INCOME}
+                    fill={colors.income}
                     radius={[3, 3, 0, 0]}
                     maxBarSize={24}
                   />
                   <Bar
                     dataKey="Ausgaben"
-                    fill={COLOR_EXPENSE}
+                    fill={colors.expense}
                     radius={[3, 3, 0, 0]}
                     maxBarSize={24}
                   />
@@ -625,8 +644,8 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                 >
                   <defs>
                     <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLOR_INCOME} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLOR_INCOME} stopOpacity={0} />
+                      <stop offset="5%" stopColor={colors.income} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={colors.income} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -657,7 +676,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   <Area
                     type="monotone"
                     dataKey="Kontostand"
-                    stroke={COLOR_INCOME}
+                    stroke={colors.income}
                     strokeWidth={2}
                     fill="url(#balanceGradient)"
                     dot={false}

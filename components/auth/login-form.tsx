@@ -43,11 +43,8 @@ export function LoginForm({
   }
 
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Einloggen</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full border-border/60">
+      <CardContent className="pt-6">
         {oidcEnabled ? (
           <div className="mb-6 space-y-4">
             <OidcButton mode="login" providerName={oidcProviderName} />

@@ -753,8 +753,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         locale,
       ),
       icon: ArrowUpRight,
-      tone: "text-emerald-600",
-      surface: "from-emerald-500/12 via-emerald-500/6 to-transparent",
+      tone: "text-income",
+      surface: "from-income-muted/60 via-income-muted/20 to-transparent",
     },
     {
       label: "Ausgaben",
@@ -764,8 +764,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         locale,
       ),
       icon: ArrowDownLeft,
-      tone: "text-rose-600",
-      surface: "from-rose-500/12 via-rose-500/6 to-transparent",
+      tone: "text-expense",
+      surface: "from-expense-muted/60 via-expense-muted/20 to-transparent",
     },
     {
       label: "Saldo",
@@ -789,15 +789,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           )}`
         : undefined,
       icon: Landmark,
-      tone: trackerBalance >= 0 ? "text-foreground" : "text-rose-600",
-      surface: "from-primary/12 via-primary/6 to-transparent",
+      tone: trackerBalance >= 0 ? "text-foreground" : "text-expense",
+      surface: "from-primary/10 via-primary/5 to-transparent",
     },
     {
       label: "Buchungen",
       value: String(transactionCount),
       icon: Tags,
       tone: "text-foreground",
-      surface: "from-slate-500/12 via-slate-500/6 to-transparent",
+      surface: "from-muted/60 via-muted/20 to-transparent",
     },
   ];
 
@@ -840,6 +840,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                     key={item.id}
                     type="button"
                     draggable
+                    aria-label={`Tracker ${item.name} auswählen`}
+                    aria-pressed={isActive}
                     onClick={() => handleTrackerSelect(item.id)}
                     onDragStart={() => setDraggedTrackerId(item.id)}
                     onDragEnd={() => setDraggedTrackerId("")}
@@ -858,7 +860,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color || "#0f172a" }}
+                      style={{ backgroundColor: item.color || "#0f766e" }}
                     />
                     {item.name}
                     {!item.isActive ? " (Archiv)" : ""}
@@ -1000,8 +1002,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             className={cn(
                               "text-sm font-semibold",
                               item.direction === "expense"
-                                ? "text-rose-600"
-                                : "text-emerald-600",
+                                ? "text-expense"
+                                : "text-income",
                             )}
                           >
                             {item.direction === "expense" ? "-" : "+"}
@@ -1189,7 +1191,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition",
                   direction === "expense"
-                    ? "bg-rose-600 text-white shadow-sm"
+                    ? "bg-expense text-expense-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -1204,7 +1206,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition",
                   direction === "income"
-                    ? "bg-emerald-600 text-white shadow-sm"
+                    ? "bg-income text-income-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >

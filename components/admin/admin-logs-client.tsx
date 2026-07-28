@@ -39,10 +39,10 @@ type AdminLogsClientProps = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  info: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
-  warning: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  error: "bg-rose-500/15 text-rose-700 dark:text-rose-400",
-  critical: "bg-rose-700/20 text-rose-900 font-semibold dark:text-rose-300",
+  info: "bg-info-muted text-info",
+  warning: "bg-warning-muted text-warning-foreground",
+  error: "bg-expense-muted text-expense",
+  critical: "bg-expense-muted text-expense font-semibold",
 };
 
 const SEVERITY_ALL = "all";

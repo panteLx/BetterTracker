@@ -1096,7 +1096,7 @@ export function SchedulesClient({
                     className={cn(
                       "rounded-lg border px-4 py-3 text-left transition",
                       direction === "expense"
-                        ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                        ? "border-expense/30 bg-expense-muted text-expense"
                         : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -1109,7 +1109,7 @@ export function SchedulesClient({
                     className={cn(
                       "rounded-lg border px-4 py-3 text-left transition",
                       direction === "income"
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                        ? "border-income/30 bg-income-muted text-income"
                         : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
                     )}
                   >

@@ -110,7 +110,7 @@ export async function POST(
       } else {
         const [inserted] = await db
           .insert(categories)
-          .values({ trackerId, name: catName, type: catType, color: "#475569" })
+          .values({ trackerId, name: catName, type: catType, color: "#0f766e" })
           .returning({ id: categories.id });
         categoryIdMap.set(catName, inserted.id);
         newCategoryCount++;
