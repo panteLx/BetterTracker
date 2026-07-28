@@ -24,10 +24,21 @@ export function AppFooter() {
     ? `dev (${commitSha.slice(0, 7)})`
     : `v${version}`;
 
+  const href = commitSha
+    ? `https://github.com/panteLx/BetterTracker/commit/${commitSha}`
+    : `https://github.com/panteLx/BetterTracker/releases/tag/v${version}`;
+
   return (
     <footer className="border-t border-border/40 py-2 mb-14 md:mb-0">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <span className="font-mono text-xs text-muted-foreground/70">{label}</span>
+        <Link
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+        >
+          {label}
+        </Link>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" className="text-muted-foreground/70 hover:text-muted-foreground" asChild>
             <Link

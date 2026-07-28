@@ -22,9 +22,10 @@ const routes = [
   { href: "/profile", label: "Profil", icon: User },
 ];
 
-export function CommandPalette() {
+export function CommandPalette({ role }: { role?: string | null }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const isAdmin = role === "admin" || role === "superadmin";
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -70,13 +71,17 @@ export function CommandPalette() {
               </CommandItem>
             ))}
           </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Einstellungen">
-            <CommandItem onSelect={() => navigate("/admin")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Admin-Bereich
-            </CommandItem>
-          </CommandGroup>
+          {isAdmin ? (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Einstellungen">
+                <CommandItem onSelect={() => navigate("/admin")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin-Bereich
+                </CommandItem>
+              </CommandGroup>
+            </>
+          ) : null}
         </CommandList>
       </CommandDialog>
     </>

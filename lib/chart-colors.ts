@@ -28,7 +28,7 @@ const DEFAULTS: ChartColors = {
   chart8: "oklch(0.56 0.21 300)",
 };
 
-function readColors(): ChartColors {
+function readColorsFromDOM(): ChartColors {
   const style = getComputedStyle(document.documentElement);
   const get = (v: string) => style.getPropertyValue(v).trim();
   return {
@@ -45,8 +45,23 @@ function readColors(): ChartColors {
   };
 }
 
+// Module-level cache — only replaced when the DOM actually changes.
+// useSyncExternalStore requires getSnapshot to return the same reference
+// between updates, otherwise React enters an infinite re-render loop.
+let snapshot: ChartColors | null = null;
+
+function getSnapshot(): ChartColors {
+  if (!snapshot) {
+    snapshot = readColorsFromDOM();
+  }
+  return snapshot;
+}
+
 function subscribe(callback: () => void): () => void {
-  const observer = new MutationObserver(callback);
+  const observer = new MutationObserver(() => {
+    snapshot = readColorsFromDOM();
+    callback();
+  });
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class", "data-theme"],
@@ -55,5 +70,5 @@ function subscribe(callback: () => void): () => void {
 }
 
 export function useChartColors(): ChartColors {
-  return useSyncExternalStore(subscribe, readColors, () => DEFAULTS);
+  return useSyncExternalStore(subscribe, getSnapshot, () => DEFAULTS);
 }

@@ -896,6 +896,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               ) : null}
               <Button
                 size="sm"
+                className="hidden sm:inline-flex"
                 onClick={() => setSheetOpen(true)}
                 disabled={!isTrackerMutable}
               >

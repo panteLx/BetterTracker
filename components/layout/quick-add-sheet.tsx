@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   CalendarClock,
   CheckCircle2,
+  Plus,
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -25,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, toDateInputValue, parseAmountToCents } from "@/lib/utils";
+import { cn, toDateInputValue } from "@/lib/utils";
 
 const EMPTY = "none";
 type Step = "pick" | "buchung" | "termin";
@@ -36,20 +38,19 @@ type Tracker = { id: string; name: string; color: string; currency: string; isAc
 type Category = { id: string; name: string; type: "expense" | "income" | "transfer"; isActive: boolean };
 type Payee = { id: string; name: string; isActive: boolean };
 
-const FREQ_OPTIONS: { value: Frequency; intervalValue: number; label: string }[] = [
-  { value: "custom_days", intervalValue: 1, label: "Täglich" },
-  { value: "custom_days", intervalValue: 7, label: "Wöchentlich" },
-  { value: "monthly", intervalValue: 1, label: "Monatlich" },
-  { value: "yearly", intervalValue: 1, label: "Jährlich" },
-];
+function sortByName<T extends { name: string }>(items: T[], locale: string): T[] {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name, locale));
+}
 
-type FreqKey = "daily" | "weekly" | "monthly" | "yearly";
-const FREQ_KEY_MAP: Record<FreqKey, { value: Frequency; intervalValue: number }> = {
-  daily: { value: "custom_days", intervalValue: 1 },
-  weekly: { value: "custom_days", intervalValue: 7 },
-  monthly: { value: "monthly", intervalValue: 1 },
-  yearly: { value: "yearly", intervalValue: 1 },
-};
+function getFrequencyLabel(frequency: Frequency, intervalValue: number): string {
+  if (frequency === "monthly") {
+    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
+  }
+  if (frequency === "yearly") {
+    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
+  }
+  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
+}
 
 function TrackerPills({
   trackers,
@@ -90,45 +91,6 @@ function TrackerPills({
   );
 }
 
-function DirectionToggle({
-  value,
-  onChange,
-}: {
-  value: Direction;
-  onChange: (v: Direction) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
-      <button
-        type="button"
-        onClick={() => onChange("expense")}
-        className={cn(
-          "rounded-full px-4 py-1.5 text-sm font-medium transition",
-          value === "expense"
-            ? "bg-expense text-expense-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <ArrowDownLeft className="mr-1 inline h-3.5 w-3.5" />
-        Ausgabe
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("income")}
-        className={cn(
-          "rounded-full px-4 py-1.5 text-sm font-medium transition",
-          value === "income"
-            ? "bg-income text-income-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <ArrowUpRight className="mr-1 inline h-3.5 w-3.5" />
-        Einnahme
-      </button>
-    </div>
-  );
-}
-
 export function QuickAddSheet({
   open,
   onOpenChange,
@@ -150,9 +112,17 @@ export function QuickAddSheet({
   const [customPayeeName, setCustomPayeeName] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Inline creation state
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showNewPayee, setShowNewPayee] = useState(false);
+  const [newPayeeName, setNewPayeeName] = useState("");
+
   // Schedule-only state
   const [scheduleName, setScheduleName] = useState("");
-  const [freqKey, setFreqKey] = useState<FreqKey>("monthly");
+  const [frequency, setFrequency] = useState<Frequency>("monthly");
+  const [intervalValue, setIntervalValue] = useState("1");
+  const [notesTemplate, setNotesTemplate] = useState("");
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -175,19 +145,29 @@ export function QuickAddSheet({
     enabled: !!activeTrackerId && step !== "pick",
   });
 
-  const categories = (categoriesQuery.data?.items ?? []).filter(
+  const filteredCategories = (categoriesQuery.data?.items ?? []).filter(
     (c) => c.isActive && (c.type === direction || c.type === "transfer"),
   );
   const payees = (payeesQuery.data?.items ?? []).filter((p) => p.isActive);
 
+  const effectiveCategoryId = filteredCategories.some((c) => c.id === categoryId)
+    ? categoryId
+    : EMPTY;
+
   const categoryOptions = [
-    { value: EMPTY, label: "Keine Kategorie" },
-    ...categories.map((c) => ({ value: c.id, label: c.name })),
+    { value: EMPTY, label: "Bitte wählen" },
+    ...filteredCategories.map((c) => ({ value: c.id, label: c.name })),
   ];
   const payeeOptions = [
-    { value: EMPTY, label: "Freier Name / Anonym" },
+    { value: EMPTY, label: "Anonym" },
     ...payees.map((p) => ({ value: p.id, label: p.name })),
   ];
+
+  const parsedIntervalValue = Number(intervalValue);
+  const normalizedIntervalValue =
+    Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
+      ? parsedIntervalValue
+      : 1;
 
   const txMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -205,9 +185,54 @@ export function QuickAddSheet({
       fetchJson("/api/schedules", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules-forecast"] });
       setDone("termin");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (payload: { trackerId: string; name: string; type: Category["type"] }) =>
+      fetchJson<{ item: Category }>("/api/categories", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Category[] } | undefined>(
+        ["categories", activeTrackerId],
+        (current) => ({
+          items: sortByName([...(current?.items ?? []), item], "de"),
+        }),
+      );
+      toast.success("Kategorie angelegt");
+      setCategoryId(item.id);
+      setNewCategoryName("");
+      setShowNewCategory(false);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Kategorie konnte nicht angelegt werden"),
+  });
+
+  const createPayeeMutation = useMutation({
+    mutationFn: (payload: { trackerId: string; name: string }) =>
+      fetchJson<{ item: Payee }>("/api/payees", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Payee[] } | undefined>(
+        ["payees", activeTrackerId],
+        (current) => ({
+          items: sortByName([...(current?.items ?? []), item], "de"),
+        }),
+      );
+      toast.success("Einzahler angelegt");
+      setPayeeId(item.id);
+      setNewPayeeName("");
+      setShowNewPayee(false);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Einzahler konnte nicht angelegt werden"),
   });
 
   function resetForm() {
@@ -219,7 +244,13 @@ export function QuickAddSheet({
     setDirection("expense");
     setDate(toDateInputValue(new Date()));
     setScheduleName("");
-    setFreqKey("monthly");
+    setFrequency("monthly");
+    setIntervalValue("1");
+    setNotesTemplate("");
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setShowNewPayee(false);
+    setNewPayeeName("");
     setDone(null);
   }
 
@@ -247,16 +278,45 @@ export function QuickAddSheet({
     setPayeeId(EMPTY);
   }
 
+  function handleCreateCategory() {
+    if (!newCategoryName.trim()) {
+      toast.error("Bitte einen Kategorienamen eingeben");
+      return;
+    }
+    createCategoryMutation.mutate({
+      trackerId: activeTrackerId,
+      name: newCategoryName.trim(),
+      type: direction,
+    });
+  }
+
+  function handleCreatePayee() {
+    if (!newPayeeName.trim()) {
+      toast.error("Bitte einen Einzahler-Namen eingeben");
+      return;
+    }
+    createPayeeMutation.mutate({
+      trackerId: activeTrackerId,
+      name: newPayeeName.trim(),
+    });
+  }
+
   function handleSubmitTransaction(e: FormEvent) {
     e.preventDefault();
-    const cents = parseAmountToCents(amount);
-    if (!cents || cents <= 0) { toast.error("Bitte einen gültigen Betrag eingeben."); return; }
+    if (!amount.trim()) {
+      toast.error("Bitte einen gültigen Betrag eingeben.");
+      return;
+    }
+    if (effectiveCategoryId === EMPTY) {
+      toast.error("Bitte eine Kategorie wählen.");
+      return;
+    }
     txMutation.mutate({
       trackerId: activeTrackerId,
       date,
-      amountCents: cents,
+      amount,
       direction,
-      categoryId: categoryId === EMPTY ? null : categoryId,
+      categoryId: effectiveCategoryId,
       payeeId: payeeId === EMPTY ? null : payeeId,
       customPayeeName: customPayeeName.trim() || null,
       notes: notes.trim() || null,
@@ -265,30 +325,41 @@ export function QuickAddSheet({
 
   function handleSubmitSchedule(e: FormEvent) {
     e.preventDefault();
-    const cents = parseAmountToCents(amount);
-    if (!cents || cents <= 0) { toast.error("Bitte einen gültigen Betrag eingeben."); return; }
-    if (!scheduleName.trim()) { toast.error("Bitte einen Namen eingeben."); return; }
-    if (payeeId === EMPTY && !customPayeeName.trim()) {
+    if (!amount.trim()) {
+      toast.error("Bitte einen gültigen Betrag eingeben.");
+      return;
+    }
+    if (!scheduleName.trim()) {
+      toast.error("Bitte einen Namen eingeben.");
+      return;
+    }
+    if (categoryId === EMPTY) {
+      toast.error("Bitte eine Kategorie wählen.");
+      return;
+    }
+    if (payeeId === EMPTY) {
       toast.error("Bitte einen Empfänger/Absender angeben.");
       return;
     }
-    if (categoryId === EMPTY) { toast.error("Bitte eine Kategorie wählen."); return; }
-    const freq = FREQ_KEY_MAP[freqKey];
     scheduleMutation.mutate({
       trackerId: activeTrackerId,
       name: scheduleName.trim(),
-      amount: cents,
+      amount,
       direction,
       categoryId,
-      payeeId: payeeId === EMPTY ? null : payeeId,
-      notesTemplate: customPayeeName.trim() || null,
-      frequency: freq.value,
-      intervalValue: freq.intervalValue,
+      payeeId,
+      notesTemplate: notesTemplate.trim() || null,
+      frequency,
+      intervalValue: Number(intervalValue),
       nextDueDate: date,
     });
   }
 
-  const isPending = txMutation.isPending || scheduleMutation.isPending;
+  const isMutating =
+    txMutation.isPending ||
+    scheduleMutation.isPending ||
+    createCategoryMutation.isPending ||
+    createPayeeMutation.isPending;
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
@@ -316,9 +387,7 @@ export function QuickAddSheet({
               </div>
               <div>
                 <p className="font-medium">Buchung</p>
-                <p className="text-sm text-muted-foreground">
-                  Einnahme oder Ausgabe erfassen
-                </p>
+                <p className="text-sm text-muted-foreground">Einnahme oder Ausgabe erfassen</p>
               </div>
             </button>
             <button
@@ -331,9 +400,7 @@ export function QuickAddSheet({
               </div>
               <div>
                 <p className="font-medium">Termin</p>
-                <p className="text-sm text-muted-foreground">
-                  Wiederkehrende Zahlung anlegen
-                </p>
+                <p className="text-sm text-muted-foreground">Wiederkehrende Zahlung anlegen</p>
               </div>
             </button>
           </div>
@@ -352,12 +419,42 @@ export function QuickAddSheet({
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <span className="font-semibold">Neue Buchung</span>
+              <div className="ml-auto">
+                <div className="inline-flex rounded-full border border-border/70 bg-muted/40 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDirectionChange("expense")}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium transition",
+                      direction === "expense"
+                        ? "bg-expense text-expense-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <ArrowDownLeft className="mr-1 inline h-3 w-3" />
+                    Ausgabe
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDirectionChange("income")}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium transition",
+                      direction === "income"
+                        ? "bg-income text-income-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <ArrowUpRight className="mr-1 inline h-3 w-3" />
+                    Einnahme
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               {done === "buchung" ? (
                 <SuccessView
                   label="Buchung gespeichert!"
-                  onAnother={() => { resetForm(); }}
+                  onAnother={resetForm}
                   onClose={() => handleClose(false)}
                 />
               ) : (
@@ -367,68 +464,175 @@ export function QuickAddSheet({
                     activeId={activeTrackerId}
                     onChange={handleTrackerChange}
                   />
-                  <DirectionToggle value={direction} onChange={handleDirectionChange} />
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="qa-tx-date">Datum</Label>
+                      <DatePicker id="qa-tx-date" value={date} onChange={setDate} />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="qa-tx-amount">Betrag</Label>
                       <Input
                         id="qa-tx-amount"
                         inputMode="decimal"
-                        placeholder="0,00"
+                        placeholder="12,50"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
                         autoFocus
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Datum</Label>
-                      <DatePicker value={date} onChange={setDate} />
-                    </div>
                   </div>
+
+                  {/* Category */}
                   <div className="space-y-2">
-                    <Label>Kategorie</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Kategorie</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setShowNewCategory((c) => !c)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Neu
+                      </Button>
+                    </div>
                     <SearchableSelect
                       value={categoryId}
-                      onValueChange={setCategoryId}
+                      onValueChange={(v) => {
+                        setCategoryId(v);
+                        if (v !== EMPTY) setShowNewCategory(false);
+                      }}
                       items={categoryOptions}
                       placeholder="Kategorie wählen"
-                      searchPlaceholder="Suchen…"
+                      searchPlaceholder="Kategorie suchen"
                       emptyMessage="Keine Kategorie gefunden."
                     />
+                    {showNewCategory ? (
+                      <div className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder={direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateCategory}
+                          disabled={createCategoryMutation.isPending}
+                        >
+                          {createCategoryMutation.isPending ? "..." : "Anlegen"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="px-2"
+                          onClick={() => {
+                            setShowNewCategory(false);
+                            setNewCategoryName("");
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
+
+                  {/* Payee */}
                   <div className="space-y-2">
-                    <Label>Empfänger / Absender</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Einzahler</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setShowNewPayee((c) => !c)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Neu
+                      </Button>
+                    </div>
                     <SearchableSelect
                       value={payeeId}
                       onValueChange={(v) => {
                         setPayeeId(v);
-                        if (v !== EMPTY) setCustomPayeeName("");
+                        if (v !== EMPTY) {
+                          setCustomPayeeName("");
+                          setShowNewPayee(false);
+                        }
                       }}
                       items={payeeOptions}
-                      placeholder="Aus Liste wählen"
-                      searchPlaceholder="Suchen…"
-                      emptyMessage="Kein Eintrag gefunden."
+                      placeholder="Einzahler wählen"
+                      searchPlaceholder="Einzahler suchen"
+                      emptyMessage="Kein Einzahler gefunden."
                     />
-                    {payeeId === EMPTY && (
-                      <Input
-                        placeholder="Oder freien Namen eingeben"
-                        value={customPayeeName}
-                        onChange={(e) => setCustomPayeeName(e.target.value)}
-                      />
+                    {showNewPayee ? (
+                      <div className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          value={newPayeeName}
+                          onChange={(e) => setNewPayeeName(e.target.value)}
+                          placeholder="z. B. Bäckerei"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreatePayee}
+                          disabled={createPayeeMutation.isPending}
+                        >
+                          {createPayeeMutation.isPending ? "..." : "Anlegen"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="px-2"
+                          onClick={() => {
+                            setShowNewPayee(false);
+                            setNewPayeeName("");
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">
+                          Oder einmaliger Freitext
+                        </Label>
+                        <Input
+                          value={customPayeeName}
+                          onChange={(e) => {
+                            setCustomPayeeName(e.target.value);
+                            if (e.target.value.trim()) setPayeeId(EMPTY);
+                          }}
+                          placeholder="z. B. Wochenmarkt"
+                        />
+                      </div>
                     )}
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="qa-tx-notes">Notiz (optional)</Label>
-                    <Input
+                    <Label htmlFor="qa-tx-notes">Notizen</Label>
+                    <Textarea
                       id="qa-tx-notes"
-                      placeholder="z. B. Rechnung Nr. 123"
+                      placeholder="Kurzer Kontext für die Buchung"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isPending || !activeTrackerId}>
-                    {isPending ? "Wird gespeichert…" : "Buchung speichern"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={isMutating || !activeTrackerId || effectiveCategoryId === EMPTY}
+                  >
+                    {txMutation.isPending ? "Speichere..." : "Eintrag speichern"}
                   </Button>
                 </form>
               )}
@@ -454,7 +658,7 @@ export function QuickAddSheet({
               {done === "termin" ? (
                 <SuccessView
                   label="Termin gespeichert!"
-                  onAnother={() => { resetForm(); }}
+                  onAnother={resetForm}
                   onClose={() => handleClose(false)}
                 />
               ) : (
@@ -464,98 +668,237 @@ export function QuickAddSheet({
                     activeId={activeTrackerId}
                     onChange={handleTrackerChange}
                   />
-                  <div className="space-y-2">
-                    <Label htmlFor="qa-sc-name">Bezeichnung</Label>
-                    <Input
-                      id="qa-sc-name"
-                      placeholder="z. B. Miete, Netflix, Gehalt"
-                      value={scheduleName}
-                      onChange={(e) => setScheduleName(e.target.value)}
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <DirectionToggle value={direction} onChange={handleDirectionChange} />
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="qa-sc-name">Bezeichnung</Label>
+                      <Input
+                        id="qa-sc-name"
+                        placeholder="z. B. Miete, Netflix"
+                        value={scheduleName}
+                        onChange={(e) => setScheduleName(e.target.value)}
+                        required
+                        autoFocus
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="qa-sc-amount">Betrag</Label>
                       <Input
                         id="qa-sc-amount"
                         inputMode="decimal"
-                        placeholder="0,00"
+                        placeholder="12,50"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Wiederholung</Label>
-                      <Select
-                        value={freqKey}
-                        onValueChange={(v) => setFreqKey(v as FreqKey)}
+                  </div>
+
+                  <div className="grid gap-3 grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDirection("expense");
+                        setCategoryId(EMPTY);
+                      }}
+                      className={cn(
+                        "rounded-lg border px-4 py-3 text-left transition",
+                        direction === "expense"
+                          ? "border-expense/30 bg-expense-muted text-expense"
+                          : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <p className="font-medium">Ausgabe</p>
+                      <p className="mt-1 text-xs">Abos, Miete, Fixkosten</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDirection("income");
+                        setCategoryId(EMPTY);
+                      }}
+                      className={cn(
+                        "rounded-lg border px-4 py-3 text-left transition",
+                        direction === "income"
+                          ? "border-income/30 bg-income-muted text-income"
+                          : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <p className="font-medium">Einnahme</p>
+                      <p className="mt-1 text-xs">Gehalt, Gutschriften</p>
+                    </button>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Kategorie *</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setShowNewCategory((c) => !c)}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {FREQ_OPTIONS.map((f) => (
-                            <SelectItem
-                              key={f.label}
-                              value={
-                                f.label === "Täglich"
-                                  ? "daily"
-                                  : f.label === "Wöchentlich"
-                                    ? "weekly"
-                                    : f.label === "Monatlich"
-                                      ? "monthly"
-                                      : "yearly"
-                              }
-                            >
-                              {f.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <Plus className="h-3.5 w-3.5" />
+                        Neu
+                      </Button>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Nächste Fälligkeit</Label>
-                    <DatePicker value={date} onChange={setDate} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Kategorie *</Label>
                     <SearchableSelect
                       value={categoryId}
-                      onValueChange={setCategoryId}
+                      onValueChange={(v) => {
+                        setCategoryId(v);
+                        if (v !== EMPTY) setShowNewCategory(false);
+                      }}
                       items={categoryOptions}
-                      placeholder="Kategorie wählen (Pflicht)"
-                      searchPlaceholder="Suchen…"
+                      placeholder="Kategorie wählen"
+                      searchPlaceholder="Kategorie suchen"
                       emptyMessage="Keine Kategorie gefunden."
                     />
+                    {showNewCategory ? (
+                      <div className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder={direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateCategory}
+                          disabled={createCategoryMutation.isPending}
+                        >
+                          {createCategoryMutation.isPending ? "..." : "Anlegen"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="px-2"
+                          onClick={() => {
+                            setShowNewCategory(false);
+                            setNewCategoryName("");
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
+
+                  {/* Payee */}
                   <div className="space-y-2">
-                    <Label>Empfänger / Absender *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Einzahler *</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setShowNewPayee((c) => !c)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Neu
+                      </Button>
+                    </div>
                     <SearchableSelect
                       value={payeeId}
                       onValueChange={(v) => {
                         setPayeeId(v);
-                        if (v !== EMPTY) setCustomPayeeName("");
+                        if (v !== EMPTY) setShowNewPayee(false);
                       }}
                       items={payeeOptions}
-                      placeholder="Aus Liste wählen (Pflicht)"
-                      searchPlaceholder="Suchen…"
-                      emptyMessage="Kein Eintrag gefunden."
+                      placeholder="Einzahler wählen"
+                      searchPlaceholder="Einzahler suchen"
+                      emptyMessage="Kein Einzahler gefunden."
                     />
-                    {payeeId === EMPTY && (
-                      <Input
-                        placeholder="Oder freien Namen eingeben"
-                        value={customPayeeName}
-                        onChange={(e) => setCustomPayeeName(e.target.value)}
-                      />
-                    )}
+                    {showNewPayee ? (
+                      <div className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          value={newPayeeName}
+                          onChange={(e) => setNewPayeeName(e.target.value)}
+                          placeholder="z. B. Bäckerei"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreatePayee}
+                          disabled={createPayeeMutation.isPending}
+                        >
+                          {createPayeeMutation.isPending ? "..." : "Anlegen"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="px-2"
+                          onClick={() => {
+                            setShowNewPayee(false);
+                            setNewPayeeName("");
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
-                  <Button type="submit" className="w-full" disabled={isPending || !activeTrackerId}>
-                    {isPending ? "Wird gespeichert…" : "Termin speichern"}
+
+                  {/* Frequency */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold">Rhythmus</p>
+                    <div className="grid gap-3 grid-cols-3">
+                      <div className="space-y-2">
+                        <Label>Frequenz</Label>
+                        <Select
+                          value={frequency}
+                          onValueChange={(v) => setFrequency(v as Frequency)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monatlich</SelectItem>
+                            <SelectItem value="yearly">Jährlich</SelectItem>
+                            <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Intervall</Label>
+                        <Input
+                          value={intervalValue}
+                          onChange={(e) => setIntervalValue(e.target.value)}
+                          inputMode="numeric"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Startdatum</Label>
+                        <DatePicker value={date} onChange={setDate} />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {getFrequencyLabel(frequency, normalizedIntervalValue)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="qa-sc-notes">Notizvorlage (optional)</Label>
+                    <Textarea
+                      id="qa-sc-notes"
+                      placeholder="Wird beim Buchen übernommen"
+                      value={notesTemplate}
+                      onChange={(e) => setNotesTemplate(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={isMutating || !activeTrackerId}
+                  >
+                    {scheduleMutation.isPending ? "Speichere..." : "Termin anlegen"}
                   </Button>
                 </form>
               )}
