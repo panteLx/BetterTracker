@@ -1,13 +1,20 @@
 import { type ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { MicroLabel } from "@/components/ui/micro-label";
 import { cn } from "@/lib/utils";
 
+/**
+ * A titled panel. The title is a micro-label rather than a heading-sized
+ * string: on a page made of many panels, big panel titles compete with the
+ * page title and with the numbers inside them.
+ */
 type SectionCardProps = {
   title?: string;
   titleRight?: ReactNode;
   children: ReactNode;
   className?: string;
   contentClassName?: string;
+  /** For panels whose content owns its own edges, e.g. a full-bleed table. */
   noPadding?: boolean;
 };
 
@@ -20,18 +27,16 @@ export function SectionCard({
   noPadding = false,
 }: SectionCardProps) {
   return (
-    <Card className={cn("border-border/60", className)}>
+    <Card className={className}>
       {title ? (
-        <CardHeader className="pb-3">
+        <CardHeader>
           <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+            <MicroLabel>{title}</MicroLabel>
             {titleRight}
           </div>
         </CardHeader>
       ) : null}
-      <CardContent
-        className={cn(noPadding ? "p-0" : "p-5 pt-0 sm:p-6 sm:pt-0", contentClassName)}
-      >
+      <CardContent className={cn(noPadding && "px-0", contentClassName)}>
         {children}
       </CardContent>
     </Card>

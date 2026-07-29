@@ -20,8 +20,8 @@ export default async function StatisticsPage() {
   return (
     <PageContainer
       user={user}
-      title="Statistiken"
-      description="Übersicht über Einnahmen, Ausgaben und Trends deiner Buchungen."
+      title="Statistik"
+      description="Wie sich Einnahmen und Ausgaben über die Zeit entwickeln."
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <StatisticsClient locale={env.defaultLocale} />

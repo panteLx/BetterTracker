@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminTrackersClient } from "@/components/admin/admin-trackers-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { requireUser } from "@/lib/auth/session";
@@ -13,11 +13,12 @@ export default async function AdminTrackersPage() {
   return (
     <PageContainer
       user={user}
-      title="Admin Trackers"
-      description="Tracker anlegen, archivieren und ihre individuellen Discord-Settings verwalten."
+      title="Tracker"
+      description="Tracker anlegen, archivieren und ihre Discord-Anbindung verwalten."
     >
-      <AdminNav />
+      <AdminShell>
       <AdminTrackersClient />
+      </AdminShell>
     </PageContainer>
   );
 }

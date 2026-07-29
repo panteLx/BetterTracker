@@ -133,7 +133,7 @@ export function AdminLogsClient({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="rounded-xl border border-border/60 bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label>Aktion</Label>
@@ -209,13 +209,13 @@ export function AdminLogsClient({
       </div>
 
       {/* Log entries */}
-      <div className="w-full overflow-x-auto rounded-xl border border-border/60 bg-card">
+      <div className="w-full overflow-x-auto rounded-xl border border-border bg-card">
         {items.length === 0 && !logsQuery.isPending ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Keine Logs gefunden.
           </p>
         ) : logsQuery.isPending ? (
-          <div className="divide-y divide-border/40">
+          <div className="divide-y divide-border">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-4 px-4 py-3">
                 <div className="w-40 shrink-0 space-y-2">
@@ -230,7 +230,7 @@ export function AdminLogsClient({
             ))}
           </div>
         ) : (
-          <div className="w-full divide-y divide-border/40">
+          <div className="w-full divide-y divide-border">
             {items.map((item) => (
               <div
                 key={item.id}

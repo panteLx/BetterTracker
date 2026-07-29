@@ -28,7 +28,7 @@ export default async function Home() {
     <PageContainer
       user={session.user}
       title="Dashboard"
-      description="Erfasse deine Ausgaben und behalte den Überblick über deine Finanzen mit BetterTracker."
+      description="Wo du gerade stehst und was als Nächstes ansteht."
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <DashboardClient locale={env.defaultLocale} />

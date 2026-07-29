@@ -24,8 +24,8 @@ export default async function TrackerSettingsPage({
   return (
     <PageContainer
       user={user}
-      title="Tracker-Settings"
-      description="Tracker-Stammdaten bearbeiten sowie Kategorien und Einzahler gesammelt verwalten."
+      title="Tracker-Einstellungen"
+      description="Stammdaten, Freigaben, Kategorien und Einzahler dieses Trackers."
     >
       <TrackerSettingsClient initialTrackerId={id} locale={env.defaultLocale} />
     </PageContainer>

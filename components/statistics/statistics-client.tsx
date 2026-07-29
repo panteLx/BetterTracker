@@ -16,16 +16,20 @@ import {
   AreaChart,
   Area,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  Receipt,
   BarChart2,
-  AlertCircle,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Amount } from "@/components/ui/amount";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionCard } from "@/components/ui/section-card";
+import { Segmented } from "@/components/ui/segmented";
+import { StatTile } from "@/components/ui/stat-tile";
 import {
   Select,
   SelectContent,
@@ -35,13 +39,19 @@ import {
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
 import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import { useChartColors } from "@/lib/chart-colors";
 
 const GERMAN_MONTHS = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
   "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
 ];
+
+/** Shared axis/grid treatment — recessive, so the marks stay the loudest thing. */
+const AXIS_TICK = { fontSize: 11 };
+const GRID_PROPS = {
+  stroke: "var(--border)",
+  vertical: false,
+} as const;
 
 type Tracker = {
   id: string;
@@ -98,70 +108,26 @@ type StatisticsClientProps = {
   locale: string;
 };
 
-function DirectionToggle({
+type Direction = "expense" | "income";
+
+function DirectionFilter({
   value,
   onChange,
 }: {
-  value: "expense" | "income";
-  onChange: (v: "expense" | "income") => void;
+  value: Direction;
+  onChange: (value: Direction) => void;
 }) {
   return (
-    <div className="flex shrink-0 rounded-md border border-border bg-muted/40 p-0.5 gap-0.5">
-      <button
-        onClick={() => onChange("expense")}
-        className={cn(
-          "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
-          value === "expense"
-            ? "bg-expense text-expense-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        Ausgaben
-      </button>
-      <button
-        onClick={() => onChange("income")}
-        className={cn(
-          "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
-          value === "income"
-            ? "bg-income text-income-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        Einnahmen
-      </button>
-    </div>
-  );
-}
-
-function SummaryCard({
-  title,
-  value,
-  icon: Icon,
-  colorClass,
-  bgClass,
-}: {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">{title}</p>
-            <p className={cn("mt-1 truncate text-xl font-semibold tracking-tight", colorClass)}>
-              {value}
-            </p>
-          </div>
-          <div className={cn("rounded-lg p-2", bgClass)}>
-            <Icon className={cn("h-4 w-4", colorClass)} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <Segmented
+      label="Richtung wählen"
+      size="sm"
+      items={[
+        { value: "expense", label: "Ausgaben" },
+        { value: "income", label: "Einnahmen" },
+      ]}
+      value={value}
+      onValueChange={onChange}
+    />
   );
 }
 
@@ -179,28 +145,22 @@ function ChartTooltipCurrency({
   locale: string;
 }) {
   if (!active || !payload?.length) return null;
+
   return (
-    <div className="rounded-lg border border-border bg-background p-2.5 text-xs shadow-lg">
-      {label && <p className="mb-1.5 font-medium">{label}</p>}
-      {payload.map((p) => (
-        <div key={p.name} className="flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-popover p-2.5 text-xs shadow-overlay">
+      {label ? <p className="mb-1.5 font-medium">{label}</p> : null}
+      {payload.map((entry) => (
+        <div key={entry.name} className="flex items-center gap-2">
           <span
             className="inline-block h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: p.color }}
+            style={{ backgroundColor: entry.color }}
           />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-medium">{formatCurrency(p.value, currency, locale)}</span>
+          <span className="text-muted-foreground">{entry.name}</span>
+          <span className="ml-auto font-medium tabular-nums">
+            {formatCurrency(entry.value, currency, locale)}
+          </span>
         </div>
       ))}
-    </div>
-  );
-}
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex h-44 flex-col items-center justify-center gap-2 text-muted-foreground">
-      <AlertCircle className="h-7 w-7 opacity-40" />
-      <p className="text-sm">{message}</p>
     </div>
   );
 }
@@ -214,9 +174,18 @@ function CategoryChart({
   currency: string;
   locale: string;
 }) {
-  if (items.length === 0) return <EmptyChart message="Keine Buchungen vorhanden" />;
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        icon={BarChart2}
+        title="Keine Buchungen"
+        description="Für diese Auswahl gibt es in diesem Jahr nichts zu zeigen."
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
       <div className="shrink-0 self-center">
         <ResponsiveContainer width={160} height={160}>
           <PieChart>
@@ -226,23 +195,29 @@ function CategoryChart({
               nameKey="categoryName"
               cx="50%"
               cy="50%"
-              innerRadius={48}
-              outerRadius={72}
+              innerRadius={50}
+              outerRadius={74}
               paddingAngle={2}
+              stroke="var(--card)"
+              strokeWidth={2}
             >
-              {items.map((entry, i) => (
-                <Cell key={`cell-${i}`} fill={entry.color} />
+              {items.map((entry) => (
+                <Cell
+                  key={entry.categoryId ?? entry.categoryName}
+                  fill={entry.color}
+                />
               ))}
             </Pie>
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
-                const d = payload[0]?.payload as CategoryBreakdownItem;
+                const item = payload[0]?.payload as CategoryBreakdownItem;
                 return (
-                  <div className="rounded-lg border border-border bg-background p-2.5 text-xs shadow-lg">
-                    <p className="font-medium">{d.categoryName}</p>
-                    <p className="mt-0.5 text-muted-foreground">
-                      {formatCurrency(d.totalCents, currency, locale)} ({d.percentage}%)
+                  <div className="rounded-lg border border-border bg-popover p-2.5 text-xs shadow-overlay">
+                    <p className="font-medium">{item.categoryName}</p>
+                    <p className="mt-0.5 text-muted-foreground tabular-nums">
+                      {formatCurrency(item.totalCents, currency, locale)} ·{" "}
+                      {item.percentage}%
                     </p>
                   </div>
                 );
@@ -251,24 +226,28 @@ function CategoryChart({
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <ul className="flex flex-1 flex-col gap-1.5 min-w-0">
-        {items.map((cat) => (
+
+      {/* The legend carries the values, so identity never rests on color
+          alone and the slices below 3:1 contrast stay readable. */}
+      <ul className="flex min-w-0 flex-1 flex-col gap-2">
+        {items.map((category) => (
           <li
-            key={cat.categoryId ?? "none"}
-            className="flex items-center gap-2 text-xs min-w-0"
+            key={category.categoryId ?? category.categoryName}
+            className="flex min-w-0 items-center gap-2 text-xs"
           >
             <span
+              aria-hidden
               className="inline-block h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: cat.color }}
+              style={{ backgroundColor: category.color }}
             />
-            <span className="flex-1 truncate text-muted-foreground">
-              {cat.categoryName}
+            <span className="flex-1 truncate font-subtext text-muted-foreground">
+              {category.categoryName}
             </span>
             <span className="shrink-0 font-medium tabular-nums">
-              {cat.percentage}%
+              {category.percentage}%
             </span>
-            <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
-              {formatCurrency(cat.totalCents, currency, locale)}
+            <span className="w-24 shrink-0 text-right font-subtext text-muted-foreground tabular-nums">
+              {formatCurrency(category.totalCents, currency, locale)}
             </span>
           </li>
         ))}
@@ -284,40 +263,48 @@ function PayeeChart({
   locale,
 }: {
   items: PayeeItem[];
-  direction: "expense" | "income";
+  direction: Direction;
   currency: string;
   locale: string;
 }) {
   const chartColors = useChartColors();
-  const barColor = direction === "expense" ? chartColors.expense : chartColors.income;
+  const barColor =
+    direction === "expense" ? chartColors.expense : chartColors.income;
   const dataKey = direction === "expense" ? "Ausgaben" : "Einnahmen";
 
   const data = items
     .slice(0, 6)
-    .map((p) => ({
-      name: p.payeeName.length > 20 ? p.payeeName.slice(0, 18) + "…" : p.payeeName,
-      [dataKey]: p.totalCents,
+    .map((payee) => ({
+      name:
+        payee.payeeName.length > 20
+          ? `${payee.payeeName.slice(0, 18)}…`
+          : payee.payeeName,
+      [dataKey]: payee.totalCents,
     }))
     .reverse();
 
-  if (data.length === 0) return <EmptyChart message="Keine Buchungen vorhanden" />;
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={BarChart2}
+        title="Keine Buchungen"
+        description="Für diese Auswahl gibt es in diesem Jahr nichts zu zeigen."
+      />
+    );
+  }
 
   return (
-    <ResponsiveContainer width="100%" height={data.length * 36 + 16}>
+    <ResponsiveContainer width="100%" height={data.length * 40 + 24}>
       <BarChart
         data={data}
         layout="vertical"
         margin={{ top: 0, right: 8, left: 4, bottom: 0 }}
       >
-        <CartesianGrid
-          strokeDasharray="3 3"
-          className="stroke-border"
-          horizontal={false}
-        />
+        <CartesianGrid stroke="var(--border)" horizontal={false} />
         <XAxis
           type="number"
-          tickFormatter={(v) => formatCurrency(v, currency, locale)}
-          tick={{ fontSize: 10 }}
+          tickFormatter={(value) => formatCurrency(value, currency, locale)}
+          tick={AXIS_TICK}
           axisLine={false}
           tickLine={false}
           className="fill-muted-foreground"
@@ -325,16 +312,22 @@ function PayeeChart({
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fontSize: 11 }}
+          tick={AXIS_TICK}
           axisLine={false}
           tickLine={false}
-          width={90}
+          width={100}
           className="fill-muted-foreground"
         />
         <Tooltip
+          cursor={{ fill: "var(--muted)" }}
           content={<ChartTooltipCurrency currency={currency} locale={locale} />}
         />
-        <Bar dataKey={dataKey} fill={barColor} radius={[0, 3, 3, 0]} maxBarSize={20} />
+        <Bar
+          dataKey={dataKey}
+          fill={barColor}
+          radius={[0, 4, 4, 0]}
+          maxBarSize={18}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -344,85 +337,84 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
   const currentYear = new Date().getFullYear();
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [categoryDirection, setCategoryDirection] = useState<"expense" | "income">("expense");
-  const [payeeDirection, setPayeeDirection] = useState<"expense" | "income">("expense");
+  const [categoryDirection, setCategoryDirection] = useState<Direction>("expense");
+  const [payeeDirection, setPayeeDirection] = useState<Direction>("expense");
 
-  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: 6 }, (_, index) => currentYear - index);
 
   const { data: trackers, isLoading: trackersLoading } = useQuery({
     queryKey: ["trackers"],
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
-    select: (data) => data.items.filter((t) => t.isActive),
+    select: (data) => data.items.filter((item) => item.isActive),
   });
 
   const activeTrackerId = selectedTrackerId ?? trackers?.[0]?.id ?? null;
-  const activeTracker = trackers?.find((t) => t.id === activeTrackerId);
+  const activeTracker = trackers?.find((item) => item.id === activeTrackerId);
   const currency = activeTracker?.currency ?? "EUR";
 
   const { data: stats, isLoading: statsLoading } = useQuery<StatisticsData>({
     queryKey: ["statistics", activeTrackerId, selectedYear],
     queryFn: () =>
       fetchJson<StatisticsData>(
-        `/api/statistics?trackerId=${activeTrackerId}&year=${selectedYear}`
+        `/api/statistics?trackerId=${activeTrackerId}&year=${selectedYear}`,
       ),
     enabled: !!activeTrackerId,
   });
 
   const monthlyChartData = useMemo(
     () =>
-      stats?.monthly.map((m, i) => ({
-        name: GERMAN_MONTHS[i],
-        Einnahmen: m.incomeCents,
-        Ausgaben: m.expenseCents,
+      stats?.monthly.map((month, index) => ({
+        name: GERMAN_MONTHS[index],
+        Einnahmen: month.incomeCents,
+        Ausgaben: month.expenseCents,
       })) ?? [],
-    [stats]
+    [stats],
   );
 
   const balanceTrendData = useMemo(
     () =>
-      stats?.balanceTrend.map((b, i) => ({
-        name: GERMAN_MONTHS[i],
-        Kontostand: b.balanceCents,
+      stats?.balanceTrend.map((entry, index) => ({
+        name: GERMAN_MONTHS[index],
+        Kontostand: entry.balanceCents,
       })) ?? [],
-    [stats]
+    [stats],
   );
 
   const colors = useChartColors();
   const hasData = (stats?.summary.transactionCount ?? 0) > 0;
   const isLoading = trackersLoading || (!!activeTrackerId && statsLoading);
 
-
   if (!trackers?.length) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
-          <BarChart2 className="h-5 w-5" />
-        </div>
-        <p className="text-sm">Kein Tracker vorhanden.</p>
-      </div>
+      <EmptyState
+        icon={BarChart2}
+        title="Noch kein Tracker"
+        description="Leg auf dem Dashboard einen Tracker an, dann erscheint hier die Auswertung."
+      />
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Controls */}
+    <div className="flex flex-col gap-6">
+      {/* Filters sit in one row above the charts. */}
       <div className="flex flex-wrap items-center gap-2">
         <Select
           value={activeTrackerId ?? ""}
-          onValueChange={(v) => setSelectedTrackerId(v)}
+          onValueChange={(value) => setSelectedTrackerId(value)}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-48" aria-label="Tracker wählen">
             <SelectValue placeholder="Tracker wählen" />
           </SelectTrigger>
           <SelectContent>
-            {trackers.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
+            {trackers.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
                 <span className="flex items-center gap-2">
                   <span
+                    aria-hidden
                     className="inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: t.color }}
+                    style={{ backgroundColor: item.color }}
                   />
-                  {t.name}
+                  {item.name}
                 </span>
               </SelectItem>
             ))}
@@ -431,15 +423,15 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
 
         <Select
           value={String(selectedYear)}
-          onValueChange={(v) => setSelectedYear(parseInt(v))}
+          onValueChange={(value) => setSelectedYear(Number.parseInt(value, 10))}
         >
-          <SelectTrigger className="w-28">
+          <SelectTrigger className="w-28" aria-label="Jahr wählen">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {years.map((y) => (
-              <SelectItem key={y} value={String(y)}>
-                {y}
+            {years.map((year) => (
+              <SelectItem key={year} value={String(year)}>
+                {year}
               </SelectItem>
             ))}
           </SelectContent>
@@ -447,222 +439,214 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-16">
+        <div className="flex items-center justify-center py-20">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-foreground" />
         </div>
       ) : !hasData ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
-            <BarChart2 className="h-5 w-5" />
-          </div>
-          <p className="text-sm">Keine Buchungen für {selectedYear} gefunden.</p>
-        </div>
+        <EmptyState
+          icon={BarChart2}
+          title={`Keine Buchungen in ${selectedYear}`}
+          description="Wähle ein anderes Jahr oder einen anderen Tracker."
+        />
       ) : (
         <>
-          {/* Summary Cards */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <SummaryCard
-              title="Einnahmen"
-              value={formatCurrency(stats!.summary.incomeCents, currency, locale)}
-              icon={TrendingUp}
-              colorClass="text-income"
-              bgClass="bg-income-muted"
-            />
-            <SummaryCard
-              title="Ausgaben"
-              value={formatCurrency(stats!.summary.expenseCents, currency, locale)}
-              icon={TrendingDown}
-              colorClass="text-expense"
-              bgClass="bg-expense-muted"
-            />
-            <SummaryCard
-              title="Saldo"
-              value={formatCurrency(stats!.summary.balanceCents, currency, locale)}
+            <StatTile
+              label="Saldo"
+              tone="inverse"
               icon={Wallet}
-              colorClass={
-                stats!.summary.balanceCents >= 0
-                  ? "text-income"
-                  : "text-expense"
+              value={
+                <Amount
+                  cents={stats!.summary.balanceCents}
+                  currency={currency}
+                  locale={locale}
+                  size="lg"
+                  tone="none"
+                />
               }
-              bgClass={
-                stats!.summary.balanceCents >= 0
-                  ? "bg-income-muted"
-                  : "bg-expense-muted"
+              className="col-span-2 lg:col-span-1"
+            />
+            <StatTile
+              label="Einnahmen"
+              icon={TrendingUp}
+              value={
+                <Amount
+                  cents={stats!.summary.incomeCents}
+                  currency={currency}
+                  locale={locale}
+                  size="lg"
+                  className="text-income"
+                />
               }
             />
-            <SummaryCard
-              title="Buchungen"
-              value={String(stats!.summary.transactionCount)}
+            <StatTile
+              label="Ausgaben"
+              icon={TrendingDown}
+              value={
+                <Amount
+                  cents={stats!.summary.expenseCents}
+                  currency={currency}
+                  locale={locale}
+                  size="lg"
+                  className="text-expense"
+                />
+              }
+            />
+            <StatTile
+              label="Buchungen"
               icon={Receipt}
-              colorClass="text-foreground"
-              bgClass="bg-muted"
+              value={stats!.summary.transactionCount}
+              className="col-span-2 lg:col-span-1"
             />
           </div>
 
-          {/* Monthly Overview */}
-          <Card>
-            <CardHeader className="px-4 pb-2 pt-4 sm:px-5">
-              <CardTitle className="text-sm font-medium">
-                Monatsübersicht {selectedYear}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-2 pb-4 sm:px-4">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={monthlyChartData}
-                  margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-border"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    className="fill-muted-foreground"
-                  />
-                  <YAxis
-                    tickFormatter={(v) => formatCurrency(v, currency, locale)}
-                    tick={{ fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={72}
-                    className="fill-muted-foreground"
-                  />
-                  <Tooltip
-                    content={
-                      <ChartTooltipCurrency currency={currency} locale={locale} />
-                    }
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                    iconType="circle"
-                    iconSize={8}
-                  />
-                  <Bar
-                    dataKey="Einnahmen"
-                    fill={colors.income}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={24}
-                  />
-                  <Bar
-                    dataKey="Ausgaben"
-                    fill={colors.expense}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={24}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Category + Payees */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Category Breakdown */}
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4 sm:px-5">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-sm font-medium">
-                    Nach Kategorie
-                  </CardTitle>
-                  <DirectionToggle
-                    value={categoryDirection}
-                    onChange={setCategoryDirection}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 sm:px-5">
-                <CategoryChart
-                  items={stats!.categories?.[categoryDirection] ?? []}
-                  currency={currency}
-                  locale={locale}
+          <SectionCard title={`Monat für Monat ${selectedYear}`}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={monthlyChartData}
+                margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+                barGap={2}
+              >
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis
+                  dataKey="name"
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  className="fill-muted-foreground"
                 />
-              </CardContent>
-            </Card>
-
-            {/* Top Payees */}
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4 sm:px-5">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-sm font-medium">
-                    Top Empfänger
-                  </CardTitle>
-                  <DirectionToggle
-                    value={payeeDirection}
-                    onChange={setPayeeDirection}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="px-2 pb-4 sm:px-4">
-                <PayeeChart
-                  items={stats!.payees?.[payeeDirection] ?? []}
-                  direction={payeeDirection}
-                  currency={currency}
-                  locale={locale}
+                <YAxis
+                  tickFormatter={(value) =>
+                    formatCurrency(value, currency, locale)
+                  }
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  width={80}
+                  className="fill-muted-foreground"
                 />
-              </CardContent>
-            </Card>
+                <Tooltip
+                  cursor={{ fill: "var(--muted)" }}
+                  content={
+                    <ChartTooltipCurrency currency={currency} locale={locale} />
+                  }
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => (
+                    <span className="text-muted-foreground">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="Einnahmen"
+                  fill={colors.income}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={22}
+                />
+                <Bar
+                  dataKey="Ausgaben"
+                  fill={colors.expense}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={22}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </SectionCard>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <SectionCard
+              title="Nach Kategorie"
+              titleRight={
+                <DirectionFilter
+                  value={categoryDirection}
+                  onChange={setCategoryDirection}
+                />
+              }
+            >
+              <CategoryChart
+                items={stats!.categories?.[categoryDirection] ?? []}
+                currency={currency}
+                locale={locale}
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="Größte Posten"
+              titleRight={
+                <DirectionFilter
+                  value={payeeDirection}
+                  onChange={setPayeeDirection}
+                />
+              }
+            >
+              <PayeeChart
+                items={stats!.payees?.[payeeDirection] ?? []}
+                direction={payeeDirection}
+                currency={currency}
+                locale={locale}
+              />
+            </SectionCard>
           </div>
 
-          {/* Balance Trend */}
-          <Card>
-            <CardHeader className="px-4 pb-2 pt-4 sm:px-5">
-              <CardTitle className="text-sm font-medium">
-                Kontostand {selectedYear}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-2 pb-4 sm:px-4">
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart
-                  data={balanceTrendData}
-                  margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.income} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={colors.income} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-border"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    className="fill-muted-foreground"
-                  />
-                  <YAxis
-                    tickFormatter={(v) => formatCurrency(v, currency, locale)}
-                    tick={{ fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={72}
-                    className="fill-muted-foreground"
-                  />
-                  <Tooltip
-                    content={
-                      <ChartTooltipCurrency currency={currency} locale={locale} />
-                    }
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Kontostand"
-                    stroke={colors.income}
-                    strokeWidth={2}
-                    fill="url(#balanceGradient)"
-                    dot={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <SectionCard title={`Kontostand ${selectedYear}`}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart
+                data={balanceTrendData}
+                margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={colors.chart1}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colors.chart1}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis
+                  dataKey="name"
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  className="fill-muted-foreground"
+                />
+                <YAxis
+                  tickFormatter={(value) =>
+                    formatCurrency(value, currency, locale)
+                  }
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  width={80}
+                  className="fill-muted-foreground"
+                />
+                {/* Zero is the line that matters on a balance chart. */}
+                <ReferenceLine y={0} stroke="var(--border-strong)" />
+                <Tooltip
+                  content={
+                    <ChartTooltipCurrency currency={currency} locale={locale} />
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="Kontostand"
+                  stroke={colors.chart1}
+                  strokeWidth={2}
+                  fill="url(#balanceGradient)"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)" }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </SectionCard>
         </>
       )}
     </div>

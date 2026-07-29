@@ -343,7 +343,7 @@ function UploadStep({
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-colors hover:border-border hover:bg-muted/40"
+        className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border bg-surface-muted p-8 text-center transition-colors hover:border-border hover:bg-surface-muted"
       >
         <div className="rounded-xl bg-muted p-3">
           <Upload className="h-5 w-5 text-muted-foreground" />
@@ -369,7 +369,7 @@ function UploadStep({
         </div>
       )}
 
-      <div className="rounded-xl bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+      <div className="rounded-xl bg-surface-muted p-3 text-xs text-muted-foreground space-y-1">
         <p className="font-medium">Erwartete Spalten:</p>
         <p>Account, Date, Payee, Notes, Category, Amount</p>
         <p className="opacity-70">Split_Amount und Cleared werden ignoriert.</p>
@@ -409,7 +409,7 @@ function ConfigureStep({
             <div
               key={key}
               className={cn(
-                "flex items-center justify-between rounded-xl border border-border/60 px-3 py-2.5",
+                "flex items-center justify-between rounded-xl border border-border px-3 py-2.5",
                 !hasColumn(col) && "opacity-40",
               )}
             >
@@ -437,7 +437,7 @@ function ConfigureStep({
           Vorschau (erste {Math.min(5, previewRows.length)} von {parsed.rows.length}{" "}
           Zeilen)
         </p>
-        <div className="overflow-x-auto rounded-xl border border-border/60">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <Table>
             <TableHeader>
               <TableRow>

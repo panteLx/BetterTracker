@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminLogsClient } from "@/components/admin/admin-logs-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { env } from "@/lib/env";
@@ -47,13 +47,14 @@ export default async function AdminLogsPage() {
   return (
     <PageContainer
       user={loggedInUser}
-      title="Admin Logs"
-      description="Audit-Log mit den letzten System- und Mutationsereignissen."
+      title="Protokoll"
+      description="Die letzten Änderungen am System, mit Zeitpunkt und Verursacher."
     >
-      <AdminNav />
+      <AdminShell>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <AdminLogsClient locale={env.defaultLocale} timezone={env.timezone} currentRole={loggedInUser.role} />
       </HydrationBoundary>
+      </AdminShell>
     </PageContainer>
   );
 }

@@ -1,32 +1,40 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { Fragment, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  ChevronDown,
-  Scale,
+  LayoutList,
+  ReceiptText,
+  Rows3,
   Search,
-  SlidersHorizontal,
+  Wallet,
   X,
 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import {
-  amountToInputValue,
-  cn,
-  EMPTY_SELECT_VALUE,
-  formatCurrency,
-} from "@/lib/utils";
-import { EntityPicker } from "@/components/transactions/entity-picker";
+  useLocalStorageValue,
+  writeLocalStorageValue,
+} from "@/hooks/use-local-storage-value";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
+import { formatDateShort, formatDayLabel, groupByDate } from "@/lib/utils";
+import {
+  TransactionEditForm,
+  TransactionRowActions,
+  useTransactionEdit,
+} from "@/components/transactions/transaction-edit";
+import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { EntityIcon } from "@/components/ui/entity-icon";
+import { DayGroup, ListRow } from "@/components/ui/list-row";
+import { MicroLabel } from "@/components/ui/micro-label";
+import { Segmented } from "@/components/ui/segmented";
 import { StatTile } from "@/components/ui/stat-tile";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -44,6 +52,9 @@ import {
 } from "@/components/ui/table";
 
 const ALL_FILTER_VALUE = "all";
+const VIEW_STORAGE_KEY = "bettertracker.transactionsView";
+
+type ViewMode = "list" | "table";
 
 type Tracker = {
   id: string;
@@ -87,21 +98,11 @@ type TransactionsClientProps = {
   currentUserId: string;
 };
 
-type EditTransactionState = {
-  date: string;
-  amount: string;
-  direction: "expense" | "income";
-  categoryId: string;
-  payeeId: string;
-  customPayeeName: string;
-  notes: string;
-};
-
 export function TransactionsClient({
   locale,
   currentUserId,
 }: TransactionsClientProps) {
-  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTracker, setSelectedTracker] = useState("");
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState(ALL_FILTER_VALUE);
@@ -110,9 +111,12 @@ export function TransactionsClient({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
-  const [editingTransactionId, setEditingTransactionId] = useState("");
-  const [editState, setEditState] = useState<EditTransactionState | null>(null);
-  const [filterExpanded, setFilterExpanded] = useState(false);
+  const storedView = useLocalStorageValue(VIEW_STORAGE_KEY);
+  const view: ViewMode = storedView === "table" ? "table" : "list";
+
+  function changeView(next: ViewMode) {
+    writeLocalStorageValue(VIEW_STORAGE_KEY, next);
+  }
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -176,56 +180,7 @@ export function TransactionsClient({
     enabled: Boolean(activeTrackerId),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: Record<string, unknown>;
-    }) =>
-      fetchJson(`/api/transactions/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: () => {
-      toast.success("Transaktion aktualisiert");
-      setEditingTransactionId("");
-      setEditState(null);
-      queryClient.invalidateQueries({
-        queryKey: ["transactions", activeTrackerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ["payees", activeTrackerId] });
-      queryClient.invalidateQueries({
-        queryKey: ["categories", activeTrackerId],
-      });
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Aktualisierung fehlgeschlagen",
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetchJson(`/api/transactions/${id}`, {
-        method: "DELETE",
-      }),
-    onSuccess: () => {
-      toast.success("Transaktion gelöscht");
-      queryClient.invalidateQueries({
-        queryKey: ["transactions", activeTrackerId],
-      });
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
-      );
-    },
-  });
+  const trackerEdit = useTransactionEdit(activeTrackerId);
 
   const currency = tracker?.currency || "EUR";
   const totals = transactionsQuery.data?.totals ?? {
@@ -233,13 +188,6 @@ export function TransactionsClient({
     expenseCents: 0,
   };
   const balance = totals.incomeCents - totals.expenseCents;
-
-  const editCategories = useMemo(() => {
-    if (!editState) return [];
-    return (categoriesQuery.data?.items || []).filter(
-      (item) => item.type === editState.direction || item.type === "transfer",
-    );
-  }, [categoriesQuery.data?.items, editState]);
 
   const activeFilterCount = [
     query.trim(),
@@ -255,8 +203,7 @@ export function TransactionsClient({
     setCategoryId(ALL_FILTER_VALUE);
     setPayeeId(ALL_FILTER_VALUE);
     setPage(1);
-    setEditingTransactionId("");
-    setEditState(null);
+    trackerEdit.cancelEdit();
   }
 
   function resetFilters() {
@@ -269,199 +216,75 @@ export function TransactionsClient({
     setPage(1);
   }
 
-  function startEdit(item: Transaction) {
-    setEditingTransactionId(item.id);
-    setEditState({
-      date: item.date,
-      amount: amountToInputValue(item.amountCents),
-      direction: item.direction,
-      categoryId: item.categoryId ?? "",
-      payeeId: item.payeeId ?? EMPTY_SELECT_VALUE,
-      customPayeeName: item.customPayeeName ?? "",
-      notes: item.notes ?? "",
-    });
-  }
-
-  function cancelEdit() {
-    setEditingTransactionId("");
-    setEditState(null);
-  }
-
-  function submitEdit(id: string) {
-    if (!editState) return;
-
-    if (!editState.date || !editState.amount.trim() || !editState.categoryId) {
-      toast.error("Datum, Betrag und Kategorie sind Pflichtfelder");
-      return;
-    }
-
-    updateMutation.mutate({
-      id,
-      payload: {
-        date: editState.date,
-        amount: editState.amount,
-        direction: editState.direction,
-        categoryId: editState.categoryId,
-        payeeId:
-          editState.payeeId === EMPTY_SELECT_VALUE ? null : editState.payeeId,
-        customPayeeName: editState.customPayeeName.trim() || null,
-        notes: editState.notes.trim() || null,
-      },
-    });
-  }
-
-  function renderEditForm(itemId: string) {
-    if (!editState) return null;
-    return (
-      <div className="grid gap-4 rounded-xl border border-border/60 bg-background p-4">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label>Datum</Label>
-            <DatePicker
-              value={editState.date}
-              onChange={(value) =>
-                setEditState((current) =>
-                  current ? { ...current, date: value } : current,
-                )
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Betrag</Label>
-            <Input
-              value={editState.amount}
-              onChange={(event) =>
-                setEditState((current) =>
-                  current
-                    ? { ...current, amount: event.target.value }
-                    : current,
-                )
-              }
-              placeholder="12,50"
-              inputMode="decimal"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Typ</Label>
-            <Select
-              value={editState.direction}
-              onValueChange={(value) =>
-                setEditState((current) =>
-                  current
-                    ? {
-                        ...current,
-                        direction: value as "expense" | "income",
-                        categoryId: EMPTY_SELECT_VALUE,
-                      }
-                    : current,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expense">Ausgabe</SelectItem>
-                <SelectItem value="income">Einnahme</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <EntityPicker
-            kind="category"
-            trackerId={activeTrackerId}
-            locale={locale}
-            label="Kategorie"
-            options={editCategories.map((category) => ({
-              value: category.id,
-              label: category.name,
-            }))}
-            value={editState.categoryId || EMPTY_SELECT_VALUE}
-            onValueChange={(value) =>
-              setEditState((current) =>
-                current ? { ...current, categoryId: value } : current,
-              )
-            }
-            required
-            direction={editState.direction}
-          />
-
-          <EntityPicker
-            kind="payee"
-            trackerId={activeTrackerId}
-            locale={locale}
-            label="Einzahler"
-            options={(payeesQuery.data?.items || []).map((payee) => ({
-              value: payee.id,
-              label: payee.name,
-            }))}
-            value={editState.payeeId}
-            onValueChange={(value) =>
-              setEditState((current) =>
-                current
-                  ? {
-                      ...current,
-                      payeeId: value,
-                      customPayeeName:
-                        value === EMPTY_SELECT_VALUE
-                          ? current.customPayeeName
-                          : "",
-                    }
-                  : current,
-              )
-            }
-            required={false}
-            allowCustomText
-            customTextValue={editState.customPayeeName}
-            onCustomTextChange={(value) =>
-              setEditState((current) =>
-                current ? { ...current, customPayeeName: value } : current,
-              )
-            }
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Notizen</Label>
-          <Textarea
-            value={editState.notes}
-            onChange={(event) =>
-              setEditState((current) =>
-                current ? { ...current, notes: event.target.value } : current,
-              )
-            }
-            rows={2}
-            placeholder="Optional"
-          />
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={cancelEdit}>
-            Abbrechen
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => submitEdit(itemId)}
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? "Speichert..." : "Speichern"}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const trackers = trackersQuery.data?.items || [];
   const transactionItems = transactionsQuery.data?.items || [];
   const totalCount =
     transactionsQuery.data?.totalCount ?? transactionItems.length;
   const hasMore = transactionsQuery.data?.hasMore ?? false;
+  const dayGroups = groupByDate(transactionItems);
+  const isArchived = Boolean(tracker) && !tracker?.isActive;
+
+  function renderEditForm(itemId: string) {
+    if (!trackerEdit.editState) return null;
+    return (
+      <TransactionEditForm
+        trackerId={activeTrackerId}
+        locale={locale}
+        editState={trackerEdit.editState}
+        onEditStateChange={(updater) =>
+          trackerEdit.setEditState((current) =>
+            current ? updater(current) : current,
+          )
+        }
+        categories={categoriesQuery.data?.items || []}
+        payees={payeesQuery.data?.items || []}
+        onCancel={trackerEdit.cancelEdit}
+        onSubmit={() => trackerEdit.submitEdit(itemId)}
+        isSaving={trackerEdit.updateMutation.isPending}
+      />
+    );
+  }
+
+  function renderRowActions(item: Transaction) {
+    return (
+      <TransactionRowActions
+        item={item}
+        isArchived={isArchived}
+        isSaving={trackerEdit.updateMutation.isPending}
+        isDeleting={trackerEdit.deleteMutation.isPending}
+        locale={locale}
+        onToggleEdit={() => trackerEdit.toggleEdit(item)}
+        onDelete={() => trackerEdit.deleteMutation.mutate(item.id)}
+      />
+    );
+  }
+
+  const emptyState = (
+    <EmptyState
+      icon={ReceiptText}
+      title={
+        activeFilterCount > 0
+          ? "Keine Treffer für diese Filter"
+          : "Noch keine Buchungen"
+      }
+      description={
+        activeFilterCount > 0
+          ? "Lockere die Filter, um mehr zu sehen."
+          : "Leg mit dem Plus-Button die erste Einnahme oder Ausgabe an."
+      }
+      action={
+        activeFilterCount > 0 ? (
+          <Button variant="outline" size="sm" shape="pill" onClick={resetFilters}>
+            <X className="h-3.5 w-3.5" />
+            Filter zurücksetzen
+          </Button>
+        ) : null
+      }
+    />
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Tracker pills */}
+    <div className="space-y-6">
       {trackers.length > 0 ? (
         <TrackerPillRow
           trackers={trackers}
@@ -470,396 +293,353 @@ export function TransactionsClient({
         />
       ) : null}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      {/* The balance answers the question the filters are being used to ask,
+          so it carries the inverted tile. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <StatTile
+          label="Saldo im Filter"
+          tone="inverse"
+          icon={Wallet}
+          value={
+            <Amount
+              cents={balance}
+              currency={currency}
+              locale={locale}
+              size="lg"
+              tone="none"
+            />
+          }
+          className="col-span-2 lg:col-span-1"
+        />
         <StatTile
           label="Einnahmen"
-          value={formatCurrency(totals.incomeCents, currency, locale)}
           icon={ArrowUpRight}
-          tone="income"
+          value={
+            <Amount
+              cents={totals.incomeCents}
+              currency={currency}
+              locale={locale}
+              size="lg"
+              className="text-income"
+            />
+          }
         />
         <StatTile
           label="Ausgaben"
-          value={formatCurrency(totals.expenseCents, currency, locale)}
           icon={ArrowDownLeft}
-          tone="expense"
-        />
-        <StatTile
-          label="Saldo"
-          value={formatCurrency(balance, currency, locale)}
-          icon={Scale}
-          tone={balance >= 0 ? "primary" : "expense"}
+          value={
+            <Amount
+              cents={totals.expenseCents}
+              currency={currency}
+              locale={locale}
+              size="lg"
+              className="text-expense"
+            />
+          }
         />
       </div>
 
-      {/* Filters */}
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
-        <div className="flex w-full items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            className="flex items-center gap-2"
-            onClick={() => setFilterExpanded((v) => !v)}
-            aria-expanded={filterExpanded}
-            aria-controls="filter-panel"
+      {/* Filters stay on screen: what you are looking at is never hidden
+          behind a disclosure you have to remember to open. */}
+      <div className="space-y-3 rounded-xl border border-border bg-card p-3 shadow-card">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-56 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Einzahler, Kategorie oder Notiz suchen"
+              aria-label="Buchungen durchsuchen"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Grouped so the two segmented controls share one line on
+              mobile instead of each wrapping onto its own row; `contents`
+              dissolves the wrapper back into the flex-wrap row at sm+. */}
+          <div className="flex w-full items-center gap-2 sm:contents">
+            <Segmented
+              label="Nach Typ filtern"
+              size={isMobile ? "sm" : "md"}
+              className="min-w-0 flex-1 sm:flex-none"
+              items={[
+                { value: ALL_FILTER_VALUE, label: "Alle" },
+                { value: "expense", label: "Ausgaben" },
+                { value: "income", label: "Einnahmen" },
+              ]}
+              value={direction}
+              onValueChange={(value) => {
+                setDirection(value);
+                setPage(1);
+              }}
+            />
+
+            <Segmented
+              label="Ansicht wechseln"
+              size={isMobile ? "sm" : "md"}
+              className="shrink-0 sm:ml-auto"
+              items={[
+                { value: "list", label: "Liste", icon: LayoutList },
+                { value: "table", label: "Tabelle", icon: Rows3 },
+              ]}
+              value={view}
+              onValueChange={(value) => changeView(value as ViewMode)}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={categoryId}
+            onValueChange={(value) => {
+              setCategoryId(value);
+              setPage(1);
+            }}
           >
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-semibold">Filter</span>
-            {activeFilterCount > 0 ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                {activeFilterCount}
-              </span>
-            ) : null}
-          </button>
-          <div className="flex items-center gap-1">
-            {activeFilterCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={resetFilters}
-              >
-                <X className="h-3 w-3" />
-                Zurücksetzen
-              </Button>
-            ) : null}
+            <SelectTrigger
+              aria-label="Nach Kategorie filtern"
+              className="min-w-36 flex-1 sm:w-44 sm:flex-none"
+            >
+              <SelectValue placeholder="Alle Kategorien" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
+              {(categoriesQuery.data?.items || []).map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={payeeId}
+            onValueChange={(value) => {
+              setPayeeId(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger
+              aria-label="Nach Einzahler filtern"
+              className="min-w-36 flex-1 sm:w-44 sm:flex-none"
+            >
+              <SelectValue placeholder="Alle Einzahler" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
+              {(payeesQuery.data?.items || []).map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex min-w-56 flex-1 items-center gap-2 sm:flex-none">
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={from}
+              onChange={(value) => {
+                setFrom(value);
+                setPage(1);
+              }}
+              placeholder="Von"
+              aria-label="Startdatum für Datumsfilter"
+            />
+            <span className="text-muted-foreground">–</span>
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={to}
+              onChange={(value) => {
+                setTo(value);
+                setPage(1);
+              }}
+              placeholder="Bis"
+              aria-label="Enddatum für Datumsfilter"
+            />
+          </div>
+
+          {activeFilterCount > 0 ? (
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setFilterExpanded((v) => !v)}
+              shape="pill"
+              className="ml-auto"
+              onClick={resetFilters}
             >
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  filterExpanded && "rotate-180",
-                )}
-              />
+              <X className="h-3.5 w-3.5" />
+              {activeFilterCount} Filter zurücksetzen
             </Button>
-          </div>
+          ) : null}
         </div>
-
-        {filterExpanded ? (
-          <div className="border-t border-border/60 p-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="filter-search">Suche</Label>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="filter-search"
-                    className="pl-9"
-                    placeholder="Einzahler, Kategorie, Notiz"
-                    aria-label="Freitext-Suche nach Einzahler, Kategorie oder Notiz"
-                    value={query}
-                    onChange={(event) => {
-                      setQuery(event.target.value);
-                      setPage(1);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Typ</Label>
-                <Select
-                  value={direction}
-                  onValueChange={(value) => {
-                    setDirection(value);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger aria-label="Nach Typ filtern">
-                    <SelectValue placeholder="Alle Typen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_FILTER_VALUE}>Alle Typen</SelectItem>
-                    <SelectItem value="expense">Ausgaben</SelectItem>
-                    <SelectItem value="income">Einnahmen</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Kategorie</Label>
-                <Select
-                  value={categoryId}
-                  onValueChange={(value) => {
-                    setCategoryId(value);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger aria-label="Nach Kategorie filtern">
-                    <SelectValue placeholder="Alle Kategorien" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_FILTER_VALUE}>
-                      Alle Kategorien
-                    </SelectItem>
-                    {(categoriesQuery.data?.items || []).map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Einzahler</Label>
-                <Select
-                  value={payeeId}
-                  onValueChange={(value) => {
-                    setPayeeId(value);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger aria-label="Nach Einzahler filtern">
-                    <SelectValue placeholder="Alle Einzahler" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_FILTER_VALUE}>
-                      Alle Einzahler
-                    </SelectItem>
-                    {(payeesQuery.data?.items || []).map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-                <Label>Zeitraum</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <DatePicker
-                    value={from}
-                    onChange={(value) => {
-                      setFrom(value);
-                      setPage(1);
-                    }}
-                    placeholder="Von"
-                    aria-label="Startdatum für Datumsfilter"
-                  />
-                  <DatePicker
-                    value={to}
-                    onChange={(value) => {
-                      setTo(value);
-                      setPage(1);
-                    }}
-                    placeholder="Bis"
-                    aria-label="Enddatum für Datumsfilter"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
 
-      {/* Transaction list */}
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
-        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-          <p className="text-sm font-semibold">Historie</p>
-          <span className="text-xs text-muted-foreground">
-            {totalCount} Treffer
-          </span>
+      {/* Results */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <MicroLabel>
+            {totalCount === 1 ? "1 Buchung" : `${totalCount} Buchungen`}
+          </MicroLabel>
+          {isArchived ? (
+            <span className="font-subtext text-xs text-muted-foreground">
+              Archivierter Tracker — nur lesbar
+            </span>
+          ) : null}
         </div>
 
-        {/* Mobile card view */}
-        <div className="sm:hidden">
-          {transactionItems.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              Keine Transaktionen für die aktuellen Filter gefunden.
-            </div>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {transactionItems.map((item) => {
-                const isEditing = editingTransactionId === item.id;
-                const isOwnEntry = item.createdByUserId === currentUserId;
-                return (
-                  <Fragment key={item.id}>
-                    <div className="px-4 py-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={cn(
-                                "font-mono text-sm font-semibold tracking-tight tabular-nums",
-                                item.direction === "expense"
-                                  ? "text-expense"
-                                  : "text-income",
-                              )}
-                            >
-                              {item.direction === "expense" ? "-" : "+"}
-                              {formatCurrency(
-                                item.amountCents,
-                                currency,
-                                locale,
-                              )}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {item.date}
-                            </span>
-                          </div>
-                          <p className="truncate text-sm font-medium">
-                            {item.payeeName || item.customPayeeName || "Anonym"}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {item.categoryName || "Ohne Kategorie"}
-                            {item.notes ? ` · ${item.notes}` : ""}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {isOwnEntry
-                              ? "Eingetragen von dir"
-                              : `Eingetragen von ${item.createdByUserName ?? "Unbekannt"}`}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 gap-1">
-                          {item.canEdit ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => startEdit(item)}
-                              disabled={
-                                updateMutation.isPending || !tracker?.isActive
-                              }
-                            >
-                              Bearbeiten
-                            </Button>
-                          ) : null}
-                          {item.canDelete ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
-                              onClick={() => deleteMutation.mutate(item.id)}
-                              disabled={
-                                deleteMutation.isPending || !tracker?.isActive
-                              }
-                            >
-                              Löschen
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                    {isEditing ? (
-                      <div className="bg-muted/20 px-4 pb-4 pt-3">
-                        {renderEditForm(item.id)}
-                      </div>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Desktop table view */}
-        <div className="hidden overflow-x-auto sm:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Datum</TableHead>
-                <TableHead>Einzahler</TableHead>
-                <TableHead>Kategorie</TableHead>
-                <TableHead>Notizen</TableHead>
-                <TableHead>Erfasst von</TableHead>
-                <TableHead className="text-right">Betrag</TableHead>
-                <TableHead className="text-right">Aktion</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactionItems.map((item) => {
-                const isEditing = editingTransactionId === item.id;
-                const isOwnEntry = item.createdByUserId === currentUserId;
-
-                return (
+        {transactionItems.length === 0 ? (
+          emptyState
+        ) : view === "list" ? (
+          <div className="space-y-5">
+            {dayGroups.map((group) => (
+              <DayGroup
+                key={group.date}
+                label={formatDayLabel(group.date, locale)}
+                total={
+                  <Amount
+                    cents={group.items.reduce(
+                      (sum, item) =>
+                        sum +
+                        (item.direction === "expense"
+                          ? -item.amountCents
+                          : item.amountCents),
+                      0,
+                    )}
+                    currency={currency}
+                    locale={locale}
+                    size="xs"
+                    className="text-muted-foreground"
+                  />
+                }
+              >
+                {group.items.map((item) => (
+                  <ListRow
+                    key={item.id}
+                    leading={
+                      <EntityIcon
+                        icon={
+                          item.direction === "expense"
+                            ? ArrowDownLeft
+                            : ArrowUpRight
+                        }
+                        size="sm"
+                        className={
+                          item.direction === "expense"
+                            ? "bg-expense-muted text-expense"
+                            : "bg-income-muted text-income"
+                        }
+                      />
+                    }
+                    title={
+                      item.payeeName || item.customPayeeName || "Ohne Angabe"
+                    }
+                    subtitle={[
+                      item.categoryName || "Ohne Kategorie",
+                      item.notes,
+                      item.createdByUserId === currentUserId
+                        ? "von dir"
+                        : `von ${item.createdByUserName ?? "Unbekannt"}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    trailing={
+                      <Amount
+                        cents={item.amountCents}
+                        currency={currency}
+                        locale={locale}
+                        direction={item.direction}
+                        signed
+                        size="sm"
+                      />
+                    }
+                    actions={renderRowActions(item)}
+                  >
+                    {trackerEdit.editingTransactionId === item.id
+                      ? renderEditForm(item.id)
+                      : null}
+                  </ListRow>
+                ))}
+              </DayGroup>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Einzahler</TableHead>
+                  <TableHead>Kategorie</TableHead>
+                  <TableHead>Notizen</TableHead>
+                  <TableHead>Erfasst von</TableHead>
+                  <TableHead className="text-right">Betrag</TableHead>
+                  <TableHead className="w-24" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactionItems.map((item) => (
                   <Fragment key={item.id}>
                     <TableRow>
-                      <TableCell className="text-sm">{item.date}</TableCell>
-                      <TableCell className="text-sm">
-                        {item.payeeName || item.customPayeeName || "Anonym"}
+                      <TableCell className="font-subtext text-sm text-muted-foreground">
+                        {formatDateShort(item.date, locale)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {item.payeeName || item.customPayeeName || "Ohne Angabe"}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {item.categoryName || "-"}
+                        {item.categoryName || "—"}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
-                        {item.notes || "-"}
+                      <TableCell className="max-w-xs truncate font-subtext text-sm text-muted-foreground">
+                        {item.notes || "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {isOwnEntry
-                          ? "Dir"
+                      <TableCell className="font-subtext text-sm text-muted-foreground">
+                        {item.createdByUserId === currentUserId
+                          ? "dir"
                           : (item.createdByUserName ?? "Unbekannt")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
-                          className={cn(
-                            "font-mono text-sm font-semibold tracking-tight tabular-nums",
-                            item.direction === "expense"
-                              ? "text-expense"
-                              : "text-income",
-                          )}
-                        >
-                          {item.direction === "expense" ? "-" : "+"}
-                          {formatCurrency(item.amountCents, currency, locale)}
-                        </span>
+                        <Amount
+                          cents={item.amountCents}
+                          currency={currency}
+                          locale={locale}
+                          direction={item.direction}
+                          signed
+                          size="sm"
+                        />
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {item.canEdit ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => startEdit(item)}
-                              disabled={
-                                updateMutation.isPending || !tracker?.isActive
-                              }
-                            >
-                              Bearbeiten
-                            </Button>
-                          ) : null}
-                          {item.canDelete ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
-                              onClick={() => deleteMutation.mutate(item.id)}
-                              disabled={
-                                deleteMutation.isPending || !tracker?.isActive
-                              }
-                            >
-                              Löschen
-                            </Button>
-                          ) : null}
+                        <div className="row-actions flex justify-end gap-0.5">
+                          {renderRowActions(item)}
                         </div>
                       </TableCell>
                     </TableRow>
-                    {isEditing ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="bg-muted/20 p-0">
-                          <div className="m-3">{renderEditForm(item.id)}</div>
+                    {trackerEdit.editingTransactionId === item.id ? (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={7} className="h-auto p-3">
+                          {renderEditForm(item.id)}
                         </TableCell>
                       </TableRow>
                     ) : null}
                   </Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
-          {transactionItems.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              Keine Transaktionen für die aktuellen Filter gefunden.
-            </div>
-          ) : null}
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         {transactionItems.length > 0 ? (
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
-            <p className="text-xs text-muted-foreground">Seite {page}</p>
+          <div className="flex items-center justify-between gap-3 px-1 pt-1">
+            <span className="font-subtext text-xs text-muted-foreground">
+              Seite {page}
+            </span>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                shape="pill"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page === 1 || transactionsQuery.isFetching}
               >
@@ -868,18 +648,13 @@ export function TransactionsClient({
               <Button
                 variant="outline"
                 size="sm"
+                shape="pill"
                 onClick={() => setPage((current) => current + 1)}
                 disabled={!hasMore || transactionsQuery.isFetching}
               >
                 Weiter
               </Button>
             </div>
-          </div>
-        ) : null}
-        {tracker && !tracker.isActive ? (
-          <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-            Dieser Tracker ist archiviert. Transaktionen können nicht geändert
-            oder gelöscht werden.
           </div>
         ) : null}
       </div>

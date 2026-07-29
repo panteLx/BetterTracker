@@ -6,6 +6,8 @@ import { ArrowLeft, CalendarClock, CheckCircle2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { EntityPicker } from "@/components/transactions/entity-picker";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -15,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { DirectionToggle } from "@/components/ui/direction-toggle";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -26,6 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
+import { LAST_TRACKER_KEY } from "@/lib/last-tracker";
+import { useLocalStorageValue } from "@/hooks/use-local-storage-value";
 import {
   cn,
   EMPTY_SELECT_VALUE as EMPTY,
@@ -52,51 +55,16 @@ type Category = {
 };
 type Payee = { id: string; name: string; isActive: boolean };
 
-function TrackerPills({
-  trackers,
-  activeId,
-  onChange,
-}: {
-  trackers: Tracker[];
-  activeId: string;
-  onChange: (id: string) => void;
-}) {
-  const active = trackers.filter((t) => t.isActive);
-  if (active.length <= 1) return null;
-  return (
-    <div className="space-y-2">
-      <Label>Tracker</Label>
-      <div className="flex flex-wrap gap-2">
-        {active.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onChange(t.id)}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-              activeId === t.id
-                ? "border-transparent bg-foreground text-background"
-                : "border-border/70 bg-background/75 hover:bg-accent",
-            )}
-          >
-            <span
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: t.color || "#0f766e" }}
-            />
-            {t.name}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function QuickAddSheet({
   open,
   onOpenChange,
+  defaultTrackerId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Preselects a tracker. Defaults to the one you last worked in. Ignored if
+   *  that tracker no longer exists or has been archived. */
+  defaultTrackerId?: string;
 }) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -121,14 +89,25 @@ export function QuickAddSheet({
   const [intervalValue, setIntervalValue] = useState("1");
   const [notesTemplate, setNotesTemplate] = useState("");
 
+  // Only a fallback: an explicit pick inside the sheet always wins, so a
+  // change to the stored value can't yank the form out from under you.
+  const recalledTrackerId = useLocalStorageValue(LAST_TRACKER_KEY) ?? undefined;
+
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
     queryFn: () => fetchJson<{ items: Tracker[] }>("/api/trackers"),
     enabled: open,
   });
   const trackers = trackersQuery.data?.items ?? [];
+  const selectableTrackers = trackers.filter((t) => t.isActive);
+  const preferredTrackerId = defaultTrackerId ?? recalledTrackerId;
+  const preselected = selectableTrackers.some(
+    (t) => t.id === preferredTrackerId,
+  )
+    ? preferredTrackerId
+    : undefined;
   const activeTrackerId =
-    selectedTrackerId || trackers.find((t) => t.isActive)?.id || "";
+    selectedTrackerId || preselected || selectableTrackers[0]?.id || "";
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", activeTrackerId],
@@ -326,14 +305,14 @@ export function QuickAddSheet({
             <button
               type="button"
               onClick={() => setStep("buchung")}
-              className="flex w-full items-center gap-4 rounded-xl border border-border/60 bg-card p-4 text-left transition hover:bg-muted active:scale-[0.98]"
+              className="flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-(--motion-duration-fast) hover:border-border-strong hover:bg-accent"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Receipt className="h-5 w-5 text-primary" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-subtle">
+                <Receipt className="h-5 w-5 text-primary-on" />
               </div>
               <div>
                 <p className="font-medium">Buchung</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-subtext text-sm text-muted-foreground">
                   Einnahme oder Ausgabe erfassen
                 </p>
               </div>
@@ -341,14 +320,14 @@ export function QuickAddSheet({
             <button
               type="button"
               onClick={() => setStep("termin")}
-              className="flex w-full items-center gap-4 rounded-xl border border-border/60 bg-card p-4 text-left transition hover:bg-muted active:scale-[0.98]"
+              className="flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-(--motion-duration-fast) hover:border-border-strong hover:bg-accent"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted">
                 <CalendarClock className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="font-medium">Termin</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-subtext text-sm text-muted-foreground">
                   Wiederkehrende Zahlung anlegen
                 </p>
               </div>
@@ -359,7 +338,7 @@ export function QuickAddSheet({
         {/* ── BUCHUNG FORM ───────────────────────────────────────── */}
         {step === "buchung" && (
           <>
-            <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
+            <div className="flex shrink-0 items-center gap-2 border-b border-border py-3 pl-4 pr-14">
               <button
                 type="button"
                 onClick={goBack}
@@ -389,11 +368,16 @@ export function QuickAddSheet({
                   onSubmit={handleSubmitTransaction}
                   className="space-y-4 p-4"
                 >
-                  <TrackerPills
-                    trackers={trackers}
-                    activeId={activeTrackerId}
-                    onChange={handleTrackerChange}
-                  />
+                  {selectableTrackers.length > 1 ? (
+                    <div className="space-y-2">
+                      <Label>Tracker</Label>
+                      <TrackerPillRow
+                        trackers={selectableTrackers}
+                        activeTrackerId={activeTrackerId}
+                        onSelect={handleTrackerChange}
+                      />
+                    </div>
+                  ) : null}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="qa-tx-date">Datum</Label>
@@ -478,7 +462,7 @@ export function QuickAddSheet({
         {/* ── TERMIN FORM ────────────────────────────────────────── */}
         {step === "termin" && (
           <>
-            <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
+            <div className="flex shrink-0 items-center gap-2 border-b border-border py-3 pl-4 pr-14">
               <button
                 type="button"
                 onClick={goBack}
@@ -498,11 +482,16 @@ export function QuickAddSheet({
                 />
               ) : (
                 <form onSubmit={handleSubmitSchedule} className="space-y-4 p-4">
-                  <TrackerPills
-                    trackers={trackers}
-                    activeId={activeTrackerId}
-                    onChange={handleTrackerChange}
-                  />
+                  {selectableTrackers.length > 1 ? (
+                    <div className="space-y-2">
+                      <Label>Tracker</Label>
+                      <TrackerPillRow
+                        trackers={selectableTrackers}
+                        activeTrackerId={activeTrackerId}
+                        onSelect={handleTrackerChange}
+                      />
+                    </div>
+                  ) : null}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="qa-sc-name">Bezeichnung</Label>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { PageContainer } from "@/components/layout/page-container";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
@@ -24,13 +24,14 @@ export default async function AdminPage() {
   return (
     <PageContainer
       user={user}
-      title="Admin"
-      description="Systemweite Kennzahlen und Einstieg in Benutzer-, Tracker- und Settings-Verwaltung."
+      title="Administration"
+      description="Kennzahlen des Systems sowie Benutzer-, Tracker- und Einstellungsverwaltung."
     >
-      <AdminNav />
+      <AdminShell>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <AdminOverview />
       </HydrationBoundary>
+      </AdminShell>
     </PageContainer>
   );
 }

@@ -3,13 +3,33 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, ArrowLeft, Check, Copy, Globe, Settings2, Trash2, Upload } from "lucide-react";
+import {
+  Archive,
+  ArrowDownLeft,
+  ArrowLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  Check,
+  Copy,
+  Globe,
+  RotateCcw,
+  Settings2,
+  Trash2,
+  Upload,
+  UserRound,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { EntityIcon } from "@/components/ui/entity-icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListRow } from "@/components/ui/list-row";
+import { SectionCard } from "@/components/ui/section-card";
 import {
   Select,
   SelectContent,
@@ -18,14 +38,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { CsvImportDialog } from "@/components/trackers/csv-import-dialog";
 import { fetchJson } from "@/lib/client-fetch";
@@ -87,6 +99,12 @@ function sortTrackers(items: Tracker[], locale: string) {
     left.name.localeCompare(right.name, locale),
   );
 }
+
+const CATEGORY_TYPE_LABELS = {
+  expense: "Ausgabe",
+  income: "Einnahme",
+  transfer: "Umbuchung",
+} as const;
 
 export function TrackerSettingsClient({
   initialTrackerId,
@@ -501,40 +519,29 @@ export function TrackerSettingsClient({
 
   if (!trackersQuery.isLoading && !tracker) {
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-xl border border-border/60 bg-card p-8 text-center">
-        <div className="rounded-xl bg-muted p-3">
-          <Settings2 className="h-5 w-5" />
-        </div>
-        <div className="space-y-1">
-          <p className="font-medium">Kein Tracker verfügbar</p>
-          <p className="text-sm text-muted-foreground">
-            Lege zuerst einen Tracker an, bevor du die Settings verwaltest.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/">Zurück zu den Buchungen</Link>
-        </Button>
-      </div>
+      <EmptyState
+        icon={Settings2}
+        title="Kein Tracker verfügbar"
+        description="Lege zuerst einen Tracker an, bevor du die Settings verwaltest."
+        action={
+          <Button asChild variant="outline">
+            <Link href="/">Zurück zu den Buchungen</Link>
+          </Button>
+        }
+      />
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Tracker selector */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Select value={activeTrackerId} onValueChange={handleTrackerChange}>
-          <SelectTrigger className="sm:max-w-xs">
-            <SelectValue placeholder="Tracker wählen" />
-          </SelectTrigger>
-          <SelectContent>
-            {trackers.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
-                {item.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button asChild variant="outline" size="sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <TrackerPillRow
+          trackers={trackers}
+          activeTrackerId={activeTrackerId}
+          onSelect={handleTrackerChange}
+        />
+        <Button asChild variant="ghost" size="sm" shape="pill" className="ml-auto">
           <Link href="/">
             <ArrowLeft className="h-4 w-4" />
             Zurück
@@ -545,8 +552,8 @@ export function TrackerSettingsClient({
       {tracker ? (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           {/* Left: tracker form */}
-          <div className="rounded-xl border border-border/60 bg-card p-4">
-            <p className="mb-4 text-sm font-semibold">Tracker-Einstellungen</p>
+          <div className="space-y-4">
+          <SectionCard title="Tracker-Einstellungen">
             <form onSubmit={handleTrackerSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="tracker-name">Name</Label>
@@ -637,7 +644,7 @@ export function TrackerSettingsClient({
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                   <div>
                     <p className="text-sm font-medium">Discord Debug</p>
                     <p className="text-xs text-muted-foreground">
@@ -655,7 +662,7 @@ export function TrackerSettingsClient({
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+                <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                   <div>
                     <p className="text-sm font-medium">Tracker archivieren</p>
                     <p className="text-xs text-muted-foreground">
@@ -692,11 +699,10 @@ export function TrackerSettingsClient({
                   : "Tracker speichern"}
               </Button>
             </form>
+          </SectionCard>
 
             {tracker.permission === "owner" ? (
-              <div className="mt-4 border-t border-border/60 pt-4">
-                <p className="mb-4 mt-4 text-sm font-semibold">Gefahrenzone</p>
-
+              <SectionCard title="Gefahrenzone">
                 <Button
                   type="button"
                   variant="outline"
@@ -720,17 +726,16 @@ export function TrackerSettingsClient({
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   Diese Aktion kann durch User nicht rückgängig gemacht werden.
                 </p>
-              </div>
+              </SectionCard>
             ) : null}
           </div>
 
           {/* Right: members, categories, payees */}
           <div className="min-w-0 space-y-4">
             {/* Members */}
-            <div className="rounded-xl border border-border/60 bg-card p-4">
-              <p className="mb-4 text-sm font-semibold">Freigaben</p>
-
-              <div className="mb-4 space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+            <SectionCard title="Freigaben">
+              <div className="space-y-4">
+              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-3">
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
                   <Input
                     value={memberSearch}
@@ -756,29 +761,25 @@ export function TrackerSettingsClient({
                   </Select>
                 </div>
                 {candidateSearch.length >= 2 ? (
-                  <div className="grid gap-2">
+                  <div className="space-y-1.5">
                     {(candidatesQuery.data?.items || []).map((candidate) => (
-                      <div
+                      <ListRow
                         key={candidate.id}
-                        className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">
-                            {candidate.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {candidate.email} · {candidate.role}
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => handleAddMember(candidate.id)}
-                          disabled={addMemberMutation.isPending}
-                        >
-                          Freigeben
-                        </Button>
-                      </div>
+                        leading={<EntityIcon icon={UserRound} size="sm" />}
+                        title={candidate.name}
+                        subtitle={`${candidate.email} · ${candidate.role}`}
+                        trailing={
+                          <Button
+                            type="button"
+                            size="sm"
+                            shape="pill"
+                            onClick={() => handleAddMember(candidate.id)}
+                            disabled={addMemberMutation.isPending}
+                          >
+                            Freigeben
+                          </Button>
+                        }
+                      />
                     ))}
                     {(candidatesQuery.data?.items || []).length === 0 ? (
                       <p className="text-sm text-muted-foreground">
@@ -793,93 +794,70 @@ export function TrackerSettingsClient({
                 )}
               </div>
 
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Benutzer</TableHead>
-                      <TableHead>Rolle</TableHead>
-                      <TableHead className="text-right">Aktion</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(membersQuery.data?.items || []).map((member) => (
-                      <TableRow key={member.id}>
-                        <TableCell className="min-w-0">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">
-                              {member.userName}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {member.userEmail}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {member.permission === "owner" ? (
-                            <span className="text-sm font-medium">Owner</span>
-                          ) : (
-                            <Select
-                              value={member.permission}
-                              onValueChange={(value) =>
-                                updateMemberMutation.mutate({
-                                  memberId: member.id,
-                                  permission: value as
-                                    | "admin"
-                                    | "write"
-                                    | "read",
-                                })
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="read">Read</SelectItem>
-                                <SelectItem value="write">Write</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {member.permission === "owner" ? (
-                            <span className="text-xs text-muted-foreground">
-                              Owner
-                            </span>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() =>
-                                handleRemoveMember(member.id, member.userEmail)
-                              }
-                              disabled={removeMemberMutation.isPending}
-                            >
-                              Entfernen
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="space-y-1.5">
+                {(membersQuery.data?.items || []).map((member) => (
+                  <ListRow
+                    key={member.id}
+                    leading={<EntityIcon icon={UserRound} size="sm" />}
+                    title={member.userName}
+                    subtitle={member.userEmail}
+                    trailing={
+                      member.permission === "owner" ? (
+                        <Badge variant="outline">Owner</Badge>
+                      ) : (
+                        <Select
+                          value={member.permission}
+                          onValueChange={(value) =>
+                            updateMemberMutation.mutate({
+                              memberId: member.id,
+                              permission: value as
+                                | "admin"
+                                | "write"
+                                | "read",
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-28 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="read">Read</SelectItem>
+                            <SelectItem value="write">Write</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )
+                    }
+                    actions={
+                      member.permission !== "owner" ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          shape="pill"
+                          title="Entfernen"
+                          aria-label={`Freigabe für ${member.userEmail} entfernen`}
+                          className="text-expense hover:bg-expense-muted hover:text-expense"
+                          disabled={removeMemberMutation.isPending}
+                          onClick={() =>
+                            handleRemoveMember(member.id, member.userEmail)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : null
+                    }
+                  />
+                ))}
               </div>
-            </div>
+              </div>
+            </SectionCard>
 
             {/* CSV Import */}
             {(tracker.permission === "owner" || tracker.permission === "admin") && (
               <>
-                <div className="rounded-xl border border-border/60 bg-card p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold">CSV-Import</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Transaktionen aus Actual Budget importieren.
-                      </p>
-                    </div>
+                <SectionCard
+                  title="CSV-Import"
+                  titleRight={
                     <Button
                       type="button"
                       variant="outline"
@@ -890,8 +868,12 @@ export function TrackerSettingsClient({
                       <Upload className="h-4 w-4" />
                       Importieren
                     </Button>
-                  </div>
-                </div>
+                  }
+                >
+                  <p className="font-subtext text-sm text-muted-foreground">
+                    Transaktionen aus Actual Budget importieren.
+                  </p>
+                </SectionCard>
                 <CsvImportDialog
                   open={importOpen}
                   onOpenChange={setImportOpen}
@@ -912,152 +894,189 @@ export function TrackerSettingsClient({
             )}
 
             {/* Categories */}
-            <div className="rounded-xl border border-border/60 bg-card p-4">
-              <p className="mb-3 text-sm font-semibold">Kategorien</p>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Typ</TableHead>
-                      <TableHead className="text-right">Aktion</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((item) => (
-                      <TableRow key={item.id} className={cn(!item.isActive && "opacity-50")}>
-                        <TableCell className="text-sm font-medium">
-                          <span className={cn(!item.isActive && "line-through")}>{item.name}</span>
-                          {!item.isActive ? (
-                            <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Archiviert</span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-xs font-medium",
+            <SectionCard title="Kategorien">
+              {categories.length > 0 ? (
+                <div className="space-y-1.5">
+                  {categories.map((item) => {
+                    const Icon =
+                      item.type === "expense"
+                        ? ArrowDownLeft
+                        : item.type === "income"
+                          ? ArrowUpRight
+                          : ArrowLeftRight;
+
+                    return (
+                      <ListRow
+                        key={item.id}
+                        className={cn(!item.isActive && "opacity-60")}
+                        leading={
+                          <EntityIcon
+                            icon={Icon}
+                            size="sm"
+                            className={
                               item.type === "expense"
                                 ? "bg-expense-muted text-expense"
                                 : item.type === "income"
                                   ? "bg-income-muted text-income"
-                                  : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {item.type}
+                                  : "bg-info-muted text-info"
+                            }
+                          />
+                        }
+                        meta={
+                          <>
+                            <Badge
+                              variant={
+                                item.type === "expense"
+                                  ? "expense"
+                                  : item.type === "income"
+                                    ? "income"
+                                    : "secondary"
+                              }
+                            >
+                              {CATEGORY_TYPE_LABELS[item.type]}
+                            </Badge>
+                            {!item.isActive ? (
+                              <Badge variant="outline">Archiviert</Badge>
+                            ) : null}
+                          </>
+                        }
+                        title={
+                          <span className={cn(!item.isActive && "line-through")}>
+                            {item.name}
                           </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {(tracker.permission === "owner" || tracker.permission === "admin") ? (
+                        }
+                        actions={
+                          <>
+                            {(tracker.permission === "owner" ||
+                              tracker.permission === "admin") ? (
                               <Button
-                                type="button"
                                 variant="ghost"
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() =>
-                                  archiveCategoryMutation.mutate({ id: item.id, isActive: !item.isActive })
+                                size="icon-sm"
+                                shape="pill"
+                                title={
+                                  item.isActive ? "Archivieren" : "Reaktivieren"
                                 }
+                                aria-label={`Kategorie ${item.name} ${
+                                  item.isActive ? "archivieren" : "reaktivieren"
+                                }`}
                                 disabled={archiveCategoryMutation.isPending}
+                                onClick={() =>
+                                  archiveCategoryMutation.mutate({
+                                    id: item.id,
+                                    isActive: !item.isActive,
+                                  })
+                                }
                               >
-                                <Archive className="h-3.5 w-3.5" />
-                                {item.isActive ? "Archivieren" : "Reaktivieren"}
+                                {item.isActive ? (
+                                  <Archive className="h-4 w-4" />
+                                ) : (
+                                  <RotateCcw className="h-4 w-4" />
+                                )}
                               </Button>
                             ) : null}
                             <Button
-                              type="button"
                               variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
-                              onClick={() =>
-                                handleDeleteCategory(item.id, item.name)
-                              }
+                              size="icon-sm"
+                              shape="pill"
+                              title="Löschen"
+                              aria-label={`Kategorie ${item.name} löschen`}
+                              className="text-expense hover:bg-expense-muted hover:text-expense"
                               disabled={
                                 deleteCategoryMutation.isPending ||
                                 !tracker.isActive
                               }
+                              onClick={() =>
+                                handleDeleteCategory(item.id, item.name)
+                              }
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Löschen
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {categories.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Noch keine Kategorien vorhanden.
-                  </p>
-                ) : null}
-              </div>
-            </div>
+                          </>
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Noch keine Kategorien vorhanden.
+                </p>
+              )}
+            </SectionCard>
 
             {/* Payees */}
-            <div className="rounded-xl border border-border/60 bg-card p-4">
-              <p className="mb-3 text-sm font-semibold">Einzahler</p>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="text-right">Aktion</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payees.map((item) => (
-                      <TableRow key={item.id} className={cn(!item.isActive && "opacity-50")}>
-                        <TableCell className="text-sm font-medium">
-                          <span className={cn(!item.isActive && "line-through")}>{item.name}</span>
-                          {!item.isActive ? (
-                            <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Archiviert</span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {(tracker.permission === "owner" || tracker.permission === "admin") ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() =>
-                                  archivePayeeMutation.mutate({ id: item.id, isActive: !item.isActive })
-                                }
-                                disabled={archivePayeeMutation.isPending}
-                              >
-                                <Archive className="h-3.5 w-3.5" />
-                                {item.isActive ? "Archivieren" : "Reaktivieren"}
-                              </Button>
-                            ) : null}
+            <SectionCard title="Einzahler">
+              {payees.length > 0 ? (
+                <div className="space-y-1.5">
+                  {payees.map((item) => (
+                    <ListRow
+                      key={item.id}
+                      className={cn(!item.isActive && "opacity-60")}
+                      leading={<EntityIcon icon={UserRound} size="sm" />}
+                      meta={
+                        !item.isActive ? (
+                          <Badge variant="outline">Archiviert</Badge>
+                        ) : undefined
+                      }
+                      title={
+                        <span className={cn(!item.isActive && "line-through")}>
+                          {item.name}
+                        </span>
+                      }
+                      actions={
+                        <>
+                          {(tracker.permission === "owner" ||
+                            tracker.permission === "admin") ? (
                             <Button
-                              type="button"
                               variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
-                              onClick={() =>
-                                handleDeletePayee(item.id, item.name)
+                              size="icon-sm"
+                              shape="pill"
+                              title={
+                                item.isActive ? "Archivieren" : "Reaktivieren"
                               }
-                              disabled={
-                                deletePayeeMutation.isPending || !tracker.isActive
+                              aria-label={`Einzahler ${item.name} ${
+                                item.isActive ? "archivieren" : "reaktivieren"
+                              }`}
+                              disabled={archivePayeeMutation.isPending}
+                              onClick={() =>
+                                archivePayeeMutation.mutate({
+                                  id: item.id,
+                                  isActive: !item.isActive,
+                                })
                               }
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Löschen
+                              {item.isActive ? (
+                                <Archive className="h-4 w-4" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4" />
+                              )}
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {payees.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Noch keine Einzahler vorhanden.
-                  </p>
-                ) : null}
-              </div>
-            </div>
+                          ) : null}
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            shape="pill"
+                            title="Löschen"
+                            aria-label={`Einzahler ${item.name} löschen`}
+                            className="text-expense hover:bg-expense-muted hover:text-expense"
+                            disabled={
+                              deletePayeeMutation.isPending || !tracker.isActive
+                            }
+                            onClick={() => handleDeletePayee(item.id, item.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Noch keine Einzahler vorhanden.
+                </p>
+              )}
+            </SectionCard>
           </div>
         </div>
       ) : null}
@@ -1086,7 +1105,7 @@ function PublicShareToggle({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5">
+      <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
         <div className="flex items-center gap-2.5">
           <Globe className="h-4 w-4 text-muted-foreground" />
           <div>
@@ -1100,7 +1119,7 @@ function PublicShareToggle({
       </div>
 
       {isPublic && slug ? (
-        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2.5">
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-muted px-3.5 py-2.5">
           <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
             {typeof window !== "undefined"
               ? `${window.location.origin}/t/${slug}`

@@ -22,7 +22,15 @@
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-field: var(--field);
   --color-ring: var(--ring);
+
+  /* Accent family — the only tokens a [data-scheme] block overrides.
+     Named "primary-*" rather than "accent-*" because shadcn already claims
+     --accent for the neutral hover surface. */
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-on: var(--primary-on);
+  --color-primary-subtle: var(--primary-subtle);
 
   /* Semantic tokens */
   --color-income: var(--income);
@@ -46,6 +54,11 @@
   /* Strong border */
   --color-border-strong: var(--border-strong);
 
+  /* The one surface that deliberately does NOT invert: the sign-in brand
+     panel reads as a dark slab in both themes. */
+  --color-brand-canvas: var(--brand-canvas);
+  --color-brand-canvas-foreground: var(--brand-canvas-foreground);
+
   /* Chart palette */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -56,159 +69,281 @@
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
 
-  /* Radius scale */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 6px);
+  /* Radius scale — 8 / 10 / 12 / 16 / 20, cards sit at xl */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-pill: 9999px;
 
-  /* Fonts */
-  --font-sans: var(--font-geist-sans);
+  /* Fonts — Poppins carries titles and body, Geist the caption tier */
+  --font-sans: var(--font-poppins);
+  --font-subtext: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Elevation — OKLCH-tinted instead of flat black, tuned per theme via --shadow-color */
-  --shadow-xs: 0 1px 2px 0 color-mix(in oklab, var(--shadow-color) 6%, transparent);
-  --shadow-sm: 0 1px 3px 0 color-mix(in oklab, var(--shadow-color) 10%, transparent),
-    0 1px 2px -1px color-mix(in oklab, var(--shadow-color) 10%, transparent);
-  --shadow-md: 0 4px 6px -1px color-mix(in oklab, var(--shadow-color) 10%, transparent),
-    0 2px 4px -2px color-mix(in oklab, var(--shadow-color) 10%, transparent);
-  --shadow-lg: 0 10px 15px -3px color-mix(in oklab, var(--shadow-color) 10%, transparent),
-    0 4px 6px -4px color-mix(in oklab, var(--shadow-color) 10%, transparent);
+  /* Elevation — values are theme-scoped so dark mode reads deeper */
+  --shadow-xs: var(--elev-xs);
+  --shadow-sm: var(--elev-sm);
+  --shadow-md: var(--elev-md);
+  --shadow-lg: var(--elev-lg);
+  --shadow-card: var(--elev-card);
+  --shadow-overlay: var(--elev-overlay);
 }
 
 :root {
-  --radius: 0.5rem;
-
   /* Motion */
   --motion-duration-fast: 120ms;
   --motion-duration-base: 180ms;
-  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-standard: cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* Shadow tint — same neutral hue (240) as the rest of the palette */
-  --shadow-color: oklch(0.14 0.02 240);
+  /* Base — flat, quiet canvas with white cards floating on it */
+  --background: #f8fafc;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #374151;
+  --muted: #f1f5f9;
+  --muted-foreground: #6b7280;
+  --accent: #f1f5f9;
+  --accent-foreground: #111827;
+  --destructive: #dc2626;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --field: #ffffff;
 
-  /* Base — cool neutral, Linear-style */
-  --background: oklch(0.99 0.003 240);
-  --foreground: oklch(0.14 0.015 240);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.14 0.015 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.14 0.015 240);
-  --primary: oklch(0.52 0.12 185);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.004 240);
-  --secondary-foreground: oklch(0.20 0.01 240);
-  --muted: oklch(0.95 0.004 240);
-  --muted-foreground: oklch(0.52 0.01 240);
-  --accent: oklch(0.94 0.008 240);
-  --accent-foreground: oklch(0.20 0.01 240);
-  --destructive: oklch(0.58 0.22 25);
-  --border: oklch(0.91 0.006 240);
-  --input: oklch(0.91 0.006 240);
-  --ring: oklch(0.55 0.12 185);
+  /* Accent family — monochrome by default, inverts between themes */
+  --primary: #111827;
+  --primary-foreground: #ffffff;
+  --primary-hover: #1f2937;
+  --primary-on: #111827;
+  --primary-subtle: #f1f5f9;
+  --ring: #111827;
 
-  /* Semantic: income (green ~155) */
-  --income: oklch(0.55 0.16 155);
-  --income-foreground: oklch(0.99 0 0);
-  --income-muted: oklch(0.94 0.06 155);
+  /* Semantic: income */
+  --income: #16a34a;
+  --income-foreground: #ffffff;
+  --income-muted: #dcfce7;
 
-  /* Semantic: expense (rose ~25) */
-  --expense: oklch(0.58 0.22 25);
-  --expense-foreground: oklch(0.99 0 0);
-  --expense-muted: oklch(0.95 0.07 25);
+  /* Semantic: expense */
+  --expense: #dc2626;
+  --expense-foreground: #ffffff;
+  --expense-muted: #fee2e2;
 
-  /* Semantic: warning (amber ~75) */
-  --warning: oklch(0.68 0.16 75);
-  --warning-foreground: oklch(0.20 0.04 75);
-  --warning-muted: oklch(0.95 0.07 75);
+  /* Semantic: warning */
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --warning-muted: #fef3c7;
 
-  /* Semantic: info (blue ~250) */
-  --info: oklch(0.52 0.15 250);
-  --info-foreground: oklch(0.99 0 0);
-  --info-muted: oklch(0.93 0.05 250);
+  /* Semantic: info */
+  --info: #2563eb;
+  --info-foreground: #ffffff;
+  --info-muted: #dbeafe;
 
   /* Surface */
-  --surface: oklch(0.97 0.003 240);
-  --surface-elevated: oklch(1 0 0);
-  --surface-muted: oklch(0.95 0.004 240);
+  --surface: #f8fafc;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f1f5f9;
 
   /* Strong border */
-  --border-strong: oklch(0.75 0.01 240);
+  --border-strong: #d1d5db;
 
-  /* Chart palette — hue rotation from 185 */
-  --chart-1: oklch(0.60 0.16 185);
-  --chart-2: oklch(0.62 0.17 155);
-  --chart-3: oklch(0.60 0.15 230);
-  --chart-4: oklch(0.58 0.19 280);
-  --chart-5: oklch(0.72 0.17 60);
-  --chart-6: oklch(0.60 0.21 15);
-  --chart-7: oklch(0.65 0.14 200);
-  --chart-8: oklch(0.56 0.21 300);
+  /* Brand slab */
+  --brand-canvas: #121215;
+  --brand-canvas-foreground: #f4f4f5;
+
+  /* Elevation */
+  --elev-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --elev-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --elev-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --elev-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --elev-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --elev-overlay: 0 16px 48px rgba(0, 0, 0, 0.18);
+
+  /* Chart palette — accent-independent (statistics needs real hue separation)
+     and validated: worst adjacent CVD ΔE 9.1, normal-vision ΔE 19.6 against a
+     white surface. The order is part of the contract — re-ordering the slots
+     invalidates the separation. Slots 3, 4 and 5 sit below 3:1 contrast on
+     light, so charts using them carry direct labels or a legend with values. */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-7: #4a3aa7;
+  --chart-8: #e34948;
 }
 
 .dark {
-  /* Shadow tint — deeper/darker so elevation still reads against dark surfaces */
-  --shadow-color: oklch(0.02 0.01 240);
+  --background: #121215;
+  --foreground: #f4f4f5;
+  --card: #17171a;
+  --card-foreground: #f4f4f5;
+  --popover: #1c1c21;
+  --popover-foreground: #f4f4f5;
+  --secondary: #1f1f24;
+  --secondary-foreground: #d4d4d8;
+  --muted: #1f1f24;
+  --muted-foreground: #a1a1aa;
+  --accent: #26262c;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ef4444;
+  --border: #27272a;
+  --input: #27272a;
+  --field: #1c1c21;
 
-  /* Base — Linear trademark near-black */
-  --background: oklch(0.145 0.005 240);
-  --foreground: oklch(0.97 0.003 240);
-  --card: oklch(0.185 0.005 240);
-  --card-foreground: oklch(0.97 0.003 240);
-  --popover: oklch(0.195 0.005 240);
-  --popover-foreground: oklch(0.97 0.003 240);
-  --primary: oklch(0.72 0.14 185);
-  --primary-foreground: oklch(0.14 0.01 240);
-  --secondary: oklch(0.24 0.006 240);
-  --secondary-foreground: oklch(0.97 0.003 240);
-  --muted: oklch(0.24 0.006 240);
-  --muted-foreground: oklch(0.65 0.006 240);
-  --accent: oklch(0.28 0.008 240);
-  --accent-foreground: oklch(0.97 0.003 240);
-  --destructive: oklch(0.68 0.19 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.72 0.14 185);
+  /* The accent inverts: near-white fills on near-black surfaces */
+  --primary: #e4e4e7;
+  --primary-foreground: #09090b;
+  --primary-hover: #d4d4d8;
+  --primary-on: #e4e4e7;
+  --primary-subtle: rgba(255, 255, 255, 0.08);
+  --ring: #e4e4e7;
 
   /* Semantic: income */
-  --income: oklch(0.72 0.18 155);
-  --income-foreground: oklch(0.14 0.02 155);
-  --income-muted: oklch(0.22 0.07 155);
+  --income: #22c55e;
+  --income-foreground: #052e16;
+  --income-muted: rgba(34, 197, 94, 0.16);
 
   /* Semantic: expense */
-  --expense: oklch(0.70 0.20 25);
-  --expense-foreground: oklch(0.14 0.02 25);
-  --expense-muted: oklch(0.22 0.08 25);
+  --expense: #ef4444;
+  --expense-foreground: #450a0a;
+  --expense-muted: rgba(239, 68, 68, 0.16);
 
   /* Semantic: warning */
-  --warning: oklch(0.78 0.15 75);
-  --warning-foreground: oklch(0.14 0.04 75);
-  --warning-muted: oklch(0.24 0.06 75);
+  --warning: #f59e0b;
+  --warning-foreground: #451a03;
+  --warning-muted: rgba(245, 158, 11, 0.16);
 
   /* Semantic: info */
-  --info: oklch(0.70 0.13 250);
-  --info-foreground: oklch(0.14 0.02 250);
-  --info-muted: oklch(0.22 0.05 250);
+  --info: #3b82f6;
+  --info-foreground: #172554;
+  --info-muted: rgba(59, 130, 246, 0.16);
 
   /* Surface */
-  --surface: oklch(0.195 0.005 240);
-  --surface-elevated: oklch(0.22 0.005 240);
-  --surface-muted: oklch(0.165 0.005 240);
+  --surface: #17171a;
+  --surface-elevated: #1c1c21;
+  --surface-muted: #131316;
 
   /* Strong border */
-  --border-strong: oklch(1 0 0 / 25%);
+  --border-strong: #3f3f46;
 
-  /* Chart palette — brighter for dark mode */
-  --chart-1: oklch(0.75 0.16 185);
-  --chart-2: oklch(0.76 0.17 155);
-  --chart-3: oklch(0.74 0.15 230);
-  --chart-4: oklch(0.72 0.19 280);
-  --chart-5: oklch(0.82 0.17 60);
-  --chart-6: oklch(0.74 0.21 15);
-  --chart-7: oklch(0.78 0.14 200);
-  --chart-8: oklch(0.70 0.21 300);
+  /* Brand slab */
+  --brand-canvas: #0c0c0f;
+  --brand-canvas-foreground: #f4f4f5;
+
+  /* Elevation */
+  --elev-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --elev-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --elev-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --elev-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --elev-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --elev-overlay: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* Chart palette — the same eight hues re-stepped for the dark surface, not
+     an automatic flip. Validated: worst adjacent CVD ΔE 8.4, all ≥ 3:1. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-7: #9085e9;
+  --chart-8: #e66767;
+}
+
+/* ── Accent schemes ───────────────────────────────────────────────
+   Set via data-scheme on <html>. Each block touches only the accent
+   family, so surfaces, text and status colors stay identical across
+   schemes. "mono" is the default and sets no attribute at all. */
+
+:root[data-scheme="teal"] {
+  --primary: #0d9488;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0f766e;
+  --primary-on: #0f766e;
+  --primary-subtle: #f0fdfa;
+  --ring: #0d9488;
+}
+.dark[data-scheme="teal"] {
+  --primary: #14b8a6;
+  --primary-foreground: #04211f;
+  --primary-hover: #0d9488;
+  --primary-on: #5eead4;
+  --primary-subtle: rgba(20, 184, 166, 0.18);
+  --ring: #14b8a6;
+}
+
+:root[data-scheme="indigo"] {
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4338ca;
+  --primary-on: #4338ca;
+  --primary-subtle: #eef2ff;
+  --ring: #4f46e5;
+}
+.dark[data-scheme="indigo"] {
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4f46e5;
+  --primary-on: #a5b4fc;
+  --primary-subtle: rgba(99, 102, 241, 0.18);
+  --ring: #6366f1;
+}
+
+:root[data-scheme="rose"] {
+  --primary: #e11d48;
+  --primary-foreground: #ffffff;
+  --primary-hover: #be123c;
+  --primary-on: #be123c;
+  --primary-subtle: #fff1f2;
+  --ring: #e11d48;
+}
+.dark[data-scheme="rose"] {
+  --primary: #f43f5e;
+  --primary-foreground: #ffffff;
+  --primary-hover: #e11d48;
+  --primary-on: #fda4af;
+  --primary-subtle: rgba(244, 63, 94, 0.18);
+  --ring: #f43f5e;
+}
+
+:root[data-scheme="amber"] {
+  --primary: #d97706;
+  --primary-foreground: #ffffff;
+  --primary-hover: #b45309;
+  --primary-on: #b45309;
+  --primary-subtle: #fffbeb;
+  --ring: #d97706;
+}
+.dark[data-scheme="amber"] {
+  --primary: #f59e0b;
+  --primary-foreground: #1c1400;
+  --primary-hover: #d97706;
+  --primary-on: #fcd34d;
+  --primary-subtle: rgba(245, 158, 11, 0.18);
+  --ring: #f59e0b;
+}
+
+:root[data-scheme="violet"] {
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --primary-hover: #6d28d9;
+  --primary-on: #6d28d9;
+  --primary-subtle: #f5f3ff;
+  --ring: #7c3aed;
+}
+.dark[data-scheme="violet"] {
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --primary-hover: #7c3aed;
+  --primary-on: #c4b5fd;
+  --primary-subtle: rgba(139, 92, 246, 0.18);
+  --ring: #8b5cf6;
 }
 
 @layer base {
@@ -223,41 +358,76 @@
   body {
     @apply min-h-full bg-background text-foreground antialiased;
     min-height: 100dvh;
-    position: relative;
-    isolation: isolate;
-    background-image:
-      radial-gradient(
-        ellipse 80% 60% at -5% -10%,
-        color-mix(in oklab, var(--primary) 7%, transparent),
-        transparent
-      );
-    background-attachment: fixed;
-    background-repeat: no-repeat;
   }
 
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
+  /* Numbers are a primary design element here — never let them jitter. */
+  :where(table, [data-slot="amount"]) {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* The caption tier: a tiny uppercase label that sits above a number or
+     names a section. Set in Geist so it reads as a different voice from
+     the Poppins titles it labels. */
+  /* Named with a non-"text-" prefix on purpose: tailwind-merge treats any
+     text-* class as part of the font-size/color conflict group and would drop
+     this one whenever a component also passes e.g. text-primary-foreground. */
+  .type-label {
+    font-family: var(--font-subtext);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* Per-row actions stay out of the way until you reach for the row. Hover
+     does not exist on touch, so there they are simply always visible —
+     otherwise the only affordance would be an invisible one. Hiding means
+     non-interactive: opacity alone still hit-tests, which leaves an invisible
+     but fully clickable delete button on every row. */
+  .row-actions {
+    opacity: 0;
     pointer-events: none;
-    background-image:
-      radial-gradient(
-        circle,
-        color-mix(in oklab, var(--foreground) 12%, transparent) 1px,
-        transparent 1px
-      );
-    background-size: 24px 24px;
-    opacity: 0.12;
-    z-index: -1;
+    transition: opacity var(--motion-duration-fast)
+      var(--motion-easing-standard);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+  .group:hover .row-actions,
+  .group:focus-within .row-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (pointer: coarse) {
+    .row-actions {
+      opacity: 1;
+      pointer-events: auto;
     }
+  }
+}
+
+@layer utilities {
+  /* Buttons answer when pressed. */
+  @media (hover: hover) {
+    button:not(:disabled):not([data-no-press]):active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  button:active {
+    transform: none !important;
   }
 }

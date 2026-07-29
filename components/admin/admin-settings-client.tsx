@@ -98,7 +98,7 @@ export function AdminSettingsClient({
             <CardTitle>System</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
+            <div className="flex items-center justify-between rounded-2xl border border-border p-4">
               <div>
                 <p className="font-medium">Registrierung erlaubt</p>
                 <p className="text-sm text-muted-foreground">
@@ -146,7 +146,7 @@ export function AdminSettingsClient({
               }
             />
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
+          <div className="flex items-center justify-between rounded-2xl border border-border p-4">
             <div>
               <p className="font-medium">Discord-Default Debug</p>
               <p className="text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export function AdminSettingsClient({
               }
             />
           </div>
-          <div className="rounded-2xl border border-border/60 p-4 md:col-span-2">
+          <div className="rounded-2xl border border-border p-4 md:col-span-2">
             <p className="font-medium">
               Discord-Defaults auf alle Tracker anwenden
             </p>

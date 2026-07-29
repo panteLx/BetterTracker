@@ -3,18 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Status badges are soft-filled rather than solid: they sit next to amounts
+ * and titles all day, and a saturated block of color there reads as an alarm
+ * even when it only means "expense".
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-pill border px-2 py-0.5 font-subtext text-[11px] font-medium whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-ring/60 focus:ring-offset-2",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+        default: "border-transparent bg-primary text-primary-foreground",
+        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        outline: "border-border bg-card text-muted-foreground",
+        income: "border-transparent bg-income-muted text-income",
+        expense: "border-transparent bg-expense-muted text-expense",
+        warning: "border-transparent bg-warning-muted text-warning",
+        info: "border-transparent bg-info-muted text-info",
+        destructive: "border-transparent bg-expense-muted text-expense",
       },
     },
     defaultVariants: {

@@ -33,10 +33,10 @@ export function DirectionToggle({
           onClick={() => onValueChange("expense")}
           disabled={disabled}
           className={cn(
-            "rounded-lg border px-4 py-3 text-left transition",
+            "rounded-xl border px-4 py-3 text-left transition-colors duration-(--motion-duration-fast)",
             value === "expense"
-              ? "border-expense/30 bg-expense-muted text-expense"
-              : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+              ? "border-expense/40 bg-expense-muted text-expense"
+              : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
         >
           <p className="font-medium">Ausgabe</p>
@@ -47,10 +47,10 @@ export function DirectionToggle({
           onClick={() => onValueChange("income")}
           disabled={disabled}
           className={cn(
-            "rounded-lg border px-4 py-3 text-left transition",
+            "rounded-xl border px-4 py-3 text-left transition-colors duration-(--motion-duration-fast)",
             value === "income"
-              ? "border-income/30 bg-income-muted text-income"
-              : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
+              ? "border-income/40 bg-income-muted text-income"
+              : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
         >
           <p className="font-medium">Einnahme</p>
@@ -63,7 +63,7 @@ export function DirectionToggle({
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 rounded-full border border-border/70 bg-muted/40 p-1",
+        "inline-flex shrink-0 rounded-pill border border-border bg-muted p-1",
         className,
       )}
     >
@@ -72,7 +72,7 @@ export function DirectionToggle({
         onClick={() => onValueChange("expense")}
         disabled={disabled}
         className={cn(
-          "rounded-full px-3 py-1.5 text-xs font-medium transition",
+          "rounded-pill px-3 py-1.5 text-xs font-medium transition-colors duration-(--motion-duration-fast)",
           value === "expense"
             ? "bg-expense text-expense-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",
@@ -86,7 +86,7 @@ export function DirectionToggle({
         onClick={() => onValueChange("income")}
         disabled={disabled}
         className={cn(
-          "rounded-full px-3 py-1.5 text-xs font-medium transition",
+          "rounded-pill px-3 py-1.5 text-xs font-medium transition-colors duration-(--motion-duration-fast)",
           value === "income"
             ? "bg-income text-income-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",

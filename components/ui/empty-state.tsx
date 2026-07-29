@@ -1,6 +1,10 @@
 import { type ReactNode, type ElementType } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * An empty screen is an invitation to act, so it always names the next step
+ * rather than just reporting that there is nothing here.
+ */
 type EmptyStateProps = {
   icon?: ElementType;
   title: string;
@@ -19,22 +23,24 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 py-12 text-center",
+        "flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border px-6 py-14 text-center",
         className,
       )}
     >
       {Icon ? (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
           <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
       ) : null}
       <div className="space-y-1">
-        <p className="text-sm font-medium">{title}</p>
+        <p className="font-medium">{title}</p>
         {description ? (
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="mx-auto max-w-sm font-subtext text-sm text-muted-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
-      {action ? <div>{action}</div> : null}
+      {action}
     </div>
   );
 }

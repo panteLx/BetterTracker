@@ -3,19 +3,42 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2, Clock, Plus } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  SkipForward,
+  Trash2,
+} from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import {
   amountToInputValue,
   EMPTY_SELECT_VALUE,
-  formatCurrency,
+  formatDateShort,
   getFrequencyLabel,
   toDateInputValue,
 } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
+import { Amount } from "@/components/ui/amount";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { EntityIcon } from "@/components/ui/entity-icon";
+import { ListRow } from "@/components/ui/list-row";
+import { Segmented } from "@/components/ui/segmented";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +57,6 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityPicker } from "@/components/transactions/entity-picker";
 
@@ -112,9 +134,10 @@ function getScheduleStatusLabel(status: Schedule["status"]) {
 }
 
 function getStatusVariant(status: Schedule["status"]) {
-  if (status === "overdue") return "destructive";
-  if (status === "due") return "secondary";
-  return "outline";
+  if (status === "overdue") return "expense" as const;
+  if (status === "due") return "warning" as const;
+  if (status === "completed") return "income" as const;
+  return "outline" as const;
 }
 
 export function SchedulesClient({
@@ -139,6 +162,7 @@ export function SchedulesClient({
   const [editingScheduleId, setEditingScheduleId] = useState("");
   const [editState, setEditState] = useState<EditScheduleState | null>(null);
   const [reactivatingScheduleId, setReactivatingScheduleId] = useState("");
+  const [tab, setTab] = useState<"due" | "upcoming" | "inactive">("due");
   const [reactivationDate, setReactivationDate] = useState(
     toDateInputValue(new Date()),
   );
@@ -459,457 +483,480 @@ export function SchedulesClient({
   const upcomingCount = upcomingQuery.data?.items.length ?? 0;
   const inactiveCount = inactiveQuery.data?.items.length ?? 0;
 
-  function renderItems(items: Schedule[]) {
+  function renderEditPanel(item: Schedule) {
+    if (!editState) return null;
+
     return (
-      <div className="grid gap-3">
-        {items.map((item) => {
-          const isEditing = editingScheduleId === item.id;
-          const isReactivating = reactivatingScheduleId === item.id;
-          const isOwnSchedule = item.createdByUserId === currentUserId;
+      <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input
+              value={editState.name}
+              onChange={(event) =>
+                setEditState((current) =>
+                  current ? { ...current, name: event.target.value } : current,
+                )
+              }
+              placeholder="z. B. Miete"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Betrag</Label>
+            <Input
+              value={editState.amount}
+              onChange={(event) =>
+                setEditState((current) =>
+                  current
+                    ? { ...current, amount: event.target.value }
+                    : current,
+                )
+              }
+              placeholder="12,50"
+              inputMode="decimal"
+            />
+          </div>
+        </div>
 
-          return (
-            <div
-              key={item.id}
-              className="rounded-xl border border-border/60 bg-card p-4"
+        <div className="space-y-2">
+          <Label>Typ</Label>
+          <DirectionToggle
+            size="sm"
+            value={editState.direction}
+            onValueChange={(value) =>
+              setEditState((current) =>
+                current ? { ...current, direction: value } : current,
+              )
+            }
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <EntityPicker
+            kind="category"
+            trackerId={activeTrackerId}
+            locale={locale}
+            label="Kategorie"
+            options={(categoriesQuery.data?.items || [])
+              .filter(
+                (entry) =>
+                  entry.type === editState.direction ||
+                  entry.type === "transfer",
+              )
+              .map((entry) => ({
+                value: entry.id,
+                label: entry.name,
+              }))}
+            value={editState.categoryId}
+            onValueChange={(value) =>
+              setEditState((current) =>
+                current ? { ...current, categoryId: value } : current,
+              )
+            }
+            required
+            direction={editState.direction}
+          />
+          <EntityPicker
+            kind="payee"
+            trackerId={activeTrackerId}
+            locale={locale}
+            label="Einzahler"
+            options={(payeesQuery.data?.items || []).map((entry) => ({
+              value: entry.id,
+              label: entry.name,
+            }))}
+            value={editState.payeeId}
+            onValueChange={(value) =>
+              setEditState((current) =>
+                current ? { ...current, payeeId: value } : current,
+              )
+            }
+            required
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Frequenz</Label>
+            <Select
+              value={editState.frequency}
+              onValueChange={(value) =>
+                setEditState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        frequency: value as
+                          | "monthly"
+                          | "yearly"
+                          | "custom_days",
+                      }
+                    : current,
+                )
+              }
             >
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-[15px] font-semibold">{item.name}</h3>
-                    <Badge
-                      variant={
-                        item.direction === "expense"
-                          ? "destructive"
-                          : "secondary"
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monatlich</SelectItem>
+                <SelectItem value="yearly">Jährlich</SelectItem>
+                <SelectItem value="custom_days">Alle X Tage</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Intervall</Label>
+            <Input
+              value={editState.intervalValue}
+              onChange={(event) =>
+                setEditState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        intervalValue: event.target.value,
                       }
-                    >
-                      {item.direction === "expense" ? "Ausgabe" : "Einnahme"}
-                    </Badge>
-                    <Badge variant={getStatusVariant(item.status)}>
-                      {getScheduleStatusLabel(item.status)}
-                    </Badge>
-                  </div>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>
-                      {item.payeeName || "Einzahler fehlt"} ·{" "}
-                      {item.categoryName || "Kategorie fehlt"}
-                    </p>
-                    <p>
-                      Nächster Termin {item.nextDueDate} |{" "}
-                      {getFrequencyLabel(item.frequency, item.intervalValue)}
-                    </p>
-                    {item.lastCompletedDate ? (
-                      <p>Zuletzt gebucht am {item.lastCompletedDate}</p>
-                    ) : null}
-                    {item.lastSkippedDate ? (
-                      <p>Zuletzt übersprungen am {item.lastSkippedDate}</p>
-                    ) : null}
-                    {!item.isComplete ? (
-                      <p>
-                        Dieser Legacy-Termin braucht noch Einzahler und
-                        Kategorie.
-                      </p>
-                    ) : null}
-                    {isOwnSchedule ? (
-                      <p className="text-xs">Von dir erstellt</p>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <div className="mr-1 rounded-full border border-border/60 bg-muted/35 px-3 py-1 font-mono text-base font-semibold tracking-tight tabular-nums">
-                    {formatCurrency(item.amountCents, currency, locale)}
-                  </div>
-                  {item.isActive ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => createTransactionMutation.mutate(item.id)}
-                      disabled={
-                        createTransactionMutation.isPending ||
-                        skipScheduleMutation.isPending ||
-                        !tracker?.isActive ||
-                        !item.canCreateTransaction
-                      }
-                    >
-                      Als Transaktion buchen
-                    </Button>
-                  ) : null}
-                  {item.isActive ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => skipScheduleMutation.mutate(item.id)}
-                      disabled={
-                        createTransactionMutation.isPending ||
-                        skipScheduleMutation.isPending ||
-                        !isTrackerMutable
-                      }
-                    >
-                      Skip
-                    </Button>
-                  ) : null}
-                  {item.isActive && item.canEdit ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => completeSchedule(item.id)}
-                      disabled={updateMutation.isPending || !isTrackerMutable}
-                    >
-                      Abschließen
-                    </Button>
-                  ) : null}
-                  {!item.isActive && item.canEdit ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openReactivate(item)}
-                      disabled={updateMutation.isPending || !isTrackerMutable}
-                    >
-                      Reaktivieren
-                    </Button>
-                  ) : null}
-                  {item.canEdit ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => startEdit(item)}
-                      disabled={updateMutation.isPending || !isTrackerMutable}
-                    >
-                      Bearbeiten
-                    </Button>
-                  ) : null}
-                  {item.canDelete ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteMutation.mutate(item.id)}
-                      disabled={deleteMutation.isPending || !isTrackerMutable}
-                    >
-                      Löschen
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
+                    : current,
+                )
+              }
+              placeholder="1"
+              inputMode="numeric"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Nächster Termin</Label>
+            <DatePicker
+              value={editState.nextDueDate}
+              onChange={(value) =>
+                setEditState((current) =>
+                  current ? { ...current, nextDueDate: value } : current,
+                )
+              }
+            />
+          </div>
+        </div>
 
-              {isReactivating ? (
-                <div className="mt-4 grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-                  <DatePicker
-                    value={reactivationDate}
-                    onChange={setReactivationDate}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => submitReactivate(item.id)}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending
-                      ? "Speichert..."
-                      : "Jetzt reaktivieren"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setReactivatingScheduleId("")}
-                  >
-                    Abbrechen
-                  </Button>
-                </div>
-              ) : null}
+        <div className="space-y-2">
+          <Label>Notizvorlage (optional)</Label>
+          <Input
+            value={editState.notesTemplate}
+            onChange={(event) =>
+              setEditState((current) =>
+                current
+                  ? { ...current, notesTemplate: event.target.value }
+                  : current,
+              )
+            }
+            placeholder="Wird beim Buchen übernommen"
+          />
+        </div>
 
-              {isEditing && editState ? (
-                <div className="mt-4 grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Name</Label>
-                      <Input
-                        value={editState.name}
-                        onChange={(event) =>
-                          setEditState((current) =>
-                            current
-                              ? { ...current, name: event.target.value }
-                              : current,
-                          )
-                        }
-                        placeholder="z. B. Miete"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Betrag</Label>
-                      <Input
-                        value={editState.amount}
-                        onChange={(event) =>
-                          setEditState((current) =>
-                            current
-                              ? { ...current, amount: event.target.value }
-                              : current,
-                          )
-                        }
-                        placeholder="12,50"
-                        inputMode="decimal"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="space-y-1.5">
-                      <Label>Typ</Label>
-                      <Select
-                        value={editState.direction}
-                        onValueChange={(value) =>
-                          setEditState((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  direction: value as "expense" | "income",
-                                }
-                              : current,
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="expense">Ausgabe</SelectItem>
-                          <SelectItem value="income">Einnahme</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Frequenz</Label>
-                      <Select
-                        value={editState.frequency}
-                        onValueChange={(value) =>
-                          setEditState((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  frequency: value as
-                                    | "monthly"
-                                    | "yearly"
-                                    | "custom_days",
-                                }
-                              : current,
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="monthly">Monatlich</SelectItem>
-                          <SelectItem value="yearly">Jährlich</SelectItem>
-                          <SelectItem value="custom_days">
-                            Alle X Tage
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Intervall</Label>
-                      <Input
-                        value={editState.intervalValue}
-                        onChange={(event) =>
-                          setEditState((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  intervalValue: event.target.value,
-                                }
-                              : current,
-                          )
-                        }
-                        placeholder="1"
-                        inputMode="numeric"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <EntityPicker
-                      kind="category"
-                      trackerId={activeTrackerId}
-                      locale={locale}
-                      label="Kategorie"
-                      options={(categoriesQuery.data?.items || [])
-                        .filter(
-                          (entry) =>
-                            entry.type === editState.direction ||
-                            entry.type === "transfer",
-                        )
-                        .map((entry) => ({
-                          value: entry.id,
-                          label: entry.name,
-                        }))}
-                      value={editState.categoryId}
-                      onValueChange={(value) =>
-                        setEditState((current) =>
-                          current ? { ...current, categoryId: value } : current,
-                        )
-                      }
-                      required
-                      direction={editState.direction}
-                    />
-                    <EntityPicker
-                      kind="payee"
-                      trackerId={activeTrackerId}
-                      locale={locale}
-                      label="Einzahler"
-                      options={(payeesQuery.data?.items || []).map((entry) => ({
-                        value: entry.id,
-                        label: entry.name,
-                      }))}
-                      value={editState.payeeId}
-                      onValueChange={(value) =>
-                        setEditState((current) =>
-                          current ? { ...current, payeeId: value } : current,
-                        )
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Nächster Termin</Label>
-                    <DatePicker
-                      value={editState.nextDueDate}
-                      onChange={(value) =>
-                        setEditState((current) =>
-                          current
-                            ? { ...current, nextDueDate: value }
-                            : current,
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Notizvorlage (optional)</Label>
-                    <Input
-                      value={editState.notesTemplate}
-                      onChange={(event) =>
-                        setEditState((current) =>
-                          current
-                            ? { ...current, notesTemplate: event.target.value }
-                            : current,
-                        )
-                      }
-                      placeholder="Wird beim Buchen übernommen"
-                    />
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={cancelEdit}
-                    >
-                      Abbrechen
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => submitEdit(item.id)}
-                      disabled={updateMutation.isPending}
-                    >
-                      {updateMutation.isPending ? "Speichert..." : "Speichern"}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-        {items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border/70 bg-card p-5 text-sm text-muted-foreground">
-            Keine Einträge in diesem Tab.
-          </p>
-        ) : null}
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={cancelEdit}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => submitEdit(item.id)}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? "Speichert..." : "Speichern"}
+          </Button>
+        </div>
       </div>
     );
   }
 
+  function renderReactivatePanel(item: Schedule) {
+    return (
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <DatePicker value={reactivationDate} onChange={setReactivationDate} />
+        <Button
+          type="button"
+          onClick={() => submitReactivate(item.id)}
+          disabled={updateMutation.isPending}
+        >
+          {updateMutation.isPending ? "Speichert..." : "Jetzt reaktivieren"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => setReactivatingScheduleId("")}
+        >
+          Abbrechen
+        </Button>
+      </div>
+    );
+  }
+
+  /**
+   * One row per schedule. Only the action you are most likely to want stays
+   * on the surface — booking a due item — with the rarer lifecycle actions
+   * behind the overflow menu, so a list of six schedules is not a wall of
+   * thirty-six buttons.
+   */
+  function renderItems(
+    items: Schedule[],
+    emptyTitle: string,
+    emptyText: string,
+  ) {
+    if (items.length === 0) {
+      return (
+        <EmptyState
+          icon={CalendarClock}
+          title={emptyTitle}
+          description={emptyText}
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-1.5">
+        {items.map((item) => {
+          const isEditing = editingScheduleId === item.id;
+          const isReactivating = reactivatingScheduleId === item.id;
+          const isOwnSchedule = item.createdByUserId === currentUserId;
+          const busy =
+            createTransactionMutation.isPending ||
+            skipScheduleMutation.isPending ||
+            updateMutation.isPending;
+
+          const overflowItems = [
+            item.isActive && {
+              key: "skip",
+              label: "Überspringen",
+              icon: SkipForward,
+              disabled: busy || !isTrackerMutable,
+              onSelect: () => skipScheduleMutation.mutate(item.id),
+            },
+            item.isActive &&
+              item.canEdit && {
+                key: "complete",
+                label: "Abschließen",
+                icon: CheckCircle2,
+                disabled: busy || !isTrackerMutable,
+                onSelect: () => completeSchedule(item.id),
+              },
+            !item.isActive &&
+              item.canEdit && {
+                key: "reactivate",
+                label: "Reaktivieren",
+                icon: RotateCcw,
+                disabled: busy || !isTrackerMutable,
+                onSelect: () => openReactivate(item),
+              },
+            item.canEdit && {
+              key: "edit",
+              label: "Bearbeiten",
+              icon: Pencil,
+              disabled: busy || !isTrackerMutable,
+              onSelect: () => (isEditing ? cancelEdit() : startEdit(item)),
+            },
+            item.canDelete && {
+              key: "delete",
+              label: "Löschen",
+              icon: Trash2,
+              destructive: true,
+              disabled: deleteMutation.isPending || !isTrackerMutable,
+              onSelect: () => deleteMutation.mutate(item.id),
+            },
+          ].filter(Boolean) as Array<{
+            key: string;
+            label: string;
+            icon: React.ElementType;
+            destructive?: boolean;
+            disabled: boolean;
+            onSelect: () => void;
+          }>;
+
+          const subtitleParts = [
+            item.payeeName || "Einzahler fehlt",
+            item.categoryName || "Kategorie fehlt",
+            `nächster Termin ${formatDateShort(item.nextDueDate, locale)}`,
+            isOwnSchedule ? "von dir" : null,
+          ].filter(Boolean);
+
+          return (
+            <ListRow
+              key={item.id}
+              leading={
+                <EntityIcon
+                  icon={
+                    item.direction === "expense" ? ArrowDownLeft : ArrowUpRight
+                  }
+                  size="sm"
+                  className={
+                    item.direction === "expense"
+                      ? "bg-expense-muted text-expense"
+                      : "bg-income-muted text-income"
+                  }
+                />
+              }
+              meta={
+                <>
+                  <Badge variant={getStatusVariant(item.status)}>
+                    {getScheduleStatusLabel(item.status)}
+                  </Badge>
+                  <span className="font-subtext text-xs text-muted-foreground">
+                    {getFrequencyLabel(item.frequency, item.intervalValue)}
+                  </span>
+                  {!item.isComplete ? (
+                    <Badge variant="warning">
+                      Einzahler und Kategorie fehlen
+                    </Badge>
+                  ) : null}
+                </>
+              }
+              title={item.name}
+              subtitle={subtitleParts.join(" · ")}
+              trailing={
+                <>
+                  <Amount
+                    cents={item.amountCents}
+                    currency={currency}
+                    locale={locale}
+                    direction={item.direction}
+                    signed
+                    size="sm"
+                  />
+                  {item.isActive ? (
+                    <Button
+                      type="button"
+                      variant="soft"
+                      size="sm"
+                      shape="pill"
+                      onClick={() => createTransactionMutation.mutate(item.id)}
+                      disabled={
+                        busy || !tracker?.isActive || !item.canCreateTransaction
+                      }
+                    >
+                      Buchen
+                    </Button>
+                  ) : null}
+                </>
+              }
+              actions={
+                overflowItems.length > 0 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        shape="pill"
+                        aria-label={`Weitere Aktionen für ${item.name}`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {overflowItems.map((action) => {
+                        const Icon = action.icon;
+                        return (
+                          <DropdownMenuItem
+                            key={action.key}
+                            disabled={action.disabled}
+                            onSelect={action.onSelect}
+                            className={
+                              action.destructive
+                                ? "text-expense focus:text-expense"
+                                : undefined
+                            }
+                          >
+                            <Icon className="mr-2 h-4 w-4" />
+                            {action.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null
+              }
+            >
+              {isReactivating ? renderReactivatePanel(item) : null}
+              {isEditing ? renderEditPanel(item) : null}
+            </ListRow>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const tabs = [
+    { value: "due" as const, label: "Fällig", count: dueCount },
+    { value: "upcoming" as const, label: "Demnächst", count: upcomingCount },
+    {
+      value: "inactive" as const,
+      label: "Abgeschlossen",
+      count: inactiveCount,
+    },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Tracker pills + action */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6">
+      {/* Tracker selector */}
+      <div className="flex flex-wrap items-center gap-2">
         <TrackerPillRow
           trackers={trackers}
           activeTrackerId={activeTrackerId}
           onSelect={setSelectedTracker}
         />
-        <Button
-          size="sm"
-          onClick={() => setSheetOpen(true)}
-          disabled={!isTrackerMutable}
-          className="gap-1.5 hidden sm:inline-flex"
-        >
-          <Plus className="h-4 w-4" />
-          Neuer Termin
-        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 lg:grid-cols-3 gap-3">
+      {/* What needs attention is the point of this page, so it is the
+          inverted tile. */}
+      <div className="grid grid-cols-3 gap-3">
         <StatTile
           label="Fällig"
-          value={String(dueCount)}
+          tone="inverse"
           icon={AlertCircle}
-          tone="expense"
+          value={dueCount}
         />
-        <StatTile
-          label="Demnächst"
-          value={String(upcomingCount)}
-          icon={Clock}
-          tone="warning"
-        />
+        <StatTile label="Demnächst" icon={Clock} value={upcomingCount} />
         <StatTile
           label="Abgeschlossen"
-          value={String(inactiveCount)}
           icon={CheckCircle2}
-          tone="neutral"
+          value={inactiveCount}
         />
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="due">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="due">
-            Fällig
-            {dueCount > 0 ? (
-              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
-                {dueCount}
-              </span>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="upcoming">
-            Demnächst
-            {upcomingCount > 0 ? (
-              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
-                {upcomingCount}
-              </span>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="inactive">
-            Abgeschlossen
-            {inactiveCount > 0 ? (
-              <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium">
-                {inactiveCount}
-              </span>
-            ) : null}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="due" className="mt-4">
-          {renderItems(dueQuery.data?.items || [])}
-        </TabsContent>
-        <TabsContent value="upcoming" className="mt-4">
-          {renderItems(upcomingQuery.data?.items || [])}
-        </TabsContent>
-        <TabsContent value="inactive" className="mt-4">
-          {renderItems(inactiveQuery.data?.items || [])}
-        </TabsContent>
-      </Tabs>
+      <div className="space-y-4">
+        <Segmented
+          label="Termine filtern"
+          items={tabs.map((entry) => ({
+            value: entry.value,
+            label: `${entry.label} (${entry.count})`,
+          }))}
+          value={tab}
+          onValueChange={setTab}
+        />
+
+        {tab === "due"
+          ? renderItems(
+              dueQuery.data?.items || [],
+              "Nichts fällig",
+              "Aktuell steht kein Termin zur Buchung an.",
+            )
+          : null}
+        {tab === "upcoming"
+          ? renderItems(
+              upcomingQuery.data?.items || [],
+              "Nichts in Sicht",
+              "Es sind keine kommenden Termine angelegt.",
+            )
+          : null}
+        {tab === "inactive"
+          ? renderItems(
+              inactiveQuery.data?.items || [],
+              "Noch nichts abgeschlossen",
+              "Abgeschlossene und archivierte Termine landen hier.",
+            )
+          : null}
+      </div>
 
       {/* New schedule sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -920,7 +967,7 @@ export function SchedulesClient({
           {isMobile && (
             <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
           )}
-          <div className="shrink-0 border-b border-border/60 p-5 pr-12">
+          <div className="shrink-0 border-b border-border p-5 pr-12">
             <SheetTitle>Neuer Termin</SheetTitle>
             <SheetDescription>für {tracker?.name}</SheetDescription>
           </div>

@@ -1,14 +1,22 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, CreditCard, Landmark, LayoutDashboard, LogIn } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CreditCard,
+  Landmark,
+  LayoutDashboard,
+  LogIn,
+} from "lucide-react";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions } from "@/lib/db/schema";
-import { formatCurrency } from "@/lib/utils";
 import { StatTile } from "@/components/ui/stat-tile";
+import { Amount } from "@/components/ui/amount";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EntityIcon } from "@/components/ui/entity-icon";
+import { ListRow } from "@/components/ui/list-row";
 import { SectionCard } from "@/components/ui/section-card";
-import { cn } from "@/lib/utils";
 import { getServerSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -16,13 +24,16 @@ export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 
 function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(dateStr));
+  return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(
+    new Date(dateStr),
+  );
 }
 
 function formatMonth(dateStr: string) {
-  return new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" }).format(
-    new Date(dateStr + "-01"),
-  );
+  return new Intl.DateTimeFormat("de-DE", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(dateStr + "-01"));
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -30,7 +41,13 @@ export async function generateMetadata({ params }: Props) {
   const rows = await db
     .select({ name: trackers.name, description: trackers.description })
     .from(trackers)
-    .where(and(eq(trackers.slug, slug), eq(trackers.isPublic, true), eq(trackers.isHidden, false)))
+    .where(
+      and(
+        eq(trackers.slug, slug),
+        eq(trackers.isPublic, true),
+        eq(trackers.isHidden, false),
+      ),
+    )
     .limit(1);
   const tracker = rows[0];
   if (!tracker) return { title: "Tracker nicht gefunden" };
@@ -48,7 +65,13 @@ export default async function PublicTrackerPage({ params }: Props) {
     db
       .select()
       .from(trackers)
-      .where(and(eq(trackers.slug, slug), eq(trackers.isPublic, true), eq(trackers.isHidden, false)))
+      .where(
+        and(
+          eq(trackers.slug, slug),
+          eq(trackers.isPublic, true),
+          eq(trackers.isHidden, false),
+        ),
+      )
       .limit(1),
   ]);
 
@@ -95,7 +118,12 @@ export default async function PublicTrackerPage({ params }: Props) {
         expenseCents: sql<number>`coalesce(sum(case when ${transactions.direction} = 'expense' then ${transactions.amountCents} else 0 end), 0)`,
       })
       .from(transactions)
-      .where(and(eq(transactions.trackerId, tracker.id), gte(transactions.date, sixMonthsAgoStr)))
+      .where(
+        and(
+          eq(transactions.trackerId, tracker.id),
+          gte(transactions.date, sixMonthsAgoStr),
+        ),
+      )
       .groupBy(sql`strftime('%Y-%m', ${transactions.date})`)
       .orderBy(sql`strftime('%Y-%m', ${transactions.date}) desc`)
       .limit(6),
@@ -108,14 +136,19 @@ export default async function PublicTrackerPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <Link href={isLoggedIn ? "/" : "/login"} className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+            <Link
+              href={isLoggedIn ? "/" : "/login"}
+              className="flex items-center gap-2.5"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <CreditCard className="h-4 w-4" />
               </div>
-              <span className="text-sm font-semibold tracking-tight">BetterTracker</span>
+              <span className="hidden sm:inline text-sm font-semibold tracking-tight">
+                BetterTracker
+              </span>
             </Link>
             <span className="text-muted-foreground/40">/</span>
             <div className="flex items-center gap-2">
@@ -129,13 +162,13 @@ export default async function PublicTrackerPage({ params }: Props) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-xs text-muted-foreground sm:inline-flex">
+            <span className="hidden rounded-pill border border-border bg-card px-2.5 py-0.5 font-subtext text-xs text-muted-foreground sm:inline-flex">
               Öffentliche Ansicht
             </span>
             {isLoggedIn ? (
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs font-medium transition hover:bg-muted"
+                className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-card px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 Dashboard
@@ -143,7 +176,7 @@ export default async function PublicTrackerPage({ params }: Props) {
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs font-medium transition hover:bg-muted"
+                className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-card px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
               >
                 <LogIn className="h-3.5 w-3.5" />
                 Anmelden
@@ -155,35 +188,57 @@ export default async function PublicTrackerPage({ params }: Props) {
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
         {tracker.description ? (
-          <p className="text-sm text-muted-foreground">{tracker.description}</p>
+          <p className="font-subtext text-sm text-muted-foreground">
+            {tracker.description}
+          </p>
         ) : null}
 
         {/* Summary tiles */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatTile
+            label="Saldo"
+            tone="inverse"
+            icon={Landmark}
+            value={
+              <Amount
+                cents={balanceCents}
+                currency={tracker.currency}
+                size="lg"
+                tone="none"
+              />
+            }
+            className="col-span-2 sm:col-span-1"
+          />
           <StatTile
             label="Einnahmen"
-            value={`+${formatCurrency(totals.incomeCents, tracker.currency)}`}
             icon={ArrowUpRight}
-            tone="income"
+            value={
+              <Amount
+                cents={totals.incomeCents}
+                currency={tracker.currency}
+                size="lg"
+                className="text-income"
+              />
+            }
           />
           <StatTile
             label="Ausgaben"
-            value={`-${formatCurrency(totals.expenseCents, tracker.currency)}`}
             icon={ArrowDownLeft}
-            tone="expense"
-          />
-          <StatTile
-            label="Saldo"
-            value={`${balanceCents >= 0 ? "+" : ""}${formatCurrency(balanceCents, tracker.currency)}`}
-            icon={Landmark}
-            tone={balanceCents >= 0 ? "primary" : "expense"}
+            value={
+              <Amount
+                cents={totals.expenseCents}
+                currency={tracker.currency}
+                size="lg"
+                className="text-expense"
+              />
+            }
           />
         </div>
 
         {/* Monthly breakdown (last 6 months) */}
         {monthlyRows.length > 0 && (
           <SectionCard title="Monatliche Übersicht">
-            <div className="divide-y divide-border/40">
+            <div className="divide-y divide-border">
               {monthlyRows.map((row) => {
                 const net = row.incomeCents - row.expenseCents;
                 return (
@@ -191,23 +246,31 @@ export default async function PublicTrackerPage({ params }: Props) {
                     key={row.month}
                     className="flex items-center justify-between gap-4 py-2.5"
                   >
-                    <span className="text-sm font-medium">{formatMonth(row.month)}</span>
-                    <div className="flex items-center gap-4 text-sm tabular-nums">
-                      <span className="hidden text-income sm:inline">
-                        +{formatCurrency(row.incomeCents, tracker.currency)}
-                      </span>
-                      <span className="hidden text-expense sm:inline">
-                        -{formatCurrency(row.expenseCents, tracker.currency)}
-                      </span>
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          net >= 0 ? "text-income" : "text-expense",
-                        )}
-                      >
-                        {net >= 0 ? "+" : ""}
-                        {formatCurrency(net, tracker.currency)}
-                      </span>
+                    <span className="text-sm font-medium">
+                      {formatMonth(row.month)}
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <Amount
+                        cents={row.incomeCents}
+                        currency={tracker.currency}
+                        direction="income"
+                        signed
+                        size="xs"
+                        className="hidden sm:inline-flex"
+                      />
+                      <Amount
+                        cents={row.expenseCents}
+                        currency={tracker.currency}
+                        direction="expense"
+                        size="xs"
+                        className="hidden sm:inline-flex"
+                      />
+                      <Amount
+                        cents={net}
+                        currency={tracker.currency}
+                        size="sm"
+                        className={net >= 0 ? "text-income" : "text-expense"}
+                      />
                     </div>
                   </div>
                 );
@@ -220,7 +283,7 @@ export default async function PublicTrackerPage({ params }: Props) {
         <SectionCard
           title="Buchungen"
           titleRight={
-            <span className="rounded-full border border-border/60 bg-background/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-pill border border-border bg-card px-2.5 py-0.5 font-subtext text-xs font-medium text-muted-foreground">
               {items.length} gesamt
             </span>
           }
@@ -233,42 +296,53 @@ export default async function PublicTrackerPage({ params }: Props) {
               className="py-10"
             />
           ) : (
-            <ul className="divide-y divide-border/40">
-              {recentItems.map((item) => {
-                const payeeLabel = item.payeeName ?? item.customPayeeName ?? "Anonym";
-                return (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{payeeLabel}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {item.categoryName ?? "—"}
-                        {item.notes ? ` · ${item.notes}` : ""}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p
-                        className={cn(
-                          "text-sm font-semibold tabular-nums",
-                          item.direction === "income" ? "text-income" : "text-expense",
-                        )}
-                      >
-                        {item.direction === "income" ? "+" : "-"}
-                        {formatCurrency(item.amountCents, tracker.currency)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{formatDate(item.date)}</p>
-                    </div>
-                  </li>
-                );
-              })}
-              {items.length > 20 && (
-                <li className="px-4 py-3 text-center text-xs text-muted-foreground">
-                  Zeige die letzten 20 von {items.length} Buchungen
-                </li>
-              )}
-            </ul>
+            <div className="space-y-1.5 px-4">
+              {recentItems.map((item) => (
+                <ListRow
+                  key={item.id}
+                  leading={
+                    <EntityIcon
+                      icon={
+                        item.direction === "expense"
+                          ? ArrowDownLeft
+                          : ArrowUpRight
+                      }
+                      size="sm"
+                      className={
+                        item.direction === "expense"
+                          ? "bg-expense-muted text-expense"
+                          : "bg-income-muted text-income"
+                      }
+                    />
+                  }
+                  title={
+                    item.payeeName ?? item.customPayeeName ?? "Ohne Angabe"
+                  }
+                  subtitle={[item.categoryName ?? "Ohne Kategorie", item.notes]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  meta={
+                    <span className="font-subtext text-xs text-muted-foreground">
+                      {formatDate(item.date)}
+                    </span>
+                  }
+                  trailing={
+                    <Amount
+                      cents={item.amountCents}
+                      currency={tracker.currency}
+                      direction={item.direction}
+                      signed
+                      size="sm"
+                    />
+                  }
+                />
+              ))}
+              {items.length > recentItems.length ? (
+                <p className="py-3 text-center font-subtext text-xs text-muted-foreground">
+                  Die letzten {recentItems.length} von {items.length} Buchungen
+                </p>
+              ) : null}
+            </div>
           )}
         </SectionCard>
       </main>

@@ -2,6 +2,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { SectionCard } from "@/components/ui/section-card";
 import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "@/components/profile/sign-out-button";
+import { AppearanceCard } from "@/components/profile/appearance-card";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
 import { env } from "@/lib/env";
 import {
@@ -23,9 +24,11 @@ export default async function ProfilePage() {
     <PageContainer
       user={current}
       title="Profil"
-      description="Persönliche Kontoinformationen und aktive Sessions."
+      description="Dein Konto, deine Sitzungen und wie die App aussehen soll."
     >
       <div className="grid gap-6 lg:grid-cols-2">
+        <AppearanceCard />
+
         <SectionCard
           title="Account"
           titleRight={
@@ -37,15 +40,15 @@ export default async function ProfilePage() {
           }
         >
           <dl className="space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
               <dt className="text-muted-foreground">Name</dt>
               <dd className="font-medium">{userRecord?.name}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
               <dt className="text-muted-foreground">E-Mail</dt>
               <dd className="font-medium">{userRecord?.email}</dd>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
               <dt className="text-muted-foreground">Status</dt>
               <dd>
                 {userRecord?.banned ? (
@@ -56,7 +59,7 @@ export default async function ProfilePage() {
               </dd>
             </div>
           </dl>
-          <div className="mt-4 pt-4 border-t border-border/60">
+          <div className="mt-5 border-t border-border pt-5">
             <SignOutButton />
           </div>
         </SectionCard>
@@ -64,7 +67,7 @@ export default async function ProfilePage() {
         <SectionCard
           title="Aktive Sessions"
           titleRight={
-            <span className="rounded-full border border-border/60 bg-background/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-pill border border-border bg-card px-2.5 py-0.5 font-subtext text-xs font-medium text-muted-foreground">
               {sessions.length} aktiv
             </span>
           }
@@ -76,10 +79,10 @@ export default async function ProfilePage() {
               sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 text-sm"
+                  className="rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-sm"
                 >
                   <p className="font-medium">{session.userAgent || "Unbekanntes Gerät"}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-subtext text-xs text-muted-foreground">
                     Läuft bis {formatDateTime(session.expiresAt, env.defaultLocale, env.timezone)}
                   </p>
                 </div>

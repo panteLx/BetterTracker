@@ -21,7 +21,7 @@ export default async function SchedulesPage() {
     <PageContainer
       user={user}
       title="Termine"
-      description="Wiederkehrende Verpflichtungen verwalten und bei Bedarf direkt als Transaktion übernehmen."
+      description="Wiederkehrende Zahlungen — fällige Termine übernimmst du mit einem Klick als Buchung."
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <SchedulesClient locale={env.defaultLocale} currentUserId={user.id} />

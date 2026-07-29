@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminUsersClient } from "@/components/admin/admin-users-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { requireUser } from "@/lib/auth/session";
@@ -13,11 +13,12 @@ export default async function AdminUsersPage() {
   return (
     <PageContainer
       user={user}
-      title="Admin Users"
-      description="Benutzerrollen, Bans und grundlegende Identitätsverwaltung."
+      title="Benutzer"
+      description="Rollen vergeben, Konten sperren und Benutzer verwalten."
     >
-      <AdminNav />
+      <AdminShell>
       <AdminUsersClient currentRole={user.role || "user"} currentUserId={user.id} />
+      </AdminShell>
     </PageContainer>
   );
 }

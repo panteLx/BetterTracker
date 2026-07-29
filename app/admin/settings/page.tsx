@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminSettingsClient } from "@/components/admin/admin-settings-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { requireUser } from "@/lib/auth/session";
@@ -13,13 +13,14 @@ export default async function AdminSettingsPage() {
   return (
     <PageContainer
       user={user}
-      title="Admin Settings"
-      description="System- und Discord-Defaults zentral verwalten."
+      title="Einstellungen"
+      description="Systemweite Vorgaben und die Discord-Anbindung."
     >
-      <AdminNav />
+      <AdminShell>
       <AdminSettingsClient
         currentRole={user.role === "superadmin" ? "superadmin" : "admin"}
       />
+      </AdminShell>
     </PageContainer>
   );
 }

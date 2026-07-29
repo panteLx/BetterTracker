@@ -3,101 +3,77 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, CalendarClock, Home, Plus, ReceiptText } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { navItems, isNavItemActive } from "@/components/layout/app-header";
 import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: Home, exact: true },
-  { href: "/transactions", label: "Buchungen", icon: ReceiptText, exact: false },
-  { href: "/schedules", label: "Termine", icon: CalendarClock, exact: false },
-  { href: "/statistics", label: "Statistik", icon: BarChart2, exact: false },
-];
-
-type MobileNavProps = {
-  role?: string | null;
-};
-
-export function MobileNav({}: MobileNavProps) {
+/**
+ * Bottom bar for phones: two destinations, the primary action, two more
+ * destinations. Same four destinations as the desktop header — the order is
+ * split around the center button rather than reshuffled, so the two layouts
+ * stay learnable as one.
+ */
+export function MobileNav() {
   const pathname = usePathname();
-  const [fabOpen, setFabOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+
+  function renderItem(item: (typeof navItems)[number]) {
+    const Icon = item.icon;
+    const active = isNavItemActive(pathname, item);
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        className="flex flex-col items-center justify-center py-2"
+      >
+        <span
+          className={cn(
+            "flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors duration-(--motion-duration-fast)",
+            active
+              ? "bg-primary-subtle text-primary-on"
+              : "text-muted-foreground",
+          )}
+        >
+          <Icon
+            className={cn("h-5 w-5", active ? "stroke-[2.5]" : "stroke-[1.75]")}
+          />
+          <span className="font-subtext text-[10px] font-medium">
+            {item.label}
+          </span>
+        </span>
+      </Link>
+    );
+  }
 
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/60 bg-background/92 backdrop-blur-xl md:hidden"
+        aria-label="Hauptnavigation"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="grid h-16 grid-cols-5 items-center">
-          {/* First 2 nav items */}
-          {navItems.slice(0, 2).map(({ href, label, icon: Icon, exact }) => {
-            const isActive = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={isActive ? "page" : undefined}
-                className="flex flex-col items-center justify-center gap-0.5 py-2"
-              >
-                <span
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-all",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon
-                    className={cn("h-5 w-5", isActive ? "stroke-[2.5]" : "stroke-[1.75]")}
-                  />
-                  <span className="text-[10px] font-medium">{label}</span>
-                </span>
-              </Link>
-            );
-          })}
+          {navItems.slice(0, 2).map(renderItem)}
 
-          {/* Center FAB */}
           <div className="flex items-center justify-center">
             <button
               type="button"
-              onClick={() => setFabOpen(true)}
-              aria-label="Neue Buchung erstellen"
-              className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-primary p-3 text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90 active:scale-95"
+              onClick={() => setAddOpen(true)}
+              aria-label="Neue Buchung erfassen"
+              className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors duration-(--motion-duration-fast) hover:bg-primary-hover"
             >
               <Plus className="h-6 w-6" />
             </button>
           </div>
 
-          {/* Last 2 nav items */}
-          {navItems.slice(2).map(({ href, label, icon: Icon, exact }) => {
-            const isActive = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={isActive ? "page" : undefined}
-                className="flex flex-col items-center justify-center gap-0.5 py-2"
-              >
-                <span
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-all",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon
-                    className={cn("h-5 w-5", isActive ? "stroke-[2.5]" : "stroke-[1.75]")}
-                  />
-                  <span className="text-[10px] font-medium">{label}</span>
-                </span>
-              </Link>
-            );
-          })}
+          {navItems.slice(2).map(renderItem)}
         </div>
       </nav>
 
-      <QuickAddSheet open={fabOpen} onOpenChange={setFabOpen} />
+      <QuickAddSheet open={addOpen} onOpenChange={setAddOpen} />
     </>
   );
 }

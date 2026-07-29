@@ -78,7 +78,7 @@ export function TrackerColorPicker({
                 onClick={() => onChange(preset)}
                 className={cn(
                   "h-8 rounded-lg border transition hover:scale-[1.03]",
-                  preset === value ? "border-foreground" : "border-border/70"
+                  preset === value ? "border-foreground" : "border-border"
                 )}
                 style={{ backgroundColor: preset }}
                 aria-label={`Farbe ${preset}`}

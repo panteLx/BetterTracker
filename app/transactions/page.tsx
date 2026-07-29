@@ -20,8 +20,8 @@ export default async function TransactionsPage() {
   return (
     <PageContainer
       user={user}
-      title="Transaktionen"
-      description="Filterbare Historie mit Summen für Einnahmen, Ausgaben und Saldo."
+      title="Buchungen"
+      description="Alle Einnahmen und Ausgaben, filterbar nach Zeitraum, Kategorie und Einzahler."
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TransactionsClient locale={env.defaultLocale} currentUserId={user.id} />
