@@ -12,6 +12,8 @@ import {
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CategoryField } from "@/components/transactions/category-field";
+import { PayeeField } from "@/components/transactions/payee-field";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,11 +105,14 @@ export function QuickAddSheet({
   const [customPayeeName, setCustomPayeeName] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Inline creation state
+  // Inline creation state for the "termin" step, which has its own required-field
+  // styling and (for payees) no free-text fallback — the "buchung" step below
+  // delegates its equivalent fields to CategoryField/PayeeField instead.
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewPayee, setShowNewPayee] = useState(false);
   const [newPayeeName, setNewPayeeName] = useState("");
+  const [entryFieldsKey, setEntryFieldsKey] = useState(0);
 
   // Schedule-only state
   const [scheduleName, setScheduleName] = useState("");
@@ -242,6 +247,7 @@ export function QuickAddSheet({
     setNewCategoryName("");
     setShowNewPayee(false);
     setNewPayeeName("");
+    setEntryFieldsKey((current) => current + 1);
     setDone(null);
   }
 
@@ -474,138 +480,26 @@ export function QuickAddSheet({
                     </div>
                   </div>
 
-                  {/* Category */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Kategorie</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => setShowNewCategory((c) => !c)}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Neu
-                      </Button>
-                    </div>
-                    <SearchableSelect
-                      value={categoryId}
-                      onValueChange={(v) => {
-                        setCategoryId(v);
-                        if (v !== EMPTY) setShowNewCategory(false);
-                      }}
-                      items={categoryOptions}
-                      placeholder="Kategorie wählen"
-                      searchPlaceholder="Kategorie suchen"
-                      emptyMessage="Keine Kategorie gefunden."
-                    />
-                    {showNewCategory ? (
-                      <div className="flex gap-2">
-                        <Input
-                          className="flex-1"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          placeholder={direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"}
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreateCategory}
-                          disabled={createCategoryMutation.isPending}
-                        >
-                          {createCategoryMutation.isPending ? "..." : "Anlegen"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="px-2"
-                          onClick={() => {
-                            setShowNewCategory(false);
-                            setNewCategoryName("");
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
+                  <CategoryField
+                    key={`buchung-category-${entryFieldsKey}`}
+                    trackerId={activeTrackerId}
+                    locale="de"
+                    direction={direction}
+                    options={categoryOptions}
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                  />
 
-                  {/* Payee */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Einzahler</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => setShowNewPayee((c) => !c)}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Neu
-                      </Button>
-                    </div>
-                    <SearchableSelect
-                      value={payeeId}
-                      onValueChange={(v) => {
-                        setPayeeId(v);
-                        if (v !== EMPTY) {
-                          setCustomPayeeName("");
-                          setShowNewPayee(false);
-                        }
-                      }}
-                      items={payeeOptions}
-                      placeholder="Einzahler wählen"
-                      searchPlaceholder="Einzahler suchen"
-                      emptyMessage="Kein Einzahler gefunden."
-                    />
-                    {showNewPayee ? (
-                      <div className="flex gap-2">
-                        <Input
-                          className="flex-1"
-                          value={newPayeeName}
-                          onChange={(e) => setNewPayeeName(e.target.value)}
-                          placeholder="z. B. Bäckerei"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreatePayee}
-                          disabled={createPayeeMutation.isPending}
-                        >
-                          {createPayeeMutation.isPending ? "..." : "Anlegen"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="px-2"
-                          onClick={() => {
-                            setShowNewPayee(false);
-                            setNewPayeeName("");
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">
-                          Oder einmaliger Freitext
-                        </Label>
-                        <Input
-                          value={customPayeeName}
-                          onChange={(e) => {
-                            setCustomPayeeName(e.target.value);
-                            if (e.target.value.trim()) setPayeeId(EMPTY);
-                          }}
-                          placeholder="z. B. Wochenmarkt"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <PayeeField
+                    key={`buchung-payee-${entryFieldsKey}`}
+                    trackerId={activeTrackerId}
+                    locale="de"
+                    options={payeeOptions}
+                    value={payeeId}
+                    onValueChange={setPayeeId}
+                    customName={customPayeeName}
+                    onCustomNameChange={setCustomPayeeName}
+                  />
 
                   <div className="space-y-2">
                     <Label htmlFor="qa-tx-notes">Notizen</Label>
