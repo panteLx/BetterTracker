@@ -267,7 +267,7 @@ function CategoryChart({
             <span className="shrink-0 font-medium tabular-nums">
               {cat.percentage}%
             </span>
-            <span className="shrink-0 text-muted-foreground tabular-nums">
+            <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
               {formatCurrency(cat.totalCents, currency, locale)}
             </span>
           </li>

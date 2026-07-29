@@ -67,6 +67,15 @@
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Elevation — OKLCH-tinted instead of flat black, tuned per theme via --shadow-color */
+  --shadow-xs: 0 1px 2px 0 color-mix(in oklab, var(--shadow-color) 6%, transparent);
+  --shadow-sm: 0 1px 3px 0 color-mix(in oklab, var(--shadow-color) 10%, transparent),
+    0 1px 2px -1px color-mix(in oklab, var(--shadow-color) 10%, transparent);
+  --shadow-md: 0 4px 6px -1px color-mix(in oklab, var(--shadow-color) 10%, transparent),
+    0 2px 4px -2px color-mix(in oklab, var(--shadow-color) 10%, transparent);
+  --shadow-lg: 0 10px 15px -3px color-mix(in oklab, var(--shadow-color) 10%, transparent),
+    0 4px 6px -4px color-mix(in oklab, var(--shadow-color) 10%, transparent);
 }
 
 :root {
@@ -76,6 +85,9 @@
   --motion-duration-fast: 120ms;
   --motion-duration-base: 180ms;
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Shadow tint — same neutral hue (240) as the rest of the palette */
+  --shadow-color: oklch(0.14 0.02 240);
 
   /* Base — cool neutral, Linear-style */
   --background: oklch(0.99 0.003 240);
@@ -137,6 +149,9 @@
 }
 
 .dark {
+  /* Shadow tint — deeper/darker so elevation still reads against dark surfaces */
+  --shadow-color: oklch(0.02 0.01 240);
+
   /* Base — Linear trademark near-black */
   --background: oklch(0.145 0.005 240);
   --foreground: oklch(0.97 0.003 240);

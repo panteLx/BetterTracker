@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, CreditCard, ReceiptText, TimerReset } from "lucide-react";
+import { BarChart2, CreditCard, Plus, ReceiptText, TimerReset } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/layout/user-menu";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -26,6 +28,7 @@ type HeaderProps = {
 
 export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
   const pathname = usePathname();
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
@@ -65,8 +68,17 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <Button
+                size="sm"
+                className="hidden gap-1.5 md:inline-flex"
+                onClick={() => setQuickAddOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Neu buchen
+              </Button>
               <CommandPalette role={user?.role} />
               <UserMenu name={user.name} email={user.email} role={user.role} />
+              <QuickAddSheet open={quickAddOpen} onOpenChange={setQuickAddOpen} />
             </>
           ) : (
             <>

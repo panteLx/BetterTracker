@@ -29,7 +29,9 @@ export function SectionCard({
           </div>
         </CardHeader>
       ) : null}
-      <CardContent className={cn(noPadding ? "p-0" : "pt-0", contentClassName)}>
+      <CardContent
+        className={cn(noPadding ? "p-0" : "p-5 pt-0 sm:p-6 sm:pt-0", contentClassName)}
+      >
         {children}
       </CardContent>
     </Card>

@@ -4,7 +4,7 @@ type StatTileProps = {
   label: string;
   value: string;
   icon: React.ElementType;
-  tone?: "income" | "expense" | "neutral" | "primary";
+  tone?: "income" | "expense" | "warning" | "neutral" | "primary";
   secondaryValue?: string;
   helperText?: string;
   className?: string;
@@ -22,6 +22,12 @@ const toneConfig = {
     icon: "text-expense",
     iconBg: "bg-expense-muted",
     surface: "bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent",
+  },
+  warning: {
+    text: "text-warning",
+    icon: "text-warning",
+    iconBg: "bg-warning-muted",
+    surface: "bg-gradient-to-br from-warning-muted/60 via-warning-muted/20 to-transparent",
   },
   primary: {
     text: "text-primary",
@@ -61,7 +67,7 @@ export function StatTile({
           <p className="text-xs text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "text-xl font-semibold tracking-tight tabular-nums",
+              "font-mono text-xl font-semibold tracking-tight tabular-nums",
               config.text,
             )}
           >
