@@ -3,12 +3,14 @@
 FROM node:22-bookworm-slim AS dependencies
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
+    && apt-get install --no-install-recommends -y python3 make g++
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
@@ -20,8 +22,10 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run db:migrate \
-    && npm run build
+RUN npm run db:migrate
+
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
