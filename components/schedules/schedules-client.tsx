@@ -3,15 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Plus } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import {
   amountToInputValue,
-  cn,
   EMPTY_SELECT_VALUE,
   formatCurrency,
   getFrequencyLabel,
-  sortByName,
   toDateInputValue,
 } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -21,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatTile } from "@/components/ui/stat-tile";
+import { DirectionToggle } from "@/components/ui/direction-toggle";
 import {
   Select,
   SelectContent,
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { EntityPicker } from "@/components/transactions/entity-picker";
 
 type Tracker = {
   id: string;
@@ -136,10 +136,6 @@ export function SchedulesClient({
   >("monthly");
   const [intervalValue, setIntervalValue] = useState("1");
   const [nextDueDate, setNextDueDate] = useState(toDateInputValue(new Date()));
-  const [showNewPayee, setShowNewPayee] = useState(false);
-  const [newPayeeName, setNewPayeeName] = useState("");
-  const [showNewCategory, setShowNewCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
   const [editingScheduleId, setEditingScheduleId] = useState("");
   const [editState, setEditState] = useState<EditScheduleState | null>(null);
   const [reactivatingScheduleId, setReactivatingScheduleId] = useState("");
@@ -208,20 +204,6 @@ export function SchedulesClient({
   );
 
   const activePayees = (payeesQuery.data?.items || []).filter((item) => item.isActive);
-  const categoryOptions = [
-    { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
-    ...filteredCategories.map((item) => ({
-      value: item.id,
-      label: item.name,
-    })),
-  ];
-  const payeeOptions = [
-    { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
-    ...activePayees.map((item) => ({
-      value: item.id,
-      label: item.name,
-    })),
-  ];
   const parsedIntervalValue = Number(intervalValue);
   const normalizedIntervalValue =
     Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
@@ -355,64 +337,6 @@ export function SchedulesClient({
     },
   });
 
-  const createPayeeMutation = useMutation({
-    mutationFn: (payload: { trackerId: string; name: string }) =>
-      fetchJson<{ item: Payee }>("/api/payees", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Payee[] } | undefined>(
-        ["payees", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items || []), item], locale),
-        }),
-      );
-      toast.success("Einzahler angelegt");
-      setPayeeId(item.id);
-      setNewPayeeName("");
-      setShowNewPayee(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Einzahler konnte nicht angelegt werden",
-      );
-    },
-  });
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (payload: {
-      trackerId: string;
-      name: string;
-      type: Category["type"];
-    }) =>
-      fetchJson<{ item: Category }>("/api/categories", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Category[] } | undefined>(
-        ["categories", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items || []), item], locale),
-        }),
-      );
-      toast.success("Kategorie angelegt");
-      setCategoryId(item.id);
-      setNewCategoryName("");
-      setShowNewCategory(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Kategorie konnte nicht angelegt werden",
-      );
-    },
-  });
-
   function onSubmit(event: FormEvent) {
     event.preventDefault();
 
@@ -437,41 +361,6 @@ export function SchedulesClient({
       frequency,
       intervalValue: Number(intervalValue),
       nextDueDate,
-    });
-  }
-
-  function handleCreatePayee() {
-    if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker wählen");
-      return;
-    }
-
-    if (!newPayeeName.trim()) {
-      toast.error("Bitte einen Einzahler-Namen eingeben");
-      return;
-    }
-
-    createPayeeMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newPayeeName.trim(),
-    });
-  }
-
-  function handleCreateCategory() {
-    if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker wählen");
-      return;
-    }
-
-    if (!newCategoryName.trim()) {
-      toast.error("Bitte einen Kategorienamen eingeben");
-      return;
-    }
-
-    createCategoryMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newCategoryName.trim(),
-      type: direction,
     });
   }
 
@@ -624,7 +513,7 @@ export function SchedulesClient({
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <div className="mr-1 rounded-full border border-border/60 bg-muted/35 px-3 py-1 text-base font-semibold">
+                  <div className="mr-1 rounded-full border border-border/60 bg-muted/35 px-3 py-1 font-mono text-base font-semibold tracking-tight tabular-nums">
                     {formatCurrency(item.amountCents, currency, locale)}
                   </div>
                   {item.isActive ? (
@@ -832,62 +721,44 @@ export function SchedulesClient({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Kategorie</Label>
-                      <Select
-                        value={editState.categoryId}
-                        onValueChange={(value) =>
-                          setEditState((current) =>
-                            current ? { ...current, categoryId: value } : current,
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Kategorie wählen" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={EMPTY_SELECT_VALUE}>
-                            Bitte wählen
-                          </SelectItem>
-                          {(categoriesQuery.data?.items || [])
-                            .filter(
-                              (entry) =>
-                                entry.type === editState.direction ||
-                                entry.type === "transfer",
-                            )
-                            .map((entry) => (
-                              <SelectItem key={entry.id} value={entry.id}>
-                                {entry.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Einzahler</Label>
-                      <Select
-                        value={editState.payeeId}
-                        onValueChange={(value) =>
-                          setEditState((current) =>
-                            current ? { ...current, payeeId: value } : current,
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Einzahler wählen" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={EMPTY_SELECT_VALUE}>
-                            Bitte wählen
-                          </SelectItem>
-                          {(payeesQuery.data?.items || []).map((entry) => (
-                            <SelectItem key={entry.id} value={entry.id}>
-                              {entry.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <EntityPicker
+                      kind="category"
+                      trackerId={activeTrackerId}
+                      locale={locale}
+                      label="Kategorie"
+                      options={(categoriesQuery.data?.items || [])
+                        .filter(
+                          (entry) =>
+                            entry.type === editState.direction ||
+                            entry.type === "transfer",
+                        )
+                        .map((entry) => ({ value: entry.id, label: entry.name }))}
+                      value={editState.categoryId}
+                      onValueChange={(value) =>
+                        setEditState((current) =>
+                          current ? { ...current, categoryId: value } : current,
+                        )
+                      }
+                      required
+                      direction={editState.direction}
+                    />
+                    <EntityPicker
+                      kind="payee"
+                      trackerId={activeTrackerId}
+                      locale={locale}
+                      label="Einzahler"
+                      options={(payeesQuery.data?.items || []).map((entry) => ({
+                        value: entry.id,
+                        label: entry.name,
+                      }))}
+                      value={editState.payeeId}
+                      onValueChange={(value) =>
+                        setEditState((current) =>
+                          current ? { ...current, payeeId: value } : current,
+                        )
+                      }
+                      required
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Nächster Termin</Label>
@@ -968,18 +839,14 @@ export function SchedulesClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Fällig</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{dueCount}</p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Demnächst</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{upcomingCount}</p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-muted/60 via-muted/20 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Abgeschlossen</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{inactiveCount}</p>
-        </div>
+        <StatTile label="Fällig" value={String(dueCount)} icon={AlertCircle} tone="expense" />
+        <StatTile label="Demnächst" value={String(upcomingCount)} icon={Clock} tone="warning" />
+        <StatTile
+          label="Abgeschlossen"
+          value={String(inactiveCount)}
+          icon={CheckCircle2}
+          tone="neutral"
+        />
       </div>
 
       {/* Tabs */}
@@ -1056,151 +923,41 @@ export function SchedulesClient({
                     />
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setDirection("expense")}
-                    className={cn(
-                      "rounded-lg border px-4 py-3 text-left transition",
-                      direction === "expense"
-                        ? "border-expense/30 bg-expense-muted text-expense"
-                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <p className="font-medium">Ausgabe</p>
-                    <p className="mt-1 text-sm">Abos, Miete, Fixkosten</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirection("income")}
-                    className={cn(
-                      "rounded-lg border px-4 py-3 text-left transition",
-                      direction === "income"
-                        ? "border-income/30 bg-income-muted text-income"
-                        : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <p className="font-medium">Einnahme</p>
-                    <p className="mt-1 text-sm">Gehalt, Gutschriften</p>
-                  </button>
-                </div>
+                <DirectionToggle size="md" value={direction} onValueChange={setDirection} />
               </div>
 
               {/* Category */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">Kategorie</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setShowNewCategory((current) => !current)}
-                    disabled={!isTrackerMutable}
-                  >
-                    Neu
-                  </Button>
-                </div>
-                <SearchableSelect
-                  value={categoryId}
-                  onValueChange={setCategoryId}
-                  items={categoryOptions}
-                  placeholder="Kategorie wählen"
-                  searchPlaceholder="Kategorie suchen"
-                  emptyMessage="Keine Kategorie gefunden."
-                  disabled={!isTrackerMutable}
-                />
-                {showNewCategory ? (
-                  <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
-                    <Input
-                      value={newCategoryName}
-                      onChange={(event) =>
-                        setNewCategoryName(event.target.value)
-                      }
-                      disabled={!isTrackerMutable}
-                      placeholder="Neue Kategorie"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleCreateCategory}
-                      disabled={
-                        createCategoryMutation.isPending || !isTrackerMutable
-                      }
-                    >
-                      {createCategoryMutation.isPending ? "..." : "Anlegen"}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setShowNewCategory(false);
-                        setNewCategoryName("");
-                      }}
-                    >
-                      Abbrechen
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+              <EntityPicker
+                kind="category"
+                trackerId={activeTrackerId}
+                locale={locale}
+                label="Kategorie"
+                options={filteredCategories.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+                value={categoryId}
+                onValueChange={setCategoryId}
+                required
+                direction={direction}
+                disabled={!isTrackerMutable}
+              />
 
               {/* Payee */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">Einzahler</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setShowNewPayee((current) => !current)}
-                    disabled={!isTrackerMutable}
-                  >
-                    Neu
-                  </Button>
-                </div>
-                <SearchableSelect
-                  value={payeeId}
-                  onValueChange={setPayeeId}
-                  items={payeeOptions}
-                  placeholder="Einzahler wählen"
-                  searchPlaceholder="Einzahler suchen"
-                  emptyMessage="Kein Einzahler gefunden."
-                  disabled={!isTrackerMutable}
-                />
-                {showNewPayee ? (
-                  <div className="grid gap-2 grid-cols-[minmax(0,1fr)_auto_auto]">
-                    <Input
-                      value={newPayeeName}
-                      onChange={(event) => setNewPayeeName(event.target.value)}
-                      disabled={!isTrackerMutable}
-                      placeholder="Neuer Einzahler"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleCreatePayee}
-                      disabled={
-                        createPayeeMutation.isPending || !isTrackerMutable
-                      }
-                    >
-                      {createPayeeMutation.isPending ? "..." : "Anlegen"}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setShowNewPayee(false);
-                        setNewPayeeName("");
-                      }}
-                    >
-                      Abbrechen
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+              <EntityPicker
+                kind="payee"
+                trackerId={activeTrackerId}
+                locale={locale}
+                label="Einzahler"
+                options={activePayees.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+                value={payeeId}
+                onValueChange={setPayeeId}
+                required
+                disabled={!isTrackerMutable}
+              />
 
               {/* Frequency */}
               <div className="space-y-3">

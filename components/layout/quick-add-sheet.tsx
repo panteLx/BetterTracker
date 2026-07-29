@@ -3,24 +3,21 @@
 import { FormEvent, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowDownLeft,
   ArrowLeft,
-  ArrowUpRight,
   CalendarClock,
   CheckCircle2,
-  Plus,
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CategoryField } from "@/components/transactions/category-field";
-import { PayeeField } from "@/components/transactions/payee-field";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { EntityPicker } from "@/components/transactions/entity-picker";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { DirectionToggle } from "@/components/ui/direction-toggle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Select,
   SelectContent,
@@ -33,7 +30,6 @@ import {
   cn,
   EMPTY_SELECT_VALUE as EMPTY,
   getFrequencyLabel,
-  sortByName,
   toDateInputValue,
 } from "@/lib/utils";
 
@@ -92,6 +88,7 @@ export function QuickAddSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [step, setStep] = useState<Step>("pick");
   const [done, setDone] = useState<Step | null>(null);
 
@@ -105,13 +102,6 @@ export function QuickAddSheet({
   const [customPayeeName, setCustomPayeeName] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Inline creation state for the "termin" step, which has its own required-field
-  // styling and (for payees) no free-text fallback — the "buchung" step below
-  // delegates its equivalent fields to CategoryField/PayeeField instead.
-  const [showNewCategory, setShowNewCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [showNewPayee, setShowNewPayee] = useState(false);
-  const [newPayeeName, setNewPayeeName] = useState("");
   const [entryFieldsKey, setEntryFieldsKey] = useState(0);
 
   // Schedule-only state
@@ -150,14 +140,8 @@ export function QuickAddSheet({
     ? categoryId
     : EMPTY;
 
-  const categoryOptions = [
-    { value: EMPTY, label: "Bitte wählen" },
-    ...filteredCategories.map((c) => ({ value: c.id, label: c.name })),
-  ];
-  const payeeOptions = [
-    { value: EMPTY, label: "Anonym" },
-    ...payees.map((p) => ({ value: p.id, label: p.name })),
-  ];
+  const categoryOptions = filteredCategories.map((c) => ({ value: c.id, label: c.name }));
+  const payeeOptions = payees.map((p) => ({ value: p.id, label: p.name }));
 
   const parsedIntervalValue = Number(intervalValue);
   const normalizedIntervalValue =
@@ -187,50 +171,6 @@ export function QuickAddSheet({
     onError: (err) => toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
   });
 
-  const createCategoryMutation = useMutation({
-    mutationFn: (payload: { trackerId: string; name: string; type: Category["type"] }) =>
-      fetchJson<{ item: Category }>("/api/categories", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Category[] } | undefined>(
-        ["categories", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items ?? []), item], "de"),
-        }),
-      );
-      toast.success("Kategorie angelegt");
-      setCategoryId(item.id);
-      setNewCategoryName("");
-      setShowNewCategory(false);
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Kategorie konnte nicht angelegt werden"),
-  });
-
-  const createPayeeMutation = useMutation({
-    mutationFn: (payload: { trackerId: string; name: string }) =>
-      fetchJson<{ item: Payee }>("/api/payees", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Payee[] } | undefined>(
-        ["payees", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items ?? []), item], "de"),
-        }),
-      );
-      toast.success("Einzahler angelegt");
-      setPayeeId(item.id);
-      setNewPayeeName("");
-      setShowNewPayee(false);
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Einzahler konnte nicht angelegt werden"),
-  });
-
   function resetForm() {
     setAmount("");
     setNotes("");
@@ -243,10 +183,6 @@ export function QuickAddSheet({
     setFrequency("monthly");
     setIntervalValue("1");
     setNotesTemplate("");
-    setShowNewCategory(false);
-    setNewCategoryName("");
-    setShowNewPayee(false);
-    setNewPayeeName("");
     setEntryFieldsKey((current) => current + 1);
     setDone(null);
   }
@@ -273,29 +209,6 @@ export function QuickAddSheet({
     setSelectedTrackerId(id);
     setCategoryId(EMPTY);
     setPayeeId(EMPTY);
-  }
-
-  function handleCreateCategory() {
-    if (!newCategoryName.trim()) {
-      toast.error("Bitte einen Kategorienamen eingeben");
-      return;
-    }
-    createCategoryMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newCategoryName.trim(),
-      type: direction,
-    });
-  }
-
-  function handleCreatePayee() {
-    if (!newPayeeName.trim()) {
-      toast.error("Bitte einen Einzahler-Namen eingeben");
-      return;
-    }
-    createPayeeMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newPayeeName.trim(),
-    });
   }
 
   function handleSubmitTransaction(e: FormEvent) {
@@ -352,23 +265,24 @@ export function QuickAddSheet({
     });
   }
 
-  const isMutating =
-    txMutation.isPending ||
-    scheduleMutation.isPending ||
-    createCategoryMutation.isPending ||
-    createPayeeMutation.isPending;
+  const isMutating = txMutation.isPending || scheduleMutation.isPending;
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
-        side="bottom"
-        className="flex flex-col gap-0 rounded-t-2xl p-0"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        side={isMobile ? "bottom" : "right"}
+        className={cn(
+          "flex flex-col gap-0 p-0",
+          isMobile ? "rounded-t-2xl" : "sm:max-w-md",
+        )}
+        style={isMobile ? { paddingBottom: "env(safe-area-inset-bottom)" } : undefined}
       >
         <SheetTitle className="sr-only">Hinzufügen</SheetTitle>
         <SheetDescription className="sr-only">Neue Buchung oder Termin anlegen</SheetDescription>
 
-        <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-muted" />
+        {isMobile ? (
+          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-muted" />
+        ) : null}
 
         {/* ── PICKER ─────────────────────────────────────────────── */}
         {step === "pick" && (
@@ -417,34 +331,7 @@ export function QuickAddSheet({
               </button>
               <span className="font-semibold">Neue Buchung</span>
               <div className="ml-auto">
-                <div className="inline-flex rounded-full border border-border/70 bg-muted/40 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => handleDirectionChange("expense")}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium transition",
-                      direction === "expense"
-                        ? "bg-expense text-expense-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <ArrowDownLeft className="mr-1 inline h-3 w-3" />
-                    Ausgabe
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDirectionChange("income")}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium transition",
-                      direction === "income"
-                        ? "bg-income text-income-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <ArrowUpRight className="mr-1 inline h-3 w-3" />
-                    Einnahme
-                  </button>
-                </div>
+                <DirectionToggle value={direction} onValueChange={handleDirectionChange} icons />
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -480,25 +367,32 @@ export function QuickAddSheet({
                     </div>
                   </div>
 
-                  <CategoryField
+                  <EntityPicker
                     key={`buchung-category-${entryFieldsKey}`}
+                    kind="category"
                     trackerId={activeTrackerId}
                     locale="de"
+                    label="Kategorie"
                     direction={direction}
                     options={categoryOptions}
                     value={categoryId}
                     onValueChange={setCategoryId}
+                    required
                   />
 
-                  <PayeeField
+                  <EntityPicker
                     key={`buchung-payee-${entryFieldsKey}`}
+                    kind="payee"
                     trackerId={activeTrackerId}
                     locale="de"
+                    label="Einzahler"
                     options={payeeOptions}
                     value={payeeId}
                     onValueChange={setPayeeId}
-                    customName={customPayeeName}
-                    onCustomNameChange={setCustomPayeeName}
+                    required={false}
+                    allowCustomText
+                    customTextValue={customPayeeName}
+                    onCustomTextChange={setCustomPayeeName}
                   />
 
                   <div className="space-y-2">
@@ -578,156 +472,41 @@ export function QuickAddSheet({
                     </div>
                   </div>
 
-                  <div className="grid gap-3 grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDirection("expense");
-                        setCategoryId(EMPTY);
-                      }}
-                      className={cn(
-                        "rounded-lg border px-4 py-3 text-left transition",
-                        direction === "expense"
-                          ? "border-expense/30 bg-expense-muted text-expense"
-                          : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <p className="font-medium">Ausgabe</p>
-                      <p className="mt-1 text-xs">Abos, Miete, Fixkosten</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDirection("income");
-                        setCategoryId(EMPTY);
-                      }}
-                      className={cn(
-                        "rounded-lg border px-4 py-3 text-left transition",
-                        direction === "income"
-                          ? "border-income/30 bg-income-muted text-income"
-                          : "border-border/60 bg-background/70 text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <p className="font-medium">Einnahme</p>
-                      <p className="mt-1 text-xs">Gehalt, Gutschriften</p>
-                    </button>
-                  </div>
+                  <DirectionToggle
+                    size="md"
+                    value={direction}
+                    onValueChange={(next) => {
+                      setDirection(next);
+                      setCategoryId(EMPTY);
+                    }}
+                  />
 
                   {/* Category */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Kategorie *</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => setShowNewCategory((c) => !c)}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Neu
-                      </Button>
-                    </div>
-                    <SearchableSelect
-                      value={categoryId}
-                      onValueChange={(v) => {
-                        setCategoryId(v);
-                        if (v !== EMPTY) setShowNewCategory(false);
-                      }}
-                      items={categoryOptions}
-                      placeholder="Kategorie wählen"
-                      searchPlaceholder="Kategorie suchen"
-                      emptyMessage="Keine Kategorie gefunden."
-                    />
-                    {showNewCategory ? (
-                      <div className="flex gap-2">
-                        <Input
-                          className="flex-1"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          placeholder={direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt"}
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreateCategory}
-                          disabled={createCategoryMutation.isPending}
-                        >
-                          {createCategoryMutation.isPending ? "..." : "Anlegen"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="px-2"
-                          onClick={() => {
-                            setShowNewCategory(false);
-                            setNewCategoryName("");
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
+                  <EntityPicker
+                    key={`termin-category-${entryFieldsKey}`}
+                    kind="category"
+                    trackerId={activeTrackerId}
+                    locale="de"
+                    label="Kategorie"
+                    direction={direction}
+                    options={categoryOptions}
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    required
+                  />
 
                   {/* Payee */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Einzahler *</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => setShowNewPayee((c) => !c)}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Neu
-                      </Button>
-                    </div>
-                    <SearchableSelect
-                      value={payeeId}
-                      onValueChange={(v) => {
-                        setPayeeId(v);
-                        if (v !== EMPTY) setShowNewPayee(false);
-                      }}
-                      items={payeeOptions}
-                      placeholder="Einzahler wählen"
-                      searchPlaceholder="Einzahler suchen"
-                      emptyMessage="Kein Einzahler gefunden."
-                    />
-                    {showNewPayee ? (
-                      <div className="flex gap-2">
-                        <Input
-                          className="flex-1"
-                          value={newPayeeName}
-                          onChange={(e) => setNewPayeeName(e.target.value)}
-                          placeholder="z. B. Bäckerei"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreatePayee}
-                          disabled={createPayeeMutation.isPending}
-                        >
-                          {createPayeeMutation.isPending ? "..." : "Anlegen"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="px-2"
-                          onClick={() => {
-                            setShowNewPayee(false);
-                            setNewPayeeName("");
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
+                  <EntityPicker
+                    key={`termin-payee-${entryFieldsKey}`}
+                    kind="payee"
+                    trackerId={activeTrackerId}
+                    locale="de"
+                    label="Einzahler"
+                    options={payeeOptions}
+                    value={payeeId}
+                    onValueChange={setPayeeId}
+                    required
+                  />
 
                   {/* Frequency */}
                   <div className="space-y-3">

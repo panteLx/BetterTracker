@@ -3,11 +3,21 @@
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronDown,
+  Scale,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import { amountToInputValue, cn, EMPTY_SELECT_VALUE, formatCurrency } from "@/lib/utils";
+import { EntityPicker } from "@/components/transactions/entity-picker";
 import { Button } from "@/components/ui/button";
+import { StatTile } from "@/components/ui/stat-tile";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -354,82 +364,57 @@ export function TransactionsClient({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>Kategorie</Label>
-            <Select
-              value={editState.categoryId || EMPTY_SELECT_VALUE}
-              onValueChange={(value) =>
-                setEditState((current) =>
-                  current ? { ...current, categoryId: value } : current,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY_SELECT_VALUE}>Bitte wählen</SelectItem>
-                {editCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <EntityPicker
+            kind="category"
+            trackerId={activeTrackerId}
+            locale={locale}
+            label="Kategorie"
+            options={editCategories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
+            value={editState.categoryId || EMPTY_SELECT_VALUE}
+            onValueChange={(value) =>
+              setEditState((current) =>
+                current ? { ...current, categoryId: value } : current,
+              )
+            }
+            required
+            direction={editState.direction}
+          />
 
-          <div className="space-y-1.5">
-            <Label>Einzahler</Label>
-            <Select
-              value={editState.payeeId}
-              onValueChange={(value) =>
-                setEditState((current) =>
-                  current
-                    ? {
-                        ...current,
-                        payeeId: value,
-                        customPayeeName:
-                          value === EMPTY_SELECT_VALUE
-                            ? current.customPayeeName
-                            : "",
-                      }
-                    : current,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY_SELECT_VALUE}>
-                  Anonym / Freitext
-                </SelectItem>
-                {(payeesQuery.data?.items || []).map((payee) => (
-                  <SelectItem key={payee.id} value={payee.id}>
-                    {payee.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <EntityPicker
+            kind="payee"
+            trackerId={activeTrackerId}
+            locale={locale}
+            label="Einzahler"
+            options={(payeesQuery.data?.items || []).map((payee) => ({
+              value: payee.id,
+              label: payee.name,
+            }))}
+            value={editState.payeeId}
+            onValueChange={(value) =>
+              setEditState((current) =>
+                current
+                  ? {
+                      ...current,
+                      payeeId: value,
+                      customPayeeName:
+                        value === EMPTY_SELECT_VALUE ? current.customPayeeName : "",
+                    }
+                  : current,
+              )
+            }
+            required={false}
+            allowCustomText
+            customTextValue={editState.customPayeeName}
+            onCustomTextChange={(value) =>
+              setEditState((current) =>
+                current ? { ...current, customPayeeName: value } : current,
+              )
+            }
+          />
         </div>
-
-        {editState.payeeId === EMPTY_SELECT_VALUE ? (
-          <div className="space-y-1.5">
-            <Label>Einmaliger Einzahler</Label>
-            <Input
-              value={editState.customPayeeName}
-              onChange={(event) =>
-                setEditState((current) =>
-                  current
-                    ? { ...current, customPayeeName: event.target.value }
-                    : current,
-                )
-              }
-              placeholder="z. B. Bäckerei Müller"
-            />
-          </div>
-        ) : null}
 
         <div className="space-y-1.5">
           <Label>Notizen</Label>
@@ -480,29 +465,24 @@ export function TransactionsClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-income-muted/60 via-income-muted/20 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Einnahmen</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums text-income">
-            {formatCurrency(totals.incomeCents, currency, locale)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Ausgaben</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums text-expense">
-            {formatCurrency(totals.expenseCents, currency, locale)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-3">
-          <p className="text-xs text-muted-foreground">Saldo</p>
-          <p
-            className={cn(
-              "mt-1 text-xl font-semibold tabular-nums",
-              balance >= 0 ? "text-foreground" : "text-expense",
-            )}
-          >
-            {formatCurrency(balance, currency, locale)}
-          </p>
-        </div>
+        <StatTile
+          label="Einnahmen"
+          value={formatCurrency(totals.incomeCents, currency, locale)}
+          icon={ArrowUpRight}
+          tone="income"
+        />
+        <StatTile
+          label="Ausgaben"
+          value={formatCurrency(totals.expenseCents, currency, locale)}
+          icon={ArrowDownLeft}
+          tone="expense"
+        />
+        <StatTile
+          label="Saldo"
+          value={formatCurrency(balance, currency, locale)}
+          icon={Scale}
+          tone={balance >= 0 ? "primary" : "expense"}
+        />
       </div>
 
       {/* Filters */}
@@ -694,7 +674,7 @@ export function TransactionsClient({
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "text-sm font-semibold",
+                                "font-mono text-sm font-semibold tracking-tight tabular-nums",
                                 item.direction === "expense"
                                   ? "text-expense"
                                   : "text-income",
@@ -806,7 +786,7 @@ export function TransactionsClient({
                       <TableCell className="text-right">
                         <span
                           className={cn(
-                            "text-sm font-semibold tabular-nums",
+                            "font-mono text-sm font-semibold tracking-tight tabular-nums",
                             item.direction === "expense"
                               ? "text-expense"
                               : "text-income",

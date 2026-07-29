@@ -51,7 +51,7 @@ export function AdminOverview() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Einnahmen
             </p>
-            <p className="mt-2 text-2xl font-semibold">
+            <p className="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums">
               {formatCurrency(stats?.totals.incomeCents ?? 0)}
             </p>
           </div>
@@ -59,7 +59,7 @@ export function AdminOverview() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Ausgaben
             </p>
-            <p className="mt-2 text-2xl font-semibold">
+            <p className="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums">
               {formatCurrency(stats?.totals.expenseCents ?? 0)}
             </p>
           </div>

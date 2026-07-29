@@ -14,8 +14,8 @@ import {
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
-import { CategoryField } from "@/components/transactions/category-field";
-import { PayeeField } from "@/components/transactions/payee-field";
+import { EntityPicker } from "@/components/transactions/entity-picker";
+import { DirectionToggle } from "@/components/ui/direction-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -343,23 +343,11 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     [payeesQuery.data?.items],
   );
   const categoryOptions = useMemo(
-    () => [
-      { value: EMPTY_SELECT_VALUE, label: "Bitte wählen" },
-      ...filteredCategories.map((item) => ({
-        value: item.id,
-        label: item.name,
-      })),
-    ],
+    () => filteredCategories.map((item) => ({ value: item.id, label: item.name })),
     [filteredCategories],
   );
   const payeeOptions = useMemo(
-    () => [
-      { value: EMPTY_SELECT_VALUE, label: "Anonym" },
-      ...activePayees.map((item) => ({
-        value: item.id,
-        label: item.name,
-      })),
-    ],
+    () => activePayees.map((item) => ({ value: item.id, label: item.name })),
     [activePayees],
   );
 
@@ -826,7 +814,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                         <div className="shrink-0 text-right">
                           <p
                             className={cn(
-                              "text-sm font-semibold",
+                              "font-mono text-sm font-semibold tracking-tight tabular-nums",
                               item.direction === "expense"
                                 ? "text-expense"
                                 : "text-income",
@@ -932,7 +920,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       </div>
                       <p
                         className={cn(
-                          "shrink-0 text-sm font-semibold tabular-nums",
+                          "shrink-0 font-mono text-sm font-semibold tracking-tight tabular-nums",
                           item.direction === "expense"
                             ? "text-expense"
                             : "text-income",
@@ -1013,38 +1001,13 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               <SheetTitle>Neue Buchung</SheetTitle>
               <SheetDescription>für {tracker?.name}</SheetDescription>
             </div>
-            <div className="shrink-0 inline-flex rounded-full border border-border/70 bg-muted/40 p-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setDirection("expense");
-                  setCategoryId(EMPTY_SELECT_VALUE);
-                }}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                  direction === "expense"
-                    ? "bg-expense text-expense-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Ausgabe
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDirection("income");
-                  setCategoryId(EMPTY_SELECT_VALUE);
-                }}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                  direction === "income"
-                    ? "bg-income text-income-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Einnahme
-              </button>
-            </div>
+            <DirectionToggle
+              value={direction}
+              onValueChange={(next) => {
+                setDirection(next);
+                setCategoryId(EMPTY_SELECT_VALUE);
+              }}
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -1073,26 +1036,33 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 </div>
               </div>
 
-              <CategoryField
+              <EntityPicker
                 key={`category-${entryFieldsKey}`}
+                kind="category"
                 trackerId={activeTrackerId}
                 locale={locale}
+                label="Kategorie"
                 direction={direction}
                 options={categoryOptions}
                 value={categoryId}
                 onValueChange={setCategoryId}
+                required
                 disabled={!isTrackerMutable}
               />
 
-              <PayeeField
+              <EntityPicker
                 key={`payee-${entryFieldsKey}`}
+                kind="payee"
                 trackerId={activeTrackerId}
                 locale={locale}
+                label="Einzahler"
                 options={payeeOptions}
                 value={payeeId}
                 onValueChange={setPayeeId}
-                customName={customPayeeName}
-                onCustomNameChange={setCustomPayeeName}
+                required={false}
+                allowCustomText
+                customTextValue={customPayeeName}
+                onCustomTextChange={setCustomPayeeName}
                 disabled={!isTrackerMutable}
               />
 

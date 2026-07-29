@@ -33,7 +33,7 @@ export function PageContainer({
       <AppHeader user={user} />
       <main
         className={cn(
-          "mx-auto flex w-full flex-col gap-4 px-4 py-4 pb-8 sm:px-6",
+          "mx-auto flex w-full flex-col gap-4 px-4 py-4 pb-8 sm:gap-5 sm:px-6 sm:py-6",
           size === "narrow" ? "max-w-4xl" : "max-w-7xl",
         )}
       >
