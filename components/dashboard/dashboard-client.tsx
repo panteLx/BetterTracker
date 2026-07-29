@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import { CategoryField } from "@/components/transactions/category-field";
 import { PayeeField } from "@/components/transactions/payee-field";
 import { Badge } from "@/components/ui/badge";
@@ -709,40 +710,18 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           {/* Tracker selector + actions */}
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              {trackers.map((item) => {
-                const isActive = item.id === activeTrackerId;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    draggable
-                    aria-label={`Tracker ${item.name} auswählen`}
-                    aria-pressed={isActive}
-                    onClick={() => handleTrackerSelect(item.id)}
-                    onDragStart={() => setDraggedTrackerId(item.id)}
-                    onDragEnd={() => setDraggedTrackerId("")}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => {
-                      moveTracker(draggedTrackerId, item.id);
-                      setDraggedTrackerId("");
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                      isActive
-                        ? "border-transparent bg-foreground text-background shadow-sm"
-                        : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                      draggedTrackerId === item.id && "opacity-60",
-                    )}
-                  >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color || "#0f766e" }}
-                    />
-                    {item.name}
-                    {!item.isActive ? " (Archiv)" : ""}
-                  </button>
-                );
-              })}
+              <TrackerPillRow
+                trackers={trackers}
+                activeTrackerId={activeTrackerId}
+                onSelect={handleTrackerSelect}
+                draggedTrackerId={draggedTrackerId}
+                onDragStart={setDraggedTrackerId}
+                onDragEnd={() => setDraggedTrackerId("")}
+                onDrop={(targetId) => {
+                  moveTracker(draggedTrackerId, targetId);
+                  setDraggedTrackerId("");
+                }}
+              />
               <Button
                 variant="outline"
                 size="sm"

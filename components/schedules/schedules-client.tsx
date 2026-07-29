@@ -15,6 +15,7 @@ import {
   toDateInputValue,
 } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -949,33 +950,11 @@ export function SchedulesClient({
     <div className="space-y-4">
       {/* Tracker pills + action */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {trackers.map((item) => {
-            const isActive = item.id === activeTrackerId;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedTracker(item.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                  isActive
-                    ? "border-transparent bg-foreground text-background shadow-sm"
-                    : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                )}
-              >
-                {item.color ? (
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                ) : null}
-                {item.name}
-                {!item.isActive ? " (Archiv)" : ""}
-              </button>
-            );
-          })}
-        </div>
+        <TrackerPillRow
+          trackers={trackers}
+          activeTrackerId={activeTrackerId}
+          onSelect={setSelectedTracker}
+        />
         <Button
           size="sm"
           onClick={() => setSheetOpen(true)}

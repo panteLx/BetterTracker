@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import { amountToInputValue, cn, EMPTY_SELECT_VALUE, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -470,33 +471,11 @@ export function TransactionsClient({
     <div className="space-y-4">
       {/* Tracker pills */}
       {trackers.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {trackers.map((item) => {
-            const isActive = item.id === activeTrackerId;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleTrackerChange(item.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                  isActive
-                    ? "border-transparent bg-foreground text-background shadow-sm"
-                    : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                )}
-              >
-                {item.color ? (
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                ) : null}
-                {item.name}
-                {!item.isActive ? " (Archiv)" : ""}
-              </button>
-            );
-          })}
-        </div>
+        <TrackerPillRow
+          trackers={trackers}
+          activeTrackerId={activeTrackerId}
+          onSelect={handleTrackerChange}
+        />
       ) : null}
 
       {/* Stats */}
