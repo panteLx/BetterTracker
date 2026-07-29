@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { requireTrackerReferenceManageAccess } from "@/lib/auth/guards";
-import { notFound, ok, serverError } from "@/lib/http";
+import { mapServiceError, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
+import { categoryUpdateSchema } from "@/lib/validators/category";
 
 async function getCategory(id: string) {
   const rows = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
@@ -22,17 +23,13 @@ export async function PATCH(
   if (access.response) return access.response;
 
   try {
-    const body = await parseRequestJson<{
-      name?: string;
-      type?: "expense" | "income" | "transfer";
-      color?: string;
-      isActive?: boolean;
-    }>(request);
+    const rawBody = await parseRequestJson<unknown>(request);
+    const body = categoryUpdateSchema.parse(rawBody);
 
     const [updated] = await db
       .update(categories)
       .set({
-        name: body.name?.trim(),
+        name: body.name,
         type: body.type,
         color: body.color,
         isActive: body.isActive,
@@ -43,7 +40,7 @@ export async function PATCH(
 
     return ok({ item: updated });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 

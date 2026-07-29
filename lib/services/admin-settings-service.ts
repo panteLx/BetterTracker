@@ -6,8 +6,6 @@ export const DEFAULT_SETTINGS = {
   discordWebhookUrl: "",
   discordDebugEnabled: false,
   discordPingRoleId: "",
-  serverIpDisplay: "",
-  directAddSubscriptions: false,
   registrationEnabled: true,
 };
 

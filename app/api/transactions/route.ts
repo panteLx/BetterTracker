@@ -1,5 +1,5 @@
 import { createTransaction, listTransactions } from "@/lib/services/transaction-service";
-import { badRequest, created, ok, serverError } from "@/lib/http";
+import { badRequest, created, mapServiceError, ok } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { requireTrackerContentCreateAccess, requireTrackerReadAccess } from "@/lib/auth/guards";
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
     return ok(data);
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 
@@ -41,6 +41,6 @@ export async function POST(request: Request) {
     const item = await createTransaction(body, access.user!.id);
     return created({ item });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

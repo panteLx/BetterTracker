@@ -13,13 +13,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
+import { CategoryField } from "@/components/transactions/category-field";
+import { PayeeField } from "@/components/transactions/payee-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Sheet,
   SheetContent,
@@ -30,10 +32,8 @@ import { Switch } from "@/components/ui/switch";
 import { StatTile } from "@/components/ui/stat-tile";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
-import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import { cn, EMPTY_SELECT_VALUE, formatCurrency, toDateInputValue } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-
-const EMPTY_SELECT_VALUE = "none";
 
 type Tracker = {
   id: string;
@@ -99,12 +99,6 @@ type ScheduleForecastResponse = {
   scheduledExpenseCents: number;
   items: ScheduleForecastItem[];
 };
-
-function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) =>
-    left.name.localeCompare(right.name, locale),
-  );
-}
 
 function sortTrackers(items: Tracker[], locale: string) {
   return [...items].sort((left, right) => {
@@ -273,10 +267,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const [payeeId, setPayeeId] = useState(EMPTY_SELECT_VALUE);
   const [customPayeeName, setCustomPayeeName] = useState("");
   const [notes, setNotes] = useState("");
-  const [showNewPayee, setShowNewPayee] = useState(false);
-  const [newPayeeName, setNewPayeeName] = useState("");
-  const [showNewCategory, setShowNewCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [entryFieldsKey, setEntryFieldsKey] = useState(0);
   const [newTrackerSheetOpen, setNewTrackerSheetOpen] = useState(false);
   const [newTrackerName, setNewTrackerName] = useState("");
   const [newTrackerColor, setNewTrackerColor] = useState(DEFAULT_TRACKER_COLOR);
@@ -470,65 +461,6 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
   });
 
-  const createPayeeMutation = useMutation({
-    mutationFn: (payload: { trackerId: string; name: string }) =>
-      fetchJson<{ item: Payee }>("/api/payees", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Payee[] } | undefined>(
-        ["payees", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items || []), item], locale),
-        }),
-      );
-      toast.success("Einzahler angelegt");
-      setPayeeId(item.id);
-      setCustomPayeeName("");
-      setNewPayeeName("");
-      setShowNewPayee(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Einzahler konnte nicht angelegt werden",
-      );
-    },
-  });
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (payload: {
-      trackerId: string;
-      name: string;
-      type: Category["type"];
-    }) =>
-      fetchJson<{ item: Category }>("/api/categories", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: Category[] } | undefined>(
-        ["categories", activeTrackerId],
-        (current) => ({
-          items: sortByName([...(current?.items || []), item], locale),
-        }),
-      );
-      toast.success("Kategorie angelegt");
-      setCategoryId(item.id);
-      setNewCategoryName("");
-      setShowNewCategory(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Kategorie konnte nicht angelegt werden",
-      );
-    },
-  });
-
   const createTrackerMutation = useMutation({
     mutationFn: (payload: {
       name: string;
@@ -638,10 +570,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     setPayeeId(EMPTY_SELECT_VALUE);
     setCustomPayeeName("");
     setNotes("");
-    setShowNewPayee(false);
-    setShowNewCategory(false);
-    setNewPayeeName("");
-    setNewCategoryName("");
+    setEntryFieldsKey((current) => current + 1);
   }
 
   function handleSubmit(event: FormEvent) {
@@ -692,41 +621,6 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     nextTrackers.splice(targetIndex, 0, draggedTracker);
 
     reorderTrackersMutation.mutate(nextTrackers.map((item) => item.id));
-  }
-
-  function handleCreatePayee() {
-    if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker anlegen");
-      return;
-    }
-
-    if (!newPayeeName.trim()) {
-      toast.error("Bitte einen Einzahler-Namen eingeben");
-      return;
-    }
-
-    createPayeeMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newPayeeName.trim(),
-    });
-  }
-
-  function handleCreateCategory() {
-    if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker anlegen");
-      return;
-    }
-
-    if (!newCategoryName.trim()) {
-      toast.error("Bitte einen Kategorienamen eingeben");
-      return;
-    }
-
-    createCategoryMutation.mutate({
-      trackerId: activeTrackerId,
-      name: newCategoryName.trim(),
-      type: direction,
-    });
   }
 
   function handleCreateTracker(event: FormEvent) {
@@ -816,40 +710,18 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           {/* Tracker selector + actions */}
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              {trackers.map((item) => {
-                const isActive = item.id === activeTrackerId;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    draggable
-                    aria-label={`Tracker ${item.name} auswählen`}
-                    aria-pressed={isActive}
-                    onClick={() => handleTrackerSelect(item.id)}
-                    onDragStart={() => setDraggedTrackerId(item.id)}
-                    onDragEnd={() => setDraggedTrackerId("")}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => {
-                      moveTracker(draggedTrackerId, item.id);
-                      setDraggedTrackerId("");
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                      isActive
-                        ? "border-transparent bg-foreground text-background shadow-sm"
-                        : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                      draggedTrackerId === item.id && "opacity-60",
-                    )}
-                  >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color || "#0f766e" }}
-                    />
-                    {item.name}
-                    {!item.isActive ? " (Archiv)" : ""}
-                  </button>
-                );
-              })}
+              <TrackerPillRow
+                trackers={trackers}
+                activeTrackerId={activeTrackerId}
+                onSelect={handleTrackerSelect}
+                draggedTrackerId={draggedTrackerId}
+                onDragStart={setDraggedTrackerId}
+                onDragEnd={() => setDraggedTrackerId("")}
+                onDrop={(targetId) => {
+                  moveTracker(draggedTrackerId, targetId);
+                  setDraggedTrackerId("");
+                }}
+              />
               <Button
                 variant="outline"
                 size="sm"
@@ -1201,161 +1073,28 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Kategorie</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 text-xs"
-                    onClick={() => setShowNewCategory((current) => !current)}
-                    disabled={!isTrackerMutable}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Neu
-                  </Button>
-                </div>
-                <SearchableSelect
-                  value={categoryId}
-                  onValueChange={(value) => {
-                    setCategoryId(value);
-                    if (value !== EMPTY_SELECT_VALUE) {
-                      setShowNewCategory(false);
-                    }
-                  }}
-                  items={categoryOptions}
-                  placeholder="Kategorie wählen"
-                  searchPlaceholder="Kategorie suchen"
-                  emptyMessage="Keine Kategorie gefunden."
-                  disabled={!isTrackerMutable}
-                />
-                {showNewCategory ? (
-                  <div className="flex gap-2">
-                    <Input
-                      className="flex-1"
-                      value={newCategoryName}
-                      onChange={(event) =>
-                        setNewCategoryName(event.target.value)
-                      }
-                      disabled={!isTrackerMutable}
-                      placeholder={
-                        direction === "expense"
-                          ? "z. B. Tanken"
-                          : "z. B. Gehalt"
-                      }
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleCreateCategory}
-                      disabled={
-                        createCategoryMutation.isPending || !isTrackerMutable
-                      }
-                    >
-                      {createCategoryMutation.isPending ? "..." : "Anlegen"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="px-2"
-                      onClick={() => {
-                        setShowNewCategory(false);
-                        setNewCategoryName("");
-                      }}
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+              <CategoryField
+                key={`category-${entryFieldsKey}`}
+                trackerId={activeTrackerId}
+                locale={locale}
+                direction={direction}
+                options={categoryOptions}
+                value={categoryId}
+                onValueChange={setCategoryId}
+                disabled={!isTrackerMutable}
+              />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Einzahler</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 text-xs"
-                    onClick={() => setShowNewPayee((current) => !current)}
-                    disabled={!isTrackerMutable}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Neu
-                  </Button>
-                </div>
-                <SearchableSelect
-                  value={payeeId}
-                  onValueChange={(value) => {
-                    setPayeeId(value);
-                    if (value !== EMPTY_SELECT_VALUE) {
-                      setCustomPayeeName("");
-                      setShowNewPayee(false);
-                    }
-                  }}
-                  items={payeeOptions}
-                  placeholder="Einzahler wählen"
-                  searchPlaceholder="Einzahler suchen"
-                  emptyMessage="Kein Einzahler gefunden."
-                  disabled={!isTrackerMutable}
-                />
-                {showNewPayee ? (
-                  <div className="flex gap-2">
-                    <Input
-                      className="flex-1"
-                      value={newPayeeName}
-                      onChange={(event) => setNewPayeeName(event.target.value)}
-                      disabled={!isTrackerMutable}
-                      placeholder="z. B. Bäckerei"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleCreatePayee}
-                      disabled={
-                        createPayeeMutation.isPending || !isTrackerMutable
-                      }
-                    >
-                      {createPayeeMutation.isPending ? "..." : "Anlegen"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="px-2"
-                      onClick={() => {
-                        setShowNewPayee(false);
-                        setNewPayeeName("");
-                      }}
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="custom-payee"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Oder einmaliger Freitext
-                    </Label>
-                    <Input
-                      id="custom-payee"
-                      value={customPayeeName}
-                      onChange={(event) => {
-                        setCustomPayeeName(event.target.value);
-                        if (event.target.value.trim()) {
-                          setPayeeId(EMPTY_SELECT_VALUE);
-                        }
-                      }}
-                      disabled={!isTrackerMutable}
-                      placeholder="z. B. Wochenmarkt"
-                    />
-                  </div>
-                )}
-              </div>
+              <PayeeField
+                key={`payee-${entryFieldsKey}`}
+                trackerId={activeTrackerId}
+                locale={locale}
+                options={payeeOptions}
+                value={payeeId}
+                onValueChange={setPayeeId}
+                customName={customPayeeName}
+                onCustomNameChange={setCustomPayeeName}
+                disabled={!isTrackerMutable}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="entry-notes">Notizen</Label>

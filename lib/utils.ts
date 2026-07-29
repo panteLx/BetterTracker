@@ -54,3 +54,27 @@ export function toDateInputValue(date: Date | string) {
   return `${year}-${month}-${day}`;
 }
 
+export function amountToInputValue(amountCents: number) {
+  return (amountCents / 100).toFixed(2).replace(".", ",");
+}
+
+export function sortByName<T extends { name: string }>(items: T[], locale: string): T[] {
+  return [...items].sort((left, right) => left.name.localeCompare(right.name, locale));
+}
+
+export function getFrequencyLabel(
+  frequency: "monthly" | "yearly" | "custom_days",
+  intervalValue: number
+): string {
+  if (frequency === "monthly") {
+    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
+  }
+  if (frequency === "yearly") {
+    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
+  }
+  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
+}
+
+/** Sentinel for select components that can't represent "no selection" as an empty string value. */
+export const EMPTY_SELECT_VALUE = "none";
+

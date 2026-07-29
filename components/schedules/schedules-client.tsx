@@ -5,8 +5,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import {
+  amountToInputValue,
+  cn,
+  EMPTY_SELECT_VALUE,
+  formatCurrency,
+  getFrequencyLabel,
+  sortByName,
+  toDateInputValue,
+} from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -28,8 +37,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-
-const EMPTY_SELECT_VALUE = "none";
 
 type Tracker = {
   id: string;
@@ -96,35 +103,12 @@ type SchedulesClientProps = {
   currentUserId: string;
 };
 
-function amountToInputValue(amountCents: number) {
-  return (amountCents / 100).toFixed(2).replace(".", ",");
-}
-
-function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) =>
-    left.name.localeCompare(right.name, locale),
-  );
-}
-
 function getScheduleStatusLabel(status: Schedule["status"]) {
   if (status === "overdue") return "Überfällig";
   if (status === "due") return "Fällig";
   if (status === "upcoming") return "Demnächst";
   if (status === "completed") return "Abgeschlossen";
   return "Unvollständig";
-}
-
-function getFrequencyLabel(
-  frequency: Schedule["frequency"] | EditScheduleState["frequency"],
-  intervalValue: number,
-) {
-  if (frequency === "monthly") {
-    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
-  }
-  if (frequency === "yearly") {
-    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
-  }
-  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
 }
 
 function getStatusVariant(status: Schedule["status"]) {
@@ -966,33 +950,11 @@ export function SchedulesClient({
     <div className="space-y-4">
       {/* Tracker pills + action */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {trackers.map((item) => {
-            const isActive = item.id === activeTrackerId;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedTracker(item.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                  isActive
-                    ? "border-transparent bg-foreground text-background shadow-sm"
-                    : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-                )}
-              >
-                {item.color ? (
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                ) : null}
-                {item.name}
-                {!item.isActive ? " (Archiv)" : ""}
-              </button>
-            );
-          })}
-        </div>
+        <TrackerPillRow
+          trackers={trackers}
+          activeTrackerId={activeTrackerId}
+          onSelect={setSelectedTracker}
+        />
         <Button
           size="sm"
           onClick={() => setSheetOpen(true)}

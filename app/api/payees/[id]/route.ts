@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { payees } from "@/lib/db/schema";
 import { requireTrackerReferenceManageAccess } from "@/lib/auth/guards";
-import { notFound, ok, serverError } from "@/lib/http";
+import { mapServiceError, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
+import { payeeUpdateSchema } from "@/lib/validators/payee";
 
 async function getPayee(id: string) {
   const rows = await db.select().from(payees).where(eq(payees.id, id)).limit(1);
@@ -21,17 +22,14 @@ export async function PATCH(
   if (access.response) return access.response;
 
   try {
-    const body = await parseRequestJson<{
-      name?: string;
-      notes?: string | null;
-      isActive?: boolean;
-    }>(request);
+    const rawBody = await parseRequestJson<unknown>(request);
+    const body = payeeUpdateSchema.parse(rawBody);
 
     const [updated] = await db
       .update(payees)
       .set({
-        name: body.name?.trim(),
-        notes: body.notes?.trim() || null,
+        name: body.name,
+        notes: body.notes === undefined ? undefined : body.notes || null,
         isActive: body.isActive,
         updatedAt: new Date(),
       })
@@ -40,7 +38,7 @@ export async function PATCH(
 
     return ok({ item: updated });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 

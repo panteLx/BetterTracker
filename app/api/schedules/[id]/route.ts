@@ -4,36 +4,8 @@ import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
 import { updateSchedule } from "@/lib/services/schedule-service";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
-import { badRequest, conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
+import { conflict, forbidden, mapServiceError, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-
-function mapScheduleError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Internal server error";
-  const isZodError =
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    error.name === "ZodError";
-
-  if (isZodError) {
-    return badRequest(message);
-  }
-
-  if (message.includes("requires a new next due date")) {
-    return conflict(message);
-  }
-
-  if (
-    message.includes("Invalid schedule amount") ||
-    message.includes("not found in tracker") ||
-    message.includes("does not match the selected direction") ||
-    message.includes("Unrecognized key")
-  ) {
-    return badRequest(message);
-  }
-
-  return serverError(error);
-}
 
 async function getSchedule(id: string) {
   const rows = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
@@ -68,7 +40,7 @@ export async function PATCH(
 
     return ok({ item: updated });
   } catch (error) {
-    return mapScheduleError(error);
+    return mapServiceError(error);
   }
 }
 
