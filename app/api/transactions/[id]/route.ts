@@ -8,6 +8,7 @@ import { conflict, forbidden, mapServiceError, notFound, ok, serverError } from 
 import { parseRequestJson } from "@/lib/http";
 import { parseAmountToCents } from "@/lib/utils";
 import { ValidationError } from "@/lib/errors";
+import { transactionUpdateSchema } from "@/lib/validators/transaction";
 
 async function getTransaction(id: string) {
   const rows = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
@@ -38,16 +39,8 @@ export async function PATCH(
   }
 
   try {
-    const body = await parseRequestJson<{
-      accountName?: string;
-      date?: string;
-      amount?: string | number;
-      direction?: "expense" | "income";
-      categoryId?: string | null;
-      payeeId?: string | null;
-      customPayeeName?: string | null;
-      notes?: string | null;
-    }>(request);
+    const rawBody = await parseRequestJson<unknown>(request);
+    const body = transactionUpdateSchema.parse(rawBody);
 
     const nextCategoryId =
       body.categoryId === undefined ? existing.categoryId : body.categoryId;

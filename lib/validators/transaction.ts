@@ -14,6 +14,19 @@ export const transactionInputSchema = z.object({
   scheduleId: z.string().optional().nullable(),
 });
 
+export const transactionUpdateSchema = z
+  .object({
+    accountName: z.string().trim().min(1).optional(),
+    date: z.string().date().optional(),
+    amount: z.union([z.string(), z.number()]).optional(),
+    direction: z.enum(["expense", "income"]).optional(),
+    categoryId: z.string().trim().min(1).optional().nullable(),
+    payeeId: z.string().optional().nullable(),
+    customPayeeName: z.string().trim().optional().nullable(),
+    notes: z.string().trim().optional().nullable(),
+  })
+  .strict();
+
 export const transactionQuerySchema = z.object({
   trackerId: z.string().min(1),
   from: z.string().optional(),
