@@ -40,7 +40,7 @@ type AdminLogsClientProps = {
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: "bg-info-muted text-info",
-  warning: "bg-warning-muted text-warning-foreground",
+  warning: "bg-warning-muted text-warning",
   error: "bg-expense-muted text-expense",
   critical: "bg-expense-muted text-expense font-semibold",
 };
@@ -49,7 +49,8 @@ const SEVERITY_ALL = "all";
 
 function MetadataCell({ json }: { json: string | null }) {
   const [expanded, setExpanded] = useState(false);
-  if (!json || json === "null") return <span className="text-muted-foreground">—</span>;
+  if (!json || json === "null")
+    return <span className="text-muted-foreground">—</span>;
 
   let pretty: string;
   try {
@@ -73,7 +74,7 @@ function MetadataCell({ json }: { json: string | null }) {
         {expanded ? "Einklappen" : "Anzeigen"}
       </button>
       {expanded ? (
-        <pre className="mt-1 max-h-48 max-w-xs overflow-auto rounded-md bg-muted p-2 text-xs">
+        <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs">
           {pretty}
         </pre>
       ) : null}
@@ -81,7 +82,11 @@ function MetadataCell({ json }: { json: string | null }) {
   );
 }
 
-export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClientProps) {
+export function AdminLogsClient({
+  locale,
+  timezone,
+  currentRole,
+}: AdminLogsClientProps) {
   const queryClient = useQueryClient();
   const [actionFilter, setActionFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState(SEVERITY_ALL);
@@ -106,14 +111,15 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () =>
-      fetchJson("/api/admin/logs", { method: "DELETE" }),
+    mutationFn: () => fetchJson("/api/admin/logs", { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Alle Logs gelöscht");
       queryClient.invalidateQueries({ queryKey: ["admin-logs"] });
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen"),
+      toast.error(
+        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
+      ),
   });
 
   function handleDeleteAll() {
@@ -163,11 +169,19 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label>Von</Label>
-              <DatePicker value={fromFilter} onChange={setFromFilter} placeholder="Von" />
+              <DatePicker
+                value={fromFilter}
+                onChange={setFromFilter}
+                placeholder="Von"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Bis</Label>
-              <DatePicker value={toFilter} onChange={setToFilter} placeholder="Bis" />
+              <DatePicker
+                value={toFilter}
+                onChange={setToFilter}
+                placeholder="Bis"
+              />
             </div>
           </div>
         </div>
@@ -218,7 +232,10 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
         ) : (
           <div className="w-full divide-y divide-border/40">
             {items.map((item) => (
-              <div key={item.id} className="flex w-full gap-4 px-4 py-3 text-sm">
+              <div
+                key={item.id}
+                className="flex w-full gap-4 px-4 py-3 text-sm"
+              >
                 {/* Left: time + severity */}
                 <div className="w-40 shrink-0 space-y-1">
                   <span className="block font-mono text-xs text-muted-foreground">
@@ -237,7 +254,7 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
                     <span className="font-medium">{item.action}</span>
                     <span className="text-xs text-muted-foreground">
                       {item.resourceType}
-                      {item.resourceId ? ` · ${item.resourceId.slice(0, 8)}…` : ""}
+                      {item.resourceId ? ` · ${item.resourceId}` : ""}
                     </span>
                   </div>
                   {item.actorUserName || item.actorUserEmail ? (
@@ -249,7 +266,9 @@ export function AdminLogsClient({ locale, timezone, currentRole }: AdminLogsClie
                     <p className="text-xs text-muted-foreground">System</p>
                   )}
                   {item.ipAddress ? (
-                    <p className="font-mono text-xs text-muted-foreground">{item.ipAddress}</p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {item.ipAddress}
+                    </p>
                   ) : null}
                   <MetadataCell json={item.metadataJson} />
                 </div>

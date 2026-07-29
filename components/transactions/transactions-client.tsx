@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import { TrackerPillRow } from "@/components/trackers/tracker-pill-row";
-import { amountToInputValue, cn, EMPTY_SELECT_VALUE, formatCurrency } from "@/lib/utils";
+import {
+  amountToInputValue,
+  cn,
+  EMPTY_SELECT_VALUE,
+  formatCurrency,
+} from "@/lib/utils";
 import { EntityPicker } from "@/components/transactions/entity-picker";
 import { Button } from "@/components/ui/button";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -107,7 +112,7 @@ export function TransactionsClient({
   const [page, setPage] = useState(1);
   const [editingTransactionId, setEditingTransactionId] = useState("");
   const [editState, setEditState] = useState<EditTransactionState | null>(null);
-  const [filterExpanded, setFilterExpanded] = useState(true);
+  const [filterExpanded, setFilterExpanded] = useState(false);
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -400,7 +405,9 @@ export function TransactionsClient({
                       ...current,
                       payeeId: value,
                       customPayeeName:
-                        value === EMPTY_SELECT_VALUE ? current.customPayeeName : "",
+                        value === EMPTY_SELECT_VALUE
+                          ? current.customPayeeName
+                          : "",
                     }
                   : current,
               )
@@ -464,7 +471,7 @@ export function TransactionsClient({
       ) : null}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <StatTile
           label="Einnahmen"
           value={formatCurrency(totals.incomeCents, currency, locale)}

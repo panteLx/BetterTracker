@@ -200,10 +200,13 @@ export function SchedulesClient({
   });
 
   const filteredCategories = (categoriesQuery.data?.items || []).filter(
-    (item) => item.isActive && (item.type === direction || item.type === "transfer"),
+    (item) =>
+      item.isActive && (item.type === direction || item.type === "transfer"),
   );
 
-  const activePayees = (payeesQuery.data?.items || []).filter((item) => item.isActive);
+  const activePayees = (payeesQuery.data?.items || []).filter(
+    (item) => item.isActive,
+  );
   const parsedIntervalValue = Number(intervalValue);
   const normalizedIntervalValue =
     Number.isFinite(parsedIntervalValue) && parsedIntervalValue > 0
@@ -700,7 +703,9 @@ export function SchedulesClient({
                         <SelectContent>
                           <SelectItem value="monthly">Monatlich</SelectItem>
                           <SelectItem value="yearly">Jährlich</SelectItem>
-                          <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                          <SelectItem value="custom_days">
+                            Alle X Tage
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -711,7 +716,10 @@ export function SchedulesClient({
                         onChange={(event) =>
                           setEditState((current) =>
                             current
-                              ? { ...current, intervalValue: event.target.value }
+                              ? {
+                                  ...current,
+                                  intervalValue: event.target.value,
+                                }
                               : current,
                           )
                         }
@@ -732,7 +740,10 @@ export function SchedulesClient({
                             entry.type === editState.direction ||
                             entry.type === "transfer",
                         )
-                        .map((entry) => ({ value: entry.id, label: entry.name }))}
+                        .map((entry) => ({
+                          value: entry.id,
+                          label: entry.name,
+                        }))}
                       value={editState.categoryId}
                       onValueChange={(value) =>
                         setEditState((current) =>
@@ -766,7 +777,9 @@ export function SchedulesClient({
                       value={editState.nextDueDate}
                       onChange={(value) =>
                         setEditState((current) =>
-                          current ? { ...current, nextDueDate: value } : current,
+                          current
+                            ? { ...current, nextDueDate: value }
+                            : current,
                         )
                       }
                     />
@@ -830,7 +843,7 @@ export function SchedulesClient({
           size="sm"
           onClick={() => setSheetOpen(true)}
           disabled={!isTrackerMutable}
-          className="gap-1.5"
+          className="gap-1.5 hidden sm:inline-flex"
         >
           <Plus className="h-4 w-4" />
           Neuer Termin
@@ -838,9 +851,19 @@ export function SchedulesClient({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatTile label="Fällig" value={String(dueCount)} icon={AlertCircle} tone="expense" />
-        <StatTile label="Demnächst" value={String(upcomingCount)} icon={Clock} tone="warning" />
+      <div className="grid grid-cols-3 lg:grid-cols-3 gap-3">
+        <StatTile
+          label="Fällig"
+          value={String(dueCount)}
+          icon={AlertCircle}
+          tone="expense"
+        />
+        <StatTile
+          label="Demnächst"
+          value={String(upcomingCount)}
+          icon={Clock}
+          tone="warning"
+        />
         <StatTile
           label="Abgeschlossen"
           value={String(inactiveCount)}
@@ -890,7 +913,10 @@ export function SchedulesClient({
 
       {/* New schedule sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side={isMobile ? "bottom" : "right"} className="flex flex-col gap-0 p-0 sm:max-w-lg">
+        <SheetContent
+          side={isMobile ? "bottom" : "right"}
+          className="flex flex-col gap-0 p-0 sm:max-w-lg"
+        >
           {isMobile && (
             <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
           )}
@@ -923,7 +949,11 @@ export function SchedulesClient({
                     />
                   </div>
                 </div>
-                <DirectionToggle size="md" value={direction} onValueChange={setDirection} />
+                <DirectionToggle
+                  size="md"
+                  value={direction}
+                  onValueChange={setDirection}
+                />
               </div>
 
               {/* Category */}

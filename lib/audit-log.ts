@@ -36,3 +36,12 @@ export async function getRequestAuditContext() {
     userAgent: headerStore.get("user-agent"),
   };
 }
+
+export function getAuditContextFromHeaders(headerStore: Headers | null | undefined) {
+  const forwardedFor = headerStore?.get("x-forwarded-for") ?? null;
+  return {
+    ipAddress:
+      forwardedFor?.split(",")[0]?.trim() || headerStore?.get("x-real-ip") || null,
+    userAgent: headerStore?.get("user-agent") ?? null,
+  };
+}

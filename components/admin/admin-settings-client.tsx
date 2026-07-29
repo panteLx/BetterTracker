@@ -17,7 +17,11 @@ type Settings = {
   registrationEnabled: boolean;
 };
 
-export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "superadmin" }) {
+export function AdminSettingsClient({
+  currentRole,
+}: {
+  currentRole: "admin" | "superadmin";
+}) {
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-settings"],
@@ -38,25 +42,34 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Speichern fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
     },
   });
 
   const applyDiscordDefaultsMutation = useMutation({
-    mutationFn: (payload: Pick<
-      Settings,
-      "discordWebhookUrl" | "discordDebugEnabled" | "discordPingRoleId"
-    >) =>
-      fetchJson<{ updatedCount: number }>("/api/admin/settings/discord/apply-to-trackers", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
+    mutationFn: (
+      payload: Pick<
+        Settings,
+        "discordWebhookUrl" | "discordDebugEnabled" | "discordPingRoleId"
+      >,
+    ) =>
+      fetchJson<{ updatedCount: number }>(
+        "/api/admin/settings/discord/apply-to-trackers",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
     onSuccess: (data) => {
       toast.success(`${data.updatedCount} Tracker aktualisiert`);
       queryClient.invalidateQueries({ queryKey: ["trackers"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Uebernahme fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : "Uebernahme fehlgeschlagen",
+      );
     },
   });
 
@@ -79,31 +92,30 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>System</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentRole === "superadmin" ? (
+      {currentRole === "superadmin" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>System</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
               <div>
                 <p className="font-medium">Registrierung erlaubt</p>
                 <p className="text-sm text-muted-foreground">
-                  Neue Benutzer duerfen sich ueber die oeffentliche Registrierung anmelden.
+                  Neue Benutzer dürfen sich über die öffentliche Registrierung
+                  anmelden.
                 </p>
               </div>
               <Switch
                 checked={form.registrationEnabled}
-                onCheckedChange={(value) => setDraft({ ...form, registrationEnabled: value })}
+                onCheckedChange={(value) =>
+                  setDraft({ ...form, registrationEnabled: value })
+                }
               />
             </div>
-          ) : (
-            <div className="rounded-2xl border border-border/60 p-4 text-sm text-muted-foreground">
-              Nur Superadmins duerfen die Registrierungssettings der Anwendung aendern.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -111,19 +123,27 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="discordWebhookUrl">Discord-Default Webhook URL</Label>
+            <Label htmlFor="discordWebhookUrl">
+              Discord-Default Webhook URL
+            </Label>
             <Input
               id="discordWebhookUrl"
               value={form.discordWebhookUrl}
-              onChange={(e) => setDraft({ ...form, discordWebhookUrl: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...form, discordWebhookUrl: e.target.value })
+              }
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="discordPingRoleId">Discord-Default Ping Role ID</Label>
+            <Label htmlFor="discordPingRoleId">
+              Discord-Default Ping Role ID
+            </Label>
             <Input
               id="discordPingRoleId"
               value={form.discordPingRoleId}
-              onChange={(e) => setDraft({ ...form, discordPingRoleId: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...form, discordPingRoleId: e.target.value })
+              }
             />
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-border/60 p-4">
@@ -135,14 +155,18 @@ export function AdminSettingsClient({ currentRole }: { currentRole: "admin" | "s
             </div>
             <Switch
               checked={form.discordDebugEnabled}
-              onCheckedChange={(value) => setDraft({ ...form, discordDebugEnabled: value })}
+              onCheckedChange={(value) =>
+                setDraft({ ...form, discordDebugEnabled: value })
+              }
             />
           </div>
           <div className="rounded-2xl border border-border/60 p-4 md:col-span-2">
-            <p className="font-medium">Discord-Defaults auf alle Tracker anwenden</p>
+            <p className="font-medium">
+              Discord-Defaults auf alle Tracker anwenden
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Uebertraegt Webhook, Ping Role ID und Discord-Debug aus dieser Seite in jeden
-              vorhandenen Tracker.
+              Uebertraegt Webhook, Ping Role ID und Discord-Debug aus dieser
+              Seite in jeden vorhandenen Tracker.
             </p>
             <Button
               type="button"

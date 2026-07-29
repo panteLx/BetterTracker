@@ -2,16 +2,16 @@
 
 import { FormEvent, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  CalendarClock,
-  CheckCircle2,
-  Receipt,
-} from "lucide-react";
+import { ArrowLeft, CalendarClock, CheckCircle2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { EntityPicker } from "@/components/transactions/entity-picker";
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DirectionToggle } from "@/components/ui/direction-toggle";
 import { Input } from "@/components/ui/input";
@@ -37,8 +37,19 @@ type Step = "pick" | "buchung" | "termin";
 type Direction = "expense" | "income";
 type Frequency = "monthly" | "yearly" | "custom_days";
 
-type Tracker = { id: string; name: string; color: string; currency: string; isActive: boolean };
-type Category = { id: string; name: string; type: "expense" | "income" | "transfer"; isActive: boolean };
+type Tracker = {
+  id: string;
+  name: string;
+  color: string;
+  currency: string;
+  isActive: boolean;
+};
+type Category = {
+  id: string;
+  name: string;
+  type: "expense" | "income" | "transfer";
+  isActive: boolean;
+};
 type Payee = { id: string; name: string; isActive: boolean };
 
 function TrackerPills({
@@ -116,12 +127,15 @@ export function QuickAddSheet({
     enabled: open,
   });
   const trackers = trackersQuery.data?.items ?? [];
-  const activeTrackerId = selectedTrackerId || trackers.find((t) => t.isActive)?.id || "";
+  const activeTrackerId =
+    selectedTrackerId || trackers.find((t) => t.isActive)?.id || "";
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", activeTrackerId],
     queryFn: () =>
-      fetchJson<{ items: Category[] }>(`/api/categories?trackerId=${activeTrackerId}`),
+      fetchJson<{ items: Category[] }>(
+        `/api/categories?trackerId=${activeTrackerId}`,
+      ),
     enabled: !!activeTrackerId && step !== "pick",
   });
   const payeesQuery = useQuery({
@@ -136,11 +150,16 @@ export function QuickAddSheet({
   );
   const payees = (payeesQuery.data?.items ?? []).filter((p) => p.isActive);
 
-  const effectiveCategoryId = filteredCategories.some((c) => c.id === categoryId)
+  const effectiveCategoryId = filteredCategories.some(
+    (c) => c.id === categoryId,
+  )
     ? categoryId
     : EMPTY;
 
-  const categoryOptions = filteredCategories.map((c) => ({ value: c.id, label: c.name }));
+  const categoryOptions = filteredCategories.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
   const payeeOptions = payees.map((p) => ({ value: p.id, label: p.name }));
 
   const parsedIntervalValue = Number(intervalValue);
@@ -151,24 +170,32 @@ export function QuickAddSheet({
 
   const txMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      fetchJson("/api/transactions", { method: "POST", body: JSON.stringify(body) }),
+      fetchJson("/api/transactions", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setDone("buchung");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
   });
 
   const scheduleMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      fetchJson("/api/schedules", { method: "POST", body: JSON.stringify(body) }),
+      fetchJson("/api/schedules", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       queryClient.invalidateQueries({ queryKey: ["schedules-forecast"] });
       setDone("termin");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
   });
 
   function resetForm() {
@@ -275,10 +302,16 @@ export function QuickAddSheet({
           "flex flex-col gap-0 p-0",
           isMobile ? "rounded-t-2xl" : "sm:max-w-md",
         )}
-        style={isMobile ? { paddingBottom: "env(safe-area-inset-bottom)" } : undefined}
+        style={
+          isMobile
+            ? { paddingBottom: "env(safe-area-inset-bottom)" }
+            : undefined
+        }
       >
         <SheetTitle className="sr-only">Hinzufügen</SheetTitle>
-        <SheetDescription className="sr-only">Neue Buchung oder Termin anlegen</SheetDescription>
+        <SheetDescription className="sr-only">
+          Neue Buchung oder Termin anlegen
+        </SheetDescription>
 
         {isMobile ? (
           <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-muted" />
@@ -287,7 +320,9 @@ export function QuickAddSheet({
         {/* ── PICKER ─────────────────────────────────────────────── */}
         {step === "pick" && (
           <div className="space-y-3 p-5 pt-4">
-            <p className="text-base font-semibold">Was möchtest du hinzufügen?</p>
+            <p className="text-base font-semibold">
+              Was möchtest du hinzufügen?
+            </p>
             <button
               type="button"
               onClick={() => setStep("buchung")}
@@ -298,7 +333,9 @@ export function QuickAddSheet({
               </div>
               <div>
                 <p className="font-medium">Buchung</p>
-                <p className="text-sm text-muted-foreground">Einnahme oder Ausgabe erfassen</p>
+                <p className="text-sm text-muted-foreground">
+                  Einnahme oder Ausgabe erfassen
+                </p>
               </div>
             </button>
             <button
@@ -311,7 +348,9 @@ export function QuickAddSheet({
               </div>
               <div>
                 <p className="font-medium">Termin</p>
-                <p className="text-sm text-muted-foreground">Wiederkehrende Zahlung anlegen</p>
+                <p className="text-sm text-muted-foreground">
+                  Wiederkehrende Zahlung anlegen
+                </p>
               </div>
             </button>
           </div>
@@ -331,7 +370,11 @@ export function QuickAddSheet({
               </button>
               <span className="font-semibold">Neue Buchung</span>
               <div className="ml-auto">
-                <DirectionToggle value={direction} onValueChange={handleDirectionChange} icons />
+                <DirectionToggle
+                  value={direction}
+                  onValueChange={handleDirectionChange}
+                  icons
+                />
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -342,7 +385,10 @@ export function QuickAddSheet({
                   onClose={() => handleClose(false)}
                 />
               ) : (
-                <form onSubmit={handleSubmitTransaction} className="space-y-4 p-4">
+                <form
+                  onSubmit={handleSubmitTransaction}
+                  className="space-y-4 p-4"
+                >
                   <TrackerPills
                     trackers={trackers}
                     activeId={activeTrackerId}
@@ -351,7 +397,11 @@ export function QuickAddSheet({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="qa-tx-date">Datum</Label>
-                      <DatePicker id="qa-tx-date" value={date} onChange={setDate} />
+                      <DatePicker
+                        id="qa-tx-date"
+                        value={date}
+                        onChange={setDate}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="qa-tx-amount">Betrag</Label>
@@ -409,9 +459,15 @@ export function QuickAddSheet({
                     type="submit"
                     className="w-full"
                     size="lg"
-                    disabled={isMutating || !activeTrackerId || effectiveCategoryId === EMPTY}
+                    disabled={
+                      isMutating ||
+                      !activeTrackerId ||
+                      effectiveCategoryId === EMPTY
+                    }
                   >
-                    {txMutation.isPending ? "Speichere..." : "Eintrag speichern"}
+                    {txMutation.isPending
+                      ? "Speichere..."
+                      : "Eintrag speichern"}
                   </Button>
                 </form>
               )}
@@ -524,7 +580,9 @@ export function QuickAddSheet({
                           <SelectContent>
                             <SelectItem value="monthly">Monatlich</SelectItem>
                             <SelectItem value="yearly">Jährlich</SelectItem>
-                            <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                            <SelectItem value="custom_days">
+                              Alle X Tage
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -562,7 +620,9 @@ export function QuickAddSheet({
                     size="lg"
                     disabled={isMutating || !activeTrackerId}
                   >
-                    {scheduleMutation.isPending ? "Speichere..." : "Termin anlegen"}
+                    {scheduleMutation.isPending
+                      ? "Speichere..."
+                      : "Termin anlegen"}
                   </Button>
                 </form>
               )}
@@ -589,7 +649,7 @@ function SuccessView({
       <p className="text-base font-semibold">{label}</p>
       <div className="flex gap-3">
         <Button variant="outline" size="sm" onClick={onAnother}>
-          Weiteres hinzufügen
+          Mehr hinzufügen
         </Button>
         <Button size="sm" onClick={onClose}>
           Schließen
