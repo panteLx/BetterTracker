@@ -5,7 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import {
+  amountToInputValue,
+  cn,
+  EMPTY_SELECT_VALUE,
+  formatCurrency,
+  getFrequencyLabel,
+  sortByName,
+  toDateInputValue,
+} from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +36,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-
-const EMPTY_SELECT_VALUE = "none";
 
 type Tracker = {
   id: string;
@@ -96,35 +102,12 @@ type SchedulesClientProps = {
   currentUserId: string;
 };
 
-function amountToInputValue(amountCents: number) {
-  return (amountCents / 100).toFixed(2).replace(".", ",");
-}
-
-function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) =>
-    left.name.localeCompare(right.name, locale),
-  );
-}
-
 function getScheduleStatusLabel(status: Schedule["status"]) {
   if (status === "overdue") return "Überfällig";
   if (status === "due") return "Fällig";
   if (status === "upcoming") return "Demnächst";
   if (status === "completed") return "Abgeschlossen";
   return "Unvollständig";
-}
-
-function getFrequencyLabel(
-  frequency: Schedule["frequency"] | EditScheduleState["frequency"],
-  intervalValue: number,
-) {
-  if (frequency === "monthly") {
-    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
-  }
-  if (frequency === "yearly") {
-    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
-  }
-  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
 }
 
 function getStatusVariant(status: Schedule["status"]) {

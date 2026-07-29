@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, formatCurrency } from "@/lib/utils";
+import { amountToInputValue, cn, EMPTY_SELECT_VALUE, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/table";
 
 const ALL_FILTER_VALUE = "all";
-const EMPTY_SELECT_VALUE = "none";
 
 type Tracker = {
   id: string;
@@ -81,10 +80,6 @@ type EditTransactionState = {
   customPayeeName: string;
   notes: string;
 };
-
-function amountToInputValue(amountCents: number) {
-  return (amountCents / 100).toFixed(2).replace(".", ",");
-}
 
 export function TransactionsClient({
   locale,

@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CsvImportDialog } from "@/components/trackers/csv-import-dialog";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
-import { cn } from "@/lib/utils";
+import { cn, sortByName } from "@/lib/utils";
 
 type Tracker = {
   id: string;
@@ -81,12 +81,6 @@ type TrackerSettingsClientProps = {
   initialTrackerId: string;
   locale: string;
 };
-
-function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) =>
-    left.name.localeCompare(right.name, locale),
-  );
-}
 
 function sortTrackers(items: Tracker[], locale: string) {
   return [...items].sort((left, right) =>

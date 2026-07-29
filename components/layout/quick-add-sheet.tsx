@@ -27,9 +27,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, toDateInputValue } from "@/lib/utils";
+import {
+  cn,
+  EMPTY_SELECT_VALUE as EMPTY,
+  getFrequencyLabel,
+  sortByName,
+  toDateInputValue,
+} from "@/lib/utils";
 
-const EMPTY = "none";
 type Step = "pick" | "buchung" | "termin";
 type Direction = "expense" | "income";
 type Frequency = "monthly" | "yearly" | "custom_days";
@@ -37,20 +42,6 @@ type Frequency = "monthly" | "yearly" | "custom_days";
 type Tracker = { id: string; name: string; color: string; currency: string; isActive: boolean };
 type Category = { id: string; name: string; type: "expense" | "income" | "transfer"; isActive: boolean };
 type Payee = { id: string; name: string; isActive: boolean };
-
-function sortByName<T extends { name: string }>(items: T[], locale: string): T[] {
-  return [...items].sort((a, b) => a.name.localeCompare(b.name, locale));
-}
-
-function getFrequencyLabel(frequency: Frequency, intervalValue: number): string {
-  if (frequency === "monthly") {
-    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
-  }
-  if (frequency === "yearly") {
-    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
-  }
-  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
-}
 
 function TrackerPills({
   trackers,

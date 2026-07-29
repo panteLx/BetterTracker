@@ -30,10 +30,8 @@ import { Switch } from "@/components/ui/switch";
 import { StatTile } from "@/components/ui/stat-tile";
 import { fetchJson } from "@/lib/client-fetch";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
-import { cn, formatCurrency, toDateInputValue } from "@/lib/utils";
+import { cn, EMPTY_SELECT_VALUE, formatCurrency, sortByName, toDateInputValue } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-
-const EMPTY_SELECT_VALUE = "none";
 
 type Tracker = {
   id: string;
@@ -99,12 +97,6 @@ type ScheduleForecastResponse = {
   scheduledExpenseCents: number;
   items: ScheduleForecastItem[];
 };
-
-function sortByName<T extends { name: string }>(items: T[], locale: string) {
-  return [...items].sort((left, right) =>
-    left.name.localeCompare(right.name, locale),
-  );
-}
 
 function sortTrackers(items: Tracker[], locale: string) {
   return [...items].sort((left, right) => {
