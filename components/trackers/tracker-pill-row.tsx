@@ -1,5 +1,6 @@
 "use client";
 
+import { Segmented, type SegmentedItem } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 
 type PillTracker = {
@@ -18,13 +19,13 @@ type TrackerPillRowProps = {
   onDragStart?: (id: string) => void;
   onDragEnd?: () => void;
   onDrop?: (targetId: string) => void;
+  className?: string;
 };
 
 /**
- * Row of tracker-selector pills, shared by the dashboard, schedules, and
- * transactions pages — all three rendered the exact same button markup
- * independently. Drag-to-reorder is opt-in via onDragStart/onDragEnd/onDrop
- * (only the dashboard's tracker list is reorderable).
+ * Row of tracker-selector pills, shared by the dashboard, schedules and
+ * transactions pages. Drag-to-reorder is opt-in via
+ * onDragStart/onDragEnd/onDrop — only the dashboard's list is reorderable.
  */
 export function TrackerPillRow({
   trackers,
@@ -34,44 +35,35 @@ export function TrackerPillRow({
   onDragStart,
   onDragEnd,
   onDrop,
+  className,
 }: TrackerPillRowProps) {
   const draggable = Boolean(onDragStart || onDragEnd || onDrop);
 
+  const items: SegmentedItem<string>[] = trackers.map((tracker) => ({
+    value: tracker.id,
+    label: tracker.isActive ? tracker.name : `${tracker.name} (Archiv)`,
+    dot: tracker.color,
+    buttonProps: draggable
+      ? {
+          draggable: true,
+          onDragStart: () => onDragStart?.(tracker.id),
+          onDragEnd: () => onDragEnd?.(),
+          onDragOver: (event) => event.preventDefault(),
+          onDrop: () => onDrop?.(tracker.id),
+          className: cn(draggedTrackerId === tracker.id && "opacity-50"),
+        }
+      : undefined,
+  }));
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {trackers.map((item) => {
-        const isActive = item.id === activeTrackerId;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            draggable={draggable}
-            aria-label={draggable ? `Tracker ${item.name} auswählen` : undefined}
-            aria-pressed={draggable ? isActive : undefined}
-            onClick={() => onSelect(item.id)}
-            onDragStart={draggable ? () => onDragStart?.(item.id) : undefined}
-            onDragEnd={draggable ? () => onDragEnd?.() : undefined}
-            onDragOver={draggable ? (event) => event.preventDefault() : undefined}
-            onDrop={draggable ? () => onDrop?.(item.id) : undefined}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-              isActive
-                ? "border-transparent bg-foreground text-background shadow-sm"
-                : "border-border/70 bg-background/75 text-foreground hover:bg-accent",
-              draggable && draggedTrackerId === item.id && "opacity-60",
-            )}
-          >
-            {item.color ? (
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-            ) : null}
-            {item.name}
-            {!item.isActive ? " (Archiv)" : ""}
-          </button>
-        );
-      })}
-    </div>
+    <Segmented
+      label="Tracker auswählen"
+      items={items}
+      value={activeTrackerId}
+      onValueChange={onSelect}
+      variant="solid"
+      size="sm"
+      className={className}
+    />
   );
 }

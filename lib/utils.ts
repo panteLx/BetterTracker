@@ -28,6 +28,68 @@ export function formatDateTime(
   }).format(new Date(value));
 }
 
+/**
+ * Day heading for grouped lists. Near dates are named rather than dated —
+ * "Heute" tells you where you are faster than "Mi, 29. Juli" does.
+ */
+export function formatDayLabel(dateString: string, locale = "de-DE") {
+  const date = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayOffset = Math.round(
+    (date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+  );
+
+  if (dayOffset === 0) return "Heute";
+  if (dayOffset === -1) return "Gestern";
+  if (dayOffset === 1) return "Morgen";
+
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}
+
+export function formatDateShort(dateString: string, locale = "de-DE") {
+  const date = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+/**
+ * Collapses an already date-sorted list into consecutive day buckets. It does
+ * not sort — the API decides the order, and re-sorting here would silently
+ * fight it.
+ */
+export function groupByDate<T extends { date: string }>(items: T[]) {
+  const groups: { date: string; items: T[] }[] = [];
+
+  for (const item of items) {
+    const current = groups.at(-1);
+
+    if (current && current.date === item.date) {
+      current.items.push(item);
+      continue;
+    }
+
+    groups.push({ date: item.date, items: [item] });
+  }
+
+  return groups;
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()

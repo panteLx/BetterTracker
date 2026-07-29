@@ -15,17 +15,18 @@ export type ChartColors = {
   chart8: string;
 };
 
+// Server-render fallback only — mirrors the light-theme values in globals.css.
 const DEFAULTS: ChartColors = {
-  income: "oklch(0.55 0.16 155)",
-  expense: "oklch(0.58 0.22 25)",
-  chart1: "oklch(0.60 0.16 185)",
-  chart2: "oklch(0.62 0.17 155)",
-  chart3: "oklch(0.60 0.15 230)",
-  chart4: "oklch(0.58 0.19 280)",
-  chart5: "oklch(0.72 0.17 60)",
-  chart6: "oklch(0.60 0.21 15)",
-  chart7: "oklch(0.65 0.14 200)",
-  chart8: "oklch(0.56 0.21 300)",
+  income: "#16a34a",
+  expense: "#dc2626",
+  chart1: "#2a78d6",
+  chart2: "#eb6834",
+  chart3: "#1baf7a",
+  chart4: "#eda100",
+  chart5: "#e87ba4",
+  chart6: "#008300",
+  chart7: "#4a3aa7",
+  chart8: "#e34948",
 };
 
 function readColorsFromDOM(): ChartColors {
@@ -64,7 +65,7 @@ function subscribe(callback: () => void): () => void {
   });
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["class", "data-theme"],
+    attributeFilter: ["class", "data-theme", "data-scheme"],
   });
   return () => observer.disconnect();
 }

@@ -1,9 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import {
+  CalendarClock,
+  ReceiptText,
+  Users,
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Amount } from "@/components/ui/amount";
+import { StatTile } from "@/components/ui/stat-tile";
 
 export function AdminOverview() {
   const statsQuery = useQuery({
@@ -19,52 +27,57 @@ export function AdminOverview() {
   });
 
   const stats = statsQuery.data;
-  const cards = [
-    { label: "Benutzer", value: stats?.users ?? 0 },
-    { label: "Tracker", value: stats?.trackers ?? 0 },
-    { label: "Transaktionen", value: stats?.transactions ?? 0 },
-    { label: "Termine", value: stats?.schedules ?? 0 },
-  ];
+  const balanceCents =
+    (stats?.totals.incomeCents ?? 0) - (stats?.totals.expenseCents ?? 0);
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <Card key={card.label}>
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">
-                {card.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-3xl font-semibold">
-              {card.value}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatTile label="Benutzer" icon={Users} value={stats?.users ?? 0} />
+        <StatTile label="Tracker" icon={Wallet} value={stats?.trackers ?? 0} />
+        <StatTile
+          label="Buchungen"
+          icon={ReceiptText}
+          value={stats?.transactions ?? 0}
+        />
+        <StatTile
+          label="Termine"
+          icon={CalendarClock}
+          value={stats?.schedules ?? 0}
+        />
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Globale Summen</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Einnahmen
-            </p>
-            <p className="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums">
-              {formatCurrency(stats?.totals.incomeCents ?? 0)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Ausgaben
-            </p>
-            <p className="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums">
-              {formatCurrency(stats?.totals.expenseCents ?? 0)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <StatTile
+          label="Saldo gesamt"
+          tone="inverse"
+          icon={Wallet}
+          value={<Amount cents={balanceCents} size="lg" tone="none" />}
+          className="col-span-2 lg:col-span-1"
+        />
+        <StatTile
+          label="Einnahmen gesamt"
+          icon={ArrowUpRight}
+          value={
+            <Amount
+              cents={stats?.totals.incomeCents ?? 0}
+              size="lg"
+              className="text-income"
+            />
+          }
+        />
+        <StatTile
+          label="Ausgaben gesamt"
+          icon={ArrowDownLeft}
+          value={
+            <Amount
+              cents={stats?.totals.expenseCents ?? 0}
+              size="lg"
+              className="text-expense"
+            />
+          }
+        />
+      </div>
     </div>
   );
 }

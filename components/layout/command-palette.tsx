@@ -54,7 +54,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
       >
         <Search className="h-3.5 w-3.5" />
         <span className="text-xs">Suche</span>
-        <kbd className="pointer-events-none ml-1 hidden select-none rounded border border-border/60 bg-muted px-1 text-[10px] font-mono font-medium sm:inline-flex">
+        <kbd className="pointer-events-none ml-1 hidden select-none rounded border border-border bg-muted px-1 text-[10px] font-mono font-medium sm:inline-flex">
           ⌘K
         </kbd>
       </Button>

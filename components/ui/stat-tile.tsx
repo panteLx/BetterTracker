@@ -1,99 +1,106 @@
 import { cn } from "@/lib/utils";
+import { MicroLabel } from "@/components/ui/micro-label";
+
+/**
+ * A single number with its name above it. Deliberately plain: no gradient, no
+ * border flourish, nothing competing with the figure itself.
+ *
+ * `tone="inverse"` fills the tile with the accent and is the one loud element
+ * a screen gets. Use it exactly once per screen, on the number that matters
+ * most — a second inverse tile costs the first one its job.
+ */
+
+const toneStyles = {
+  default: { root: "border-border bg-card", value: "text-foreground" },
+  income: { root: "border-border bg-card", value: "text-income" },
+  expense: { root: "border-border bg-card", value: "text-expense" },
+  inverse: {
+    root: "border-transparent bg-primary",
+    value: "text-primary-foreground",
+  },
+} as const;
 
 type StatTileProps = {
   label: string;
-  value: string;
-  icon: React.ElementType;
-  tone?: "income" | "expense" | "warning" | "neutral" | "primary";
-  secondaryValue?: string;
+  /** A string, or an <Amount /> that brings its own size. */
+  value: React.ReactNode;
+  icon?: React.ElementType;
+  tone?: keyof typeof toneStyles;
+  /** One line under the number — a forecast, a comparison. */
+  sublabel?: React.ReactNode;
   helperText?: string;
   className?: string;
-};
-
-const toneConfig = {
-  income: {
-    text: "text-income",
-    icon: "text-income",
-    iconBg: "bg-income-muted",
-    surface:
-      "bg-gradient-to-br from-income-muted/60 via-income-muted/20 to-transparent",
-  },
-  expense: {
-    text: "text-expense",
-    icon: "text-expense",
-    iconBg: "bg-expense-muted",
-    surface:
-      "bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent",
-  },
-  warning: {
-    text: "text-warning",
-    icon: "text-warning",
-    iconBg: "bg-warning-muted",
-    surface:
-      "bg-gradient-to-br from-warning-muted/60 via-warning-muted/20 to-transparent",
-  },
-  primary: {
-    text: "text-primary",
-    icon: "text-primary",
-    iconBg: "bg-primary/10",
-    surface: "bg-gradient-to-br from-primary/8 via-primary/4 to-transparent",
-  },
-  neutral: {
-    text: "text-foreground",
-    icon: "text-muted-foreground",
-    iconBg: "bg-muted",
-    surface: "bg-gradient-to-br from-muted/60 via-muted/20 to-transparent",
-  },
 };
 
 export function StatTile({
   label,
   value,
   icon: Icon,
-  tone = "neutral",
-  secondaryValue,
+  tone = "default",
+  sublabel,
   helperText,
   className,
 }: StatTileProps) {
-  const config = toneConfig[tone];
+  const styles = toneStyles[tone];
+  const inverse = tone === "inverse";
 
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/60 p-3",
-        config.surface,
+        "min-w-0 rounded-xl border p-4 shadow-card sm:p-5",
+        styles.root,
         className,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 space-y-1">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p
-            className={cn(
-              "font-mono text-xl font-semibold tracking-tight tabular-nums",
-              config.text,
-            )}
-          >
-            {value}
-          </p>
-          {secondaryValue ? (
-            <p className="text-xs font-medium text-muted-foreground tabular-nums">
-              {secondaryValue}
-            </p>
-          ) : null}
-          {helperText ? (
-            <p className="text-xs text-muted-foreground">{helperText}</p>
-          ) : null}
-        </div>
-        <div
+        <MicroLabel
           className={cn(
-            "shrink-0 rounded-lg border border-border/50 p-2 hidden md:block",
-            config.iconBg,
+            "min-w-0 truncate",
+            inverse ? "text-primary-foreground/60" : undefined,
           )}
         >
-          <Icon className={cn("h-3.5 w-3.5", config.icon)} />
-        </div>
+          {label}
+        </MicroLabel>
+        {Icon ? (
+          <Icon
+            className={cn(
+              "h-4 w-4 shrink-0",
+              inverse ? "text-primary-foreground/50" : "text-muted-foreground",
+            )}
+          />
+        ) : null}
       </div>
+
+      <div
+        className={cn(
+          "mt-2 text-2xl font-semibold tracking-tight tabular-nums",
+          styles.value,
+        )}
+      >
+        {value}
+      </div>
+
+      {sublabel ? (
+        <div
+          className={cn(
+            "mt-1.5 font-subtext text-xs",
+            inverse ? "text-primary-foreground/70" : "text-muted-foreground",
+          )}
+        >
+          {sublabel}
+        </div>
+      ) : null}
+
+      {helperText ? (
+        <p
+          className={cn(
+            "mt-0.5 font-subtext text-xs",
+            inverse ? "text-primary-foreground/55" : "text-muted-foreground",
+          )}
+        >
+          {helperText}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -102,17 +109,12 @@ export function StatTileSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/60 bg-card p-3 animate-pulse",
+        "animate-pulse rounded-xl border border-border bg-card p-4 shadow-card sm:p-5",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 space-y-2 flex-1">
-          <div className="h-3 w-16 rounded bg-muted" />
-          <div className="h-6 w-24 rounded bg-muted" />
-        </div>
-        <div className="h-8 w-8 rounded-lg bg-muted shrink-0" />
-      </div>
+      <div className="h-3 w-20 rounded bg-muted" />
+      <div className="mt-3 h-7 w-28 rounded bg-muted" />
     </div>
   );
 }

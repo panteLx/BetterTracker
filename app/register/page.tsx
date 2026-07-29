@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
+import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { AuthRedirectAlert } from "@/components/auth/auth-redirect-alert";
 import { RegisterForm } from "@/components/auth/register-form";
 import { oidcDisplayName, oidcEnabled } from "@/lib/auth/oidc";
@@ -25,28 +26,41 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
   return (
     <div className="min-h-screen flex">
       {/* Brand Panel */}
-      <div className="hidden md:flex md:w-1/2 flex-col justify-between bg-gradient-to-br from-primary/90 to-primary p-12">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-            <CreditCard className="h-5 w-5 text-white" />
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-brand-canvas p-12 text-brand-canvas-foreground md:flex md:w-1/2">
+        {/* A single wash of the chosen accent, so the panel picks up the
+            accent setting without becoming a colored slab. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse 70% 60% at 15% 0%, var(--primary), transparent 70%)",
+          }}
+        />
+        <Link href="/" className="relative flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+            <CreditCard className="h-5 w-5" />
           </div>
-          <span className="text-lg font-semibold text-white tracking-tight">BetterTracker</span>
+          <span className="text-lg font-semibold tracking-tight">BetterTracker</span>
         </Link>
-        <div className="space-y-4">
-          <h1 className="text-3xl font-semibold text-white tracking-tight leading-snug">
+        <div className="relative space-y-4">
+          <h1 className="text-3xl font-semibold leading-snug tracking-tight sm:text-4xl">
             Starte noch heute<br />mit deiner Finanzverwaltung.
           </h1>
-          <p className="text-primary-foreground/80 text-sm leading-relaxed">
+          <p className="max-w-sm font-subtext text-sm leading-relaxed text-brand-canvas-foreground/70">
             Erstelle ein kostenloses Konto und behalte mit BetterTracker den Überblick über deine Ausgaben und Einnahmen.
           </p>
         </div>
-        <p className="text-xs text-primary-foreground/50">
+        <p className="relative font-subtext text-xs text-brand-canvas-foreground/50">
           Self-hosted · Open Source · Datenschutzfreundlich
         </p>
       </div>
 
       {/* Form Panel */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+      <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="absolute right-5 top-5">
+          <ThemeToggleButton />
+        </div>
         <div className="w-full max-w-sm space-y-6">
           {/* Mobile brand */}
           <div className="flex flex-col items-center gap-3 md:hidden">
@@ -76,16 +90,16 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
               oidcProviderName={oidcDisplayName}
             />
           ) : (
-            <div className="rounded-xl border border-border/60 bg-muted/50 p-4 text-center">
+            <div className="rounded-xl border border-border bg-surface-muted p-4 text-center">
               <p className="text-sm text-muted-foreground">
                 Registrierungen sind aktuell deaktiviert.
               </p>
             </div>
           )}
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center font-subtext text-sm text-muted-foreground">
             Bereits registriert?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link href="/login" className="font-medium text-primary-on hover:underline">
               Zum Login
             </Link>
           </p>

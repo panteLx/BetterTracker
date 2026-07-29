@@ -29,8 +29,10 @@ export function AppFooter() {
     : `https://github.com/panteLx/BetterTracker/releases/tag/v${version}`;
 
   return (
-    <footer className="border-t border-border/40 py-2 mb-14 md:mb-0">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6">
+    <footer className="mb-16 border-t border-border py-3 md:mb-0">
+      {/* Everything sits left: the bottom-right corner belongs to the
+          floating quick-add button. */}
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-1 px-4 sm:px-6">
         <Link
           href={href}
           target="_blank"
@@ -39,7 +41,7 @@ export function AppFooter() {
         >
           {label}
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center">
           <Button variant="ghost" size="icon-sm" className="text-muted-foreground/70 hover:text-muted-foreground" asChild>
             <Link
               href="https://buymeacoffee.com/pantel"
