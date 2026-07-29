@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, CreditCard, Plus, ReceiptText, TimerReset } from "lucide-react";
+import {
+  BarChart2,
+  CreditCard,
+  Plus,
+  ReceiptText,
+  TimerReset,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/layout/user-menu";
 import { CommandPalette } from "@/components/layout/command-palette";
@@ -12,7 +18,12 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: CreditCard, exact: true },
-  { href: "/transactions", label: "Transaktionen", icon: ReceiptText, exact: false },
+  {
+    href: "/transactions",
+    label: "Transaktionen",
+    icon: ReceiptText,
+    exact: false,
+  },
   { href: "/schedules", label: "Termine", icon: TimerReset, exact: false },
   { href: "/statistics", label: "Statistiken", icon: BarChart2, exact: false },
 ];
@@ -45,7 +56,9 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
         {user ? (
           <nav className="hidden items-center gap-0.5 md:flex">
             {navItems.map(({ href, label, icon: Icon, exact }) => {
-              const isActive = exact ? pathname === href : pathname.startsWith(href);
+              const isActive = exact
+                ? pathname === href
+                : pathname.startsWith(href);
               return (
                 <Link
                   key={href}
@@ -74,11 +87,13 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
                 onClick={() => setQuickAddOpen(true)}
               >
                 <Plus className="h-4 w-4" />
-                Neu buchen
               </Button>
               <CommandPalette role={user?.role} />
               <UserMenu name={user.name} email={user.email} role={user.role} />
-              <QuickAddSheet open={quickAddOpen} onOpenChange={setQuickAddOpen} />
+              <QuickAddSheet
+                open={quickAddOpen}
+                onOpenChange={setQuickAddOpen}
+              />
             </>
           ) : (
             <>

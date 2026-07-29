@@ -15,19 +15,22 @@ const toneConfig = {
     text: "text-income",
     icon: "text-income",
     iconBg: "bg-income-muted",
-    surface: "bg-gradient-to-br from-income-muted/60 via-income-muted/20 to-transparent",
+    surface:
+      "bg-gradient-to-br from-income-muted/60 via-income-muted/20 to-transparent",
   },
   expense: {
     text: "text-expense",
     icon: "text-expense",
     iconBg: "bg-expense-muted",
-    surface: "bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent",
+    surface:
+      "bg-gradient-to-br from-expense-muted/60 via-expense-muted/20 to-transparent",
   },
   warning: {
     text: "text-warning",
     icon: "text-warning",
     iconBg: "bg-warning-muted",
-    surface: "bg-gradient-to-br from-warning-muted/60 via-warning-muted/20 to-transparent",
+    surface:
+      "bg-gradient-to-br from-warning-muted/60 via-warning-muted/20 to-transparent",
   },
   primary: {
     text: "text-primary",
@@ -84,7 +87,7 @@ export function StatTile({
         </div>
         <div
           className={cn(
-            "shrink-0 rounded-lg border border-border/50 p-2",
+            "shrink-0 rounded-lg border border-border/50 p-2 hidden md:block",
             config.iconBg,
           )}
         >
