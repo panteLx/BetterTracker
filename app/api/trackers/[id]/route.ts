@@ -4,9 +4,8 @@ import { trackers } from "@/lib/db/schema";
 import { requireTrackerManageAccess } from "@/lib/auth/guards";
 import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-import { slugify } from "@/lib/utils";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { getTrackerById } from "@/lib/trackers";
+import { buildTrackerUpdateValues, getTrackerById, type TrackerUpdateInput } from "@/lib/trackers";
 
 export async function PATCH(
   request: Request,
@@ -17,39 +16,12 @@ export async function PATCH(
   if (access.response) return access.response;
 
   try {
-    const body = await parseRequestJson<{
-      name?: string;
-      description?: string | null;
-      color?: string;
-      currency?: string;
-      discordWebhookUrl?: string;
-      discordDebugEnabled?: boolean;
-      discordPingRoleId?: string;
-      isActive?: boolean;
-      isHidden?: boolean;
-      isPublic?: boolean;
-    }>(request);
+    const body = await parseRequestJson<TrackerUpdateInput>(request);
 
     const currentTracker = await getTrackerById(id);
     if (!currentTracker) return notFound("Tracker not found");
 
-    const updateValues = {
-      name: body.name?.trim(),
-      slug: body.name ? slugify(body.name) : undefined,
-      description:
-        body.description === undefined ? undefined : body.description?.trim() || null,
-      color: body.color,
-      currency: body.currency?.trim().toUpperCase(),
-      discordWebhookUrl:
-        body.discordWebhookUrl === undefined ? undefined : body.discordWebhookUrl.trim(),
-      discordDebugEnabled: body.discordDebugEnabled,
-      discordPingRoleId:
-        body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),
-      isActive: body.isActive,
-      isHidden: body.isHidden,
-      isPublic: body.isPublic,
-      updatedAt: new Date(),
-    };
+    const updateValues = buildTrackerUpdateValues(body);
 
     const [updated] = await db
       .update(trackers)

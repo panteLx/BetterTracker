@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
 import { notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-import { slugify } from "@/lib/utils";
+import { buildTrackerUpdateValues, type TrackerUpdateInput } from "@/lib/trackers";
 
 export async function PATCH(
   request: Request,
@@ -16,38 +16,11 @@ export async function PATCH(
   if (access.response) return access.response;
 
   try {
-    const body = await parseRequestJson<{
-      name?: string;
-      description?: string | null;
-      color?: string;
-      currency?: string;
-      discordWebhookUrl?: string;
-      discordDebugEnabled?: boolean;
-      discordPingRoleId?: string;
-      isActive?: boolean;
-      isHidden?: boolean;
-      isPublic?: boolean;
-    }>(request);
+    const body = await parseRequestJson<TrackerUpdateInput>(request);
 
     const [updated] = await db
       .update(trackers)
-      .set({
-        name: body.name?.trim(),
-        slug: body.name ? slugify(body.name) : undefined,
-        description:
-          body.description === undefined ? undefined : body.description?.trim() || null,
-        color: body.color,
-        currency: body.currency?.trim().toUpperCase(),
-        discordWebhookUrl:
-          body.discordWebhookUrl === undefined ? undefined : body.discordWebhookUrl.trim(),
-        discordDebugEnabled: body.discordDebugEnabled,
-        discordPingRoleId:
-          body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),
-        isActive: body.isActive,
-        isHidden: body.isHidden,
-        isPublic: body.isPublic,
-        updatedAt: new Date(),
-      })
+      .set(buildTrackerUpdateValues(body))
       .where(eq(trackers.id, id))
       .returning();
 
