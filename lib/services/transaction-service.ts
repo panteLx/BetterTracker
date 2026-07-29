@@ -7,6 +7,7 @@ import { transactionInputSchema, transactionQuerySchema } from "@/lib/validators
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { sendDiscordNotification } from "@/lib/services/discord-service";
 import { getTrackerById } from "@/lib/trackers";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
 export async function listTransactions(
   query: unknown,
@@ -103,15 +104,15 @@ export async function createTransaction(input: unknown, actorUserId: string) {
   const parsed = transactionInputSchema.parse(input);
   const amountCents = parseAmountToCents(parsed.amount);
   if (amountCents === null || amountCents <= 0) {
-    throw new Error("Invalid transaction amount");
+    throw new ValidationError("Invalid transaction amount");
   }
 
   const tracker = await getTrackerById(parsed.trackerId);
   if (!tracker) {
-    throw new Error("Tracker not found");
+    throw new NotFoundError("Tracker not found");
   }
   if (!tracker.isActive) {
-    throw new Error("Tracker is archived and cannot be modified");
+    throw new ConflictError("Tracker is archived and cannot be modified");
   }
 
   const [category] = await db
@@ -130,11 +131,11 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     .limit(1);
 
   if (!category) {
-    throw new Error("Transaction category is required");
+    throw new ValidationError("Transaction category is required");
   }
 
   if (category.type !== parsed.direction && category.type !== "transfer") {
-    throw new Error("Transaction category does not match the selected direction");
+    throw new ValidationError("Transaction category does not match the selected direction");
   }
 
   let resolvedPayeeId = parsed.payeeId ?? null;
@@ -163,7 +164,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
       .limit(1);
 
     if (!payee) {
-      throw new Error("Transaction payee not found in tracker");
+      throw new ValidationError("Transaction payee not found in tracker");
     }
 
     resolvedPayeeName = payee.name;

@@ -1,6 +1,6 @@
 import { canWriteTracker } from "@/lib/auth/permissions";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
-import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
+import { conflict, forbidden, mapServiceError, notFound, ok } from "@/lib/http";
 import { skipSchedule } from "@/lib/services/schedule-service";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
@@ -32,12 +32,6 @@ export async function POST(
     const item = await skipSchedule(id, access.user!.id);
     return ok({ item });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes("cannot be skipped")
-    ) {
-      return conflict(error.message);
-    }
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

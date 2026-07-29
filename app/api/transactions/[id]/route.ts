@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import { categories, transactions } from "@/lib/db/schema";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
+import { conflict, forbidden, mapServiceError, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { parseAmountToCents } from "@/lib/utils";
+import { ValidationError } from "@/lib/errors";
 
 async function getTransaction(id: string) {
   const rows = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
@@ -52,7 +53,7 @@ export async function PATCH(
       body.categoryId === undefined ? existing.categoryId : body.categoryId;
 
     if (!nextCategoryId) {
-      throw new Error("Transaction category is required");
+      throw new ValidationError("Transaction category is required");
     }
 
     const [category] = await db
@@ -70,12 +71,12 @@ export async function PATCH(
       .limit(1);
 
     if (!category) {
-      throw new Error("Transaction category is required");
+      throw new ValidationError("Transaction category is required");
     }
 
     const nextDirection = body.direction ?? existing.direction;
     if (category.type !== nextDirection && category.type !== "transfer") {
-      throw new Error("Transaction category does not match the selected direction");
+      throw new ValidationError("Transaction category does not match the selected direction");
     }
 
     const [updated] = await db
@@ -111,7 +112,7 @@ export async function PATCH(
 
     return ok({ item: updated });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 

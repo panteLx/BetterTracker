@@ -8,6 +8,7 @@ import { scheduleInputSchema, scheduleUpdateSchema } from "@/lib/validators/sche
 import { createTransaction } from "@/lib/services/transaction-service";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { getTrackerById } from "@/lib/trackers";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
 export type ScheduleStatus = "overdue" | "due" | "upcoming" | "completed" | "incomplete";
 
@@ -120,11 +121,11 @@ async function validateScheduleReferences(
     .limit(1);
 
   if (!category) {
-    throw new Error("Schedule category not found in tracker");
+    throw new ValidationError("Schedule category not found in tracker");
   }
 
   if (category.type !== direction && category.type !== "transfer") {
-    throw new Error("Schedule category does not match the selected direction");
+    throw new ValidationError("Schedule category does not match the selected direction");
   }
 
   const [payee] = await db
@@ -134,7 +135,7 @@ async function validateScheduleReferences(
     .limit(1);
 
   if (!payee) {
-    throw new Error("Schedule payee not found in tracker");
+    throw new ValidationError("Schedule payee not found in tracker");
   }
 }
 
@@ -200,15 +201,15 @@ export async function createSchedule(input: unknown, actorUserId: string) {
   const parsed = scheduleInputSchema.parse(input);
   const amountCents = parseAmountToCents(parsed.amount);
   if (amountCents === null || amountCents <= 0) {
-    throw new Error("Invalid schedule amount");
+    throw new ValidationError("Invalid schedule amount");
   }
 
   const tracker = await getTrackerById(parsed.trackerId);
   if (!tracker) {
-    throw new Error("Tracker not found");
+    throw new NotFoundError("Tracker not found");
   }
   if (!tracker.isActive) {
-    throw new Error("Tracker is archived and cannot be modified");
+    throw new ConflictError("Tracker is archived and cannot be modified");
   }
 
   await validateScheduleReferences(
@@ -265,11 +266,11 @@ export async function updateSchedule(scheduleId: string, input: unknown) {
   const schedule = rows[0];
 
   if (!schedule) {
-    throw new Error("Schedule not found");
+    throw new NotFoundError("Schedule not found");
   }
 
   if (!schedule.isActive && parsed.isActive === true && parsed.nextDueDate === undefined) {
-    throw new Error("Reactivating a schedule requires a new next due date");
+    throw new ConflictError("Reactivating a schedule requires a new next due date");
   }
 
   const nextDirection = parsed.direction ?? schedule.direction;
@@ -289,7 +290,7 @@ export async function updateSchedule(scheduleId: string, input: unknown) {
       : schedule.amountCents;
 
   if (amountCents === null || amountCents <= 0) {
-    throw new Error("Invalid schedule amount");
+    throw new ValidationError("Invalid schedule amount");
   }
 
   const [updated] = await db
@@ -324,15 +325,15 @@ export async function createTransactionFromSchedule(
   const schedule = await getScheduleRowById(scheduleId);
 
   if (!schedule) {
-    throw new Error("Schedule not found");
+    throw new NotFoundError("Schedule not found");
   }
 
   if (!schedule.isActive) {
-    throw new Error("Completed schedules cannot create transactions");
+    throw new ConflictError("Completed schedules cannot create transactions");
   }
 
   if (!schedule.categoryId || !schedule.payeeId || !schedule.categoryName || !schedule.payeeName) {
-    throw new Error("Schedule is incomplete and cannot create a transaction");
+    throw new ConflictError("Schedule is incomplete and cannot create a transaction");
   }
 
   const bookingDate = toDateInputValue(new Date());
@@ -388,11 +389,11 @@ export async function skipSchedule(scheduleId: string, actorUserId: string) {
   const schedule = await getScheduleRowById(scheduleId);
 
   if (!schedule) {
-    throw new Error("Schedule not found");
+    throw new NotFoundError("Schedule not found");
   }
 
   if (!schedule.isActive) {
-    throw new Error("Completed schedules cannot be skipped");
+    throw new ConflictError("Completed schedules cannot be skipped");
   }
 
   const skippedDate = toDateInputValue(new Date());

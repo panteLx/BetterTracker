@@ -4,17 +4,7 @@ import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
-import { conflict, forbidden, notFound, ok, serverError } from "@/lib/http";
-
-function mapScheduleError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Internal server error";
-
-  if (message.includes("cannot create")) {
-    return conflict(message);
-  }
-
-  return serverError(error);
-}
+import { conflict, forbidden, mapServiceError, notFound, ok } from "@/lib/http";
 
 export async function POST(
   request: Request,
@@ -43,6 +33,6 @@ export async function POST(
     const item = await createTransactionFromSchedule(id, access.user!.id);
     return ok({ item });
   } catch (error) {
-    return mapScheduleError(error);
+    return mapServiceError(error);
   }
 }
