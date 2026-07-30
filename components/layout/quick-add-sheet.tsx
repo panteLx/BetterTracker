@@ -46,6 +46,7 @@ type Tracker = {
   color: string;
   currency: string;
   isActive: boolean;
+  permission?: "owner" | "admin" | "write" | "read";
 };
 type Category = {
   id: string;
@@ -99,7 +100,9 @@ export function QuickAddSheet({
     enabled: open,
   });
   const trackers = trackersQuery.data?.items ?? [];
-  const selectableTrackers = trackers.filter((t) => t.isActive);
+  const selectableTrackers = trackers.filter(
+    (t) => t.isActive && t.permission !== "read",
+  );
   const preferredTrackerId = defaultTrackerId ?? recalledTrackerId;
   const preselected = selectableTrackers.some(
     (t) => t.id === preferredTrackerId,
@@ -430,7 +433,7 @@ export function QuickAddSheet({
                   />
 
                   <div className="space-y-2">
-                    <Label htmlFor="qa-tx-notes">Notizen</Label>
+                    <Label htmlFor="qa-tx-notes">Notizen (optional)</Label>
                     <Textarea
                       id="qa-tx-notes"
                       placeholder="Kurzer Kontext für die Buchung"

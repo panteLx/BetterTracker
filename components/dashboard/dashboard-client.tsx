@@ -287,6 +287,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   const currency = tracker?.currency || "EUR";
   const canManageTracker =
     tracker?.permission === "owner" || tracker?.permission === "admin";
+  const canCreateContent = tracker?.permission !== "read";
 
   const transactionsQuery = useQuery({
     queryKey: ["transactions", activeTrackerId],
@@ -407,7 +408,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         ["trackers"],
         (current) => ({
           items: sortTrackers(
-            [...(current?.items || []), { ...item, permission: "owner" as const }],
+            [
+              ...(current?.items || []),
+              { ...item, permission: "owner" as const },
+            ],
             locale,
           ),
         }),
@@ -448,23 +452,28 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         "trackers",
       ]);
 
-      queryClient.setQueryData<{ items: Tracker[] }>(["trackers"], (current) => {
-        if (!current) return current;
+      queryClient.setQueryData<{ items: Tracker[] }>(
+        ["trackers"],
+        (current) => {
+          if (!current) return current;
 
-        const trackerMap = new Map(current.items.map((item) => [item.id, item]));
-        const reorderedItems: Tracker[] = [];
+          const trackerMap = new Map(
+            current.items.map((item) => [item.id, item]),
+          );
+          const reorderedItems: Tracker[] = [];
 
-        for (const [index, trackerId] of trackerIds.entries()) {
-          const trackerItem = trackerMap.get(trackerId);
-          if (!trackerItem) {
-            continue;
+          for (const [index, trackerId] of trackerIds.entries()) {
+            const trackerItem = trackerMap.get(trackerId);
+            if (!trackerItem) {
+              continue;
+            }
+
+            reorderedItems.push({ ...trackerItem, sortOrder: index });
           }
 
-          reorderedItems.push({ ...trackerItem, sortOrder: index });
-        }
-
-        return { items: reorderedItems };
-      });
+          return { items: reorderedItems };
+        },
+      );
 
       return { previous };
     },
@@ -540,7 +549,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   }
 
   const schedulesBusy =
-    createScheduleTransactionMutation.isPending || skipScheduleMutation.isPending;
+    createScheduleTransactionMutation.isPending ||
+    skipScheduleMutation.isPending;
 
   if (!hasTrackers) {
     return (
@@ -625,7 +635,13 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             tone="inverse"
             icon={Wallet}
             value={
-              <Amount cents={trackerBalance} currency={currency} locale={locale} size="lg" tone="none" />
+              <Amount
+                cents={trackerBalance}
+                currency={currency}
+                locale={locale}
+                size="lg"
+                tone="none"
+              />
             }
             sublabel={
               forecast.projectedDeltaCents !== 0
@@ -638,14 +654,26 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             label="Einnahmen"
             icon={ArrowUpRight}
             value={
-              <Amount cents={totals.incomeCents} currency={currency} locale={locale} size="lg" className="text-income" />
+              <Amount
+                cents={totals.incomeCents}
+                currency={currency}
+                locale={locale}
+                size="lg"
+                className="text-income"
+              />
             }
           />
           <StatTile
             label="Ausgaben"
             icon={ArrowDownLeft}
             value={
-              <Amount cents={totals.expenseCents} currency={currency} locale={locale} size="lg" className="text-expense" />
+              <Amount
+                cents={totals.expenseCents}
+                currency={currency}
+                locale={locale}
+                size="lg"
+                className="text-expense"
+              />
             }
           />
           <StatTile
@@ -713,7 +741,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                           />
                         }
                         title={
-                          item.payeeName || item.customPayeeName || "Ohne Angabe"
+                          item.payeeName || item.customPayeeName || "Anonym"
                         }
                         subtitle={item.categoryName || "Ohne Kategorie"}
                         trailing={
@@ -754,9 +782,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                             categories={categoriesQuery.data?.items || []}
                             payees={payeesQuery.data?.items || []}
                             onCancel={trackerEdit.cancelEdit}
-                            onSubmit={() =>
-                              trackerEdit.submitEdit(item.id)
-                            }
+                            onSubmit={() => trackerEdit.submitEdit(item.id)}
                             isSaving={trackerEdit.updateMutation.isPending}
                           />
                         ) : null}
@@ -819,7 +845,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                         />
                       }
                       actions={
-                        tracker?.isActive ? (
+                        tracker?.isActive && canCreateContent ? (
                           <>
                             <Button
                               variant="ghost"
