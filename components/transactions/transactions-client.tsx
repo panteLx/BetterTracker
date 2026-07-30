@@ -274,7 +274,12 @@ export function TransactionsClient({
       }
       action={
         activeFilterCount > 0 ? (
-          <Button variant="outline" size="sm" shape="pill" onClick={resetFilters}>
+          <Button
+            variant="outline"
+            size="sm"
+            shape="pill"
+            onClick={resetFilters}
+          >
             <X className="h-3.5 w-3.5" />
             Filter zurücksetzen
           </Button>
@@ -533,9 +538,7 @@ export function TransactionsClient({
                         }
                       />
                     }
-                    title={
-                      item.payeeName || item.customPayeeName || "Ohne Angabe"
-                    }
+                    title={item.payeeName || item.customPayeeName || "Anonym"}
                     subtitle={[
                       item.categoryName || "Ohne Kategorie",
                       item.notes,
@@ -587,7 +590,7 @@ export function TransactionsClient({
                         {formatDateShort(item.date, locale)}
                       </TableCell>
                       <TableCell className="text-sm font-medium">
-                        {item.payeeName || item.customPayeeName || "Ohne Angabe"}
+                        {item.payeeName || item.customPayeeName || "Anonym"}
                       </TableCell>
                       <TableCell className="text-sm">
                         {item.categoryName || "—"}

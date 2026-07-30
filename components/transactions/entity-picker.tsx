@@ -77,7 +77,8 @@ export function EntityPicker({
         searchPlaceholder: "Kategorie suchen",
         emptyMessage: "Keine Kategorie gefunden.",
         createLabel: "Neue Kategorie anlegen",
-        namePlaceholder: direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt",
+        namePlaceholder:
+          direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt",
         toastCreated: "Kategorie angelegt",
         toastNameRequired: "Bitte einen Kategorienamen eingeben",
         toastCreateError: "Kategorie konnte nicht angelegt werden",
@@ -104,12 +105,11 @@ export function EntityPicker({
         ),
       }),
     onSuccess: ({ item }) => {
-      queryClient.setQueryData<{ items: (CreatedCategory | CreatedPayee)[] } | undefined>(
-        queryKey,
-        (current) => ({
-          items: sortByName([...(current?.items ?? []), item], locale),
-        }),
-      );
+      queryClient.setQueryData<
+        { items: (CreatedCategory | CreatedPayee)[] } | undefined
+      >(queryKey, (current) => ({
+        items: sortByName([...(current?.items ?? []), item], locale),
+      }));
       toast.success(copy.toastCreated);
       onValueChange(item.id);
       onCustomTextChange?.("");
@@ -118,7 +118,9 @@ export function EntityPicker({
       setOpen(false);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : copy.toastCreateError),
+      toast.error(
+        error instanceof Error ? error.message : copy.toastCreateError,
+      ),
   });
 
   function handleCreate() {
@@ -132,7 +134,10 @@ export function EntityPicker({
   const items = required
     ? options
     : [
-        { value: EMPTY_SELECT_VALUE, label: isCategory ? "Keine Kategorie" : "Kein Einzahler" },
+        {
+          value: EMPTY_SELECT_VALUE,
+          label: isCategory ? "Keine Kategorie" : "Anonym",
+        },
         ...options,
       ];
 
@@ -182,7 +187,10 @@ export function EntityPicker({
           mode === "create" ? (
             <div className="flex h-full flex-col gap-3 p-4 animate-in fade-in slide-in-from-bottom-1 duration-(--motion-duration-base)">
               <div className="space-y-1.5">
-                <Label htmlFor={`new-${kind}-name`} className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor={`new-${kind}-name`}
+                  className="text-xs text-muted-foreground"
+                >
                   Name
                 </Label>
                 <Input
@@ -231,7 +239,10 @@ export function EntityPicker({
       />
       {allowCustomText && !required ? (
         <div className="space-y-1.5">
-          <Label htmlFor="custom-payee" className="text-xs text-muted-foreground">
+          <Label
+            htmlFor="custom-payee"
+            className="text-xs text-muted-foreground"
+          >
             Oder einmaliger Freitext
           </Label>
           <Input

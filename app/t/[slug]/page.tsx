@@ -315,9 +315,7 @@ export default async function PublicTrackerPage({ params }: Props) {
                       }
                     />
                   }
-                  title={
-                    item.payeeName ?? item.customPayeeName ?? "Ohne Angabe"
-                  }
+                  title={item.payeeName ?? item.customPayeeName ?? "Anonym"}
                   subtitle={[item.categoryName ?? "Ohne Kategorie", item.notes]
                     .filter(Boolean)
                     .join(" · ")}

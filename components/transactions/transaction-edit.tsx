@@ -275,7 +275,7 @@ export function TransactionEditForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Notizen</Label>
+        <Label>Notizen (optional)</Label>
         <Textarea
           value={editState.notes}
           onChange={(event) =>
