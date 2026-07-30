@@ -19,8 +19,13 @@ import {
   ReferenceLine,
 } from "recharts";
 import {
+  ArrowDown,
+  ArrowUp,
   BarChart2,
+  Flame,
+  PiggyBank,
   Receipt,
+  Scale,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -38,7 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDateShort } from "@/lib/utils";
 import { useChartColors } from "@/lib/chart-colors";
 
 const GERMAN_MONTHS = [
@@ -77,18 +82,22 @@ type PayeeItem = {
   count: number;
 };
 
+type PeriodSummary = {
+  incomeCents: number;
+  expenseCents: number;
+  balanceCents: number;
+  transactionCount: number;
+};
+
 type StatisticsData = {
   year: number;
-  summary: {
-    incomeCents: number;
-    expenseCents: number;
-    balanceCents: number;
-    transactionCount: number;
-  };
+  summary: PeriodSummary;
+  previousYear: PeriodSummary;
   monthly: Array<{
     month: string;
     incomeCents: number;
     expenseCents: number;
+    transactionCount: number;
   }>;
   categories: {
     expense: CategoryBreakdownItem[];
@@ -102,6 +111,17 @@ type StatisticsData = {
     month: string;
     balanceCents: number;
   }>;
+  weekday: Array<{
+    weekday: string;
+    incomeCents: number;
+    expenseCents: number;
+  }>;
+  topExpense: {
+    amountCents: number;
+    date: string;
+    payeeName: string;
+    categoryName: string;
+  } | null;
 };
 
 type StatisticsClientProps = {
@@ -128,6 +148,52 @@ function DirectionFilter({
       value={value}
       onValueChange={onChange}
     />
+  );
+}
+
+/**
+ * "% ggü. Vorjahr" — sign and color read against `positiveIsGood`, so a
+ * shrinking expense shows green even though its number went down.
+ */
+function YoyDelta({
+  current,
+  previous,
+  positiveIsGood,
+}: {
+  current: number;
+  previous: number;
+  positiveIsGood: boolean;
+}) {
+  if (previous === 0) {
+    if (current === 0) return null;
+    return (
+      <span className="inline-flex items-center gap-1 text-muted-foreground">
+        Neu ggü. Vorjahr
+      </span>
+    );
+  }
+
+  const change = ((current - previous) / Math.abs(previous)) * 100;
+  const rounded = Math.round(change * 10) / 10;
+
+  if (rounded === 0) {
+    return <span className="text-muted-foreground">± 0 % ggü. Vorjahr</span>;
+  }
+
+  const isIncrease = rounded > 0;
+  const isGood = positiveIsGood ? isIncrease : !isIncrease;
+  const Icon = isIncrease ? ArrowUp : ArrowDown;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5",
+        isGood ? "text-income" : "text-expense",
+      )}
+    >
+      <Icon className="h-3 w-3 shrink-0" />
+      {Math.abs(rounded)} % ggü. Vorjahr
+    </span>
   );
 }
 
@@ -380,6 +446,54 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
     [stats],
   );
 
+  const weekdayChartData = useMemo(
+    () =>
+      stats?.weekday.map((entry) => ({
+        name: entry.weekday,
+        Einnahmen: entry.incomeCents,
+        Ausgaben: entry.expenseCents,
+      })) ?? [],
+    [stats],
+  );
+
+  const yearComparisonData = useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        name: "Einnahmen",
+        "Dieses Jahr": stats.summary.incomeCents,
+        Vorjahr: stats.previousYear.incomeCents,
+      },
+      {
+        name: "Ausgaben",
+        "Dieses Jahr": stats.summary.expenseCents,
+        Vorjahr: stats.previousYear.expenseCents,
+      },
+      {
+        name: "Saldo",
+        "Dieses Jahr": stats.summary.balanceCents,
+        Vorjahr: stats.previousYear.balanceCents,
+      },
+    ];
+  }, [stats]);
+
+  const savingsRate =
+    stats && stats.summary.incomeCents > 0
+      ? Math.round(
+          ((stats.summary.incomeCents - stats.summary.expenseCents) /
+            stats.summary.incomeCents) *
+            1000,
+        ) / 10
+      : null;
+
+  const avgTransactionCents =
+    stats && stats.summary.transactionCount > 0
+      ? Math.round(
+          (stats.summary.incomeCents + stats.summary.expenseCents) /
+            stats.summary.transactionCount,
+        )
+      : 0;
+
   const colors = useChartColors();
   const hasData = (stats?.summary.transactionCount ?? 0) > 0;
   const isLoading = trackersLoading || (!!activeTrackerId && statsLoading);
@@ -464,6 +578,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   tone="none"
                 />
               }
+              sublabel={
+                <YoyDelta
+                  current={stats!.summary.balanceCents}
+                  previous={stats!.previousYear.balanceCents}
+                  positiveIsGood
+                />
+              }
               className="col-span-2 lg:col-span-1"
             />
             <StatTile
@@ -476,6 +597,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   locale={locale}
                   size="lg"
                   className="text-income"
+                />
+              }
+              sublabel={
+                <YoyDelta
+                  current={stats!.summary.incomeCents}
+                  previous={stats!.previousYear.incomeCents}
+                  positiveIsGood
                 />
               }
             />
@@ -491,11 +619,71 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   className="text-expense"
                 />
               }
+              sublabel={
+                <YoyDelta
+                  current={stats!.summary.expenseCents}
+                  previous={stats!.previousYear.expenseCents}
+                  positiveIsGood={false}
+                />
+              }
             />
             <StatTile
               label="Buchungen"
               icon={Receipt}
               value={stats!.summary.transactionCount}
+              sublabel={
+                <YoyDelta
+                  current={stats!.summary.transactionCount}
+                  previous={stats!.previousYear.transactionCount}
+                  positiveIsGood
+                />
+              }
+              className="col-span-2 lg:col-span-1"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <StatTile
+              label="Sparquote"
+              icon={PiggyBank}
+              value={savingsRate === null ? "–" : `${savingsRate} %`}
+              helperText="Anteil der Einnahmen, der übrig bleibt"
+            />
+            <StatTile
+              label="Ø pro Buchung"
+              icon={Scale}
+              value={
+                <Amount
+                  cents={avgTransactionCents}
+                  currency={currency}
+                  locale={locale}
+                  size="lg"
+                  tone="none"
+                />
+              }
+              helperText="Über Einnahmen und Ausgaben hinweg"
+            />
+            <StatTile
+              label="Größte Ausgabe"
+              icon={Flame}
+              value={
+                stats!.topExpense ? (
+                  <Amount
+                    cents={stats!.topExpense.amountCents}
+                    currency={currency}
+                    locale={locale}
+                    size="lg"
+                    direction="expense"
+                  />
+                ) : (
+                  "–"
+                )
+              }
+              helperText={
+                stats!.topExpense
+                  ? `${stats!.topExpense.payeeName} · ${formatDateShort(stats!.topExpense.date, locale)}`
+                  : "Keine Ausgaben in diesem Jahr"
+              }
               className="col-span-2 lg:col-span-1"
             />
           </div>
@@ -554,6 +742,112 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               </BarChart>
             </ResponsiveContainer>
           </SectionCard>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <SectionCard title="Wochentag-Muster">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={weekdayChartData}
+                  margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+                  barGap={2}
+                >
+                  <CartesianGrid {...GRID_PROPS} />
+                  <XAxis
+                    dataKey="name"
+                    tick={AXIS_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis
+                    tickFormatter={(value) =>
+                      formatCurrency(value, currency, locale)
+                    }
+                    tick={AXIS_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    width={80}
+                    className="fill-muted-foreground"
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)" }}
+                    content={
+                      <ChartTooltipCurrency currency={currency} locale={locale} />
+                    }
+                  />
+                  <Bar
+                    dataKey="Einnahmen"
+                    fill={colors.income}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={18}
+                  />
+                  <Bar
+                    dataKey="Ausgaben"
+                    fill={colors.expense}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={18}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </SectionCard>
+
+            <SectionCard title="Jahresvergleich">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={yearComparisonData}
+                  margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+                  barGap={2}
+                >
+                  <CartesianGrid {...GRID_PROPS} />
+                  <XAxis
+                    dataKey="name"
+                    tick={AXIS_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis
+                    tickFormatter={(value) =>
+                      formatCurrency(value, currency, locale)
+                    }
+                    tick={AXIS_TICK}
+                    axisLine={false}
+                    tickLine={false}
+                    width={80}
+                    className="fill-muted-foreground"
+                  />
+                  <ReferenceLine y={0} stroke="var(--border-strong)" />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)" }}
+                    content={
+                      <ChartTooltipCurrency currency={currency} locale={locale} />
+                    }
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => (
+                      <span className="text-muted-foreground">{value}</span>
+                    )}
+                  />
+                  <Bar
+                    dataKey="Vorjahr"
+                    fill="var(--muted-foreground)"
+                    fillOpacity={0.35}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={28}
+                  />
+                  <Bar
+                    dataKey="Dieses Jahr"
+                    fill={colors.chart1}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={28}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </SectionCard>
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <SectionCard

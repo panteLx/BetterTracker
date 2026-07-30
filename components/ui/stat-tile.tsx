@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { MicroLabel } from "@/components/ui/micro-label";
+import { StatTileTrend } from "@/components/ui/stat-tile-trend";
 
 /**
  * A single number with its name above it. Deliberately plain: no gradient, no
@@ -29,6 +30,9 @@ type StatTileProps = {
   /** One line under the number — a forecast, a comparison. */
   sublabel?: React.ReactNode;
   helperText?: string;
+  /** A quiet trailing sparkline — recent history, not another headline number. */
+  trend?: number[];
+  trendColor?: string;
   className?: string;
 };
 
@@ -39,10 +43,15 @@ export function StatTile({
   tone = "default",
   sublabel,
   helperText,
+  trend,
+  trendColor,
   className,
 }: StatTileProps) {
   const styles = toneStyles[tone];
   const inverse = tone === "inverse";
+  const hasTrend = trend && trend.length > 1;
+  const sparklineColor =
+    trendColor ?? (inverse ? "var(--primary-foreground)" : "var(--foreground)");
 
   return (
     <div
@@ -100,6 +109,10 @@ export function StatTile({
         >
           {helperText}
         </p>
+      ) : null}
+
+      {hasTrend ? (
+        <StatTileTrend trend={trend} color={sparklineColor} inverse={inverse} />
       ) : null}
     </div>
   );
