@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/sheet";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Switch } from "@/components/ui/switch";
+import { useChartColors } from "@/lib/chart-colors";
 import { fetchJson } from "@/lib/client-fetch";
 import { rememberTracker } from "@/lib/last-tracker";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
@@ -110,7 +111,18 @@ type ScheduleForecastResponse = {
   items: ScheduleForecastItem[];
 };
 
+/** Only the slice of /api/statistics the dashboard needs for its tile sparklines. */
+type StatisticsTrendResponse = {
+  monthly: Array<{
+    incomeCents: number;
+    expenseCents: number;
+    transactionCount: number;
+  }>;
+  balanceTrend: Array<{ balanceCents: number }>;
+};
+
 const RECENT_TRANSACTION_LIMIT = 8;
+const TREND_MONTHS = 6;
 
 function sortTrackers(items: Tracker[], locale: string) {
   return [...items].sort((left, right) => {
@@ -325,6 +337,43 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       ),
     enabled: Boolean(activeTrackerId),
   });
+
+  const currentYear = new Date().getFullYear();
+  const currentMonthIndex = new Date().getMonth();
+
+  // Shares its query key with the statistics page, so the sparklines below
+  // are usually already warm from cache rather than a fresh request.
+  const trendQuery = useQuery({
+    queryKey: ["statistics", activeTrackerId, currentYear],
+    queryFn: () =>
+      fetchJson<StatisticsTrendResponse>(
+        `/api/statistics?trackerId=${activeTrackerId}&year=${currentYear}`,
+      ),
+    enabled: Boolean(activeTrackerId),
+  });
+
+  const monthsToDate = (trendQuery.data?.monthly ?? []).slice(
+    0,
+    currentMonthIndex + 1,
+  );
+  const balanceToDate = (trendQuery.data?.balanceTrend ?? []).slice(
+    0,
+    currentMonthIndex + 1,
+  );
+  const balanceTrend = balanceToDate
+    .slice(-TREND_MONTHS)
+    .map((entry) => entry.balanceCents);
+  const incomeTrend = monthsToDate
+    .slice(-TREND_MONTHS)
+    .map((entry) => entry.incomeCents);
+  const expenseTrend = monthsToDate
+    .slice(-TREND_MONTHS)
+    .map((entry) => entry.expenseCents);
+  const transactionTrend = monthsToDate
+    .slice(-TREND_MONTHS)
+    .map((entry) => entry.transactionCount);
+
+  const chartColors = useChartColors();
 
   const totals = transactionsQuery.data?.totals ?? {
     incomeCents: 0,
@@ -648,6 +697,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 ? `In ${forecast.days} Tagen etwa ${new Intl.NumberFormat(locale, { style: "currency", currency }).format(forecast.projectedBalanceCents / 100)}`
                 : undefined
             }
+            trend={balanceTrend}
             className="col-span-2 lg:col-span-1"
           />
           <StatTile
@@ -662,6 +712,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 className="text-income"
               />
             }
+            trend={incomeTrend}
+            trendColor={chartColors.income}
           />
           <StatTile
             label="Ausgaben"
@@ -675,6 +727,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 className="text-expense"
               />
             }
+            trend={expenseTrend}
+            trendColor={chartColors.expense}
           />
           <StatTile
             label="Buchungen"
@@ -685,6 +739,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 ? `${forecast.items.length} geplant in ${forecast.days} Tagen`
                 : undefined
             }
+            trend={transactionTrend}
             className="col-span-2 lg:col-span-1"
           />
         </div>
