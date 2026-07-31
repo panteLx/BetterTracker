@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -103,14 +104,33 @@ export function TransactionsClient({
   currentUserId,
 }: TransactionsClientProps) {
   const isMobile = useIsMobile();
-  const [selectedTracker, setSelectedTracker] = useState("");
-  const [query, setQuery] = useState("");
+  // Deep-links (e.g. from the command palette) land on the matching filter.
+  // Typing afterwards is purely local state, not synced back to the URL —
+  // but a *new* navigation (different q/tracker, including palette searches
+  // fired while already on this page) must still take effect, so state is
+  // re-seeded whenever the URL's query string actually changes. Comparing
+  // during render rather than in an effect avoids an extra commit; see
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const searchParams = useSearchParams();
+  const paramsKey = searchParams.toString();
+  const [seenParamsKey, setSeenParamsKey] = useState(paramsKey);
+  const [selectedTracker, setSelectedTracker] = useState(
+    () => searchParams.get("tracker") || "",
+  );
+  const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [direction, setDirection] = useState(ALL_FILTER_VALUE);
   const [categoryId, setCategoryId] = useState(ALL_FILTER_VALUE);
   const [payeeId, setPayeeId] = useState(ALL_FILTER_VALUE);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
+
+  if (paramsKey !== seenParamsKey) {
+    setSeenParamsKey(paramsKey);
+    setSelectedTracker(searchParams.get("tracker") || "");
+    setQuery(searchParams.get("q") || "");
+    setPage(1);
+  }
   const storedView = useLocalStorageValue(VIEW_STORAGE_KEY);
   const view: ViewMode = storedView === "table" ? "table" : "list";
 

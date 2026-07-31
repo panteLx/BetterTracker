@@ -10,3 +10,4 @@ data/*
 coverage
 Dockerfile*
 README.md
+.playwright-mcp

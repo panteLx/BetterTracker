@@ -13,8 +13,10 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Search,
   SkipForward,
   Trash2,
+  X,
 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import {
@@ -125,6 +127,8 @@ type SchedulesClientProps = {
   currentUserId: string;
 };
 
+const ALL_FILTER_VALUE = "all";
+
 function getScheduleStatusLabel(status: Schedule["status"]) {
   if (status === "overdue") return "Überfällig";
   if (status === "due") return "Fällig";
@@ -166,6 +170,12 @@ export function SchedulesClient({
   const [reactivationDate, setReactivationDate] = useState(
     toDateInputValue(new Date()),
   );
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterDirection, setFilterDirection] = useState(ALL_FILTER_VALUE);
+  const [filterCategoryId, setFilterCategoryId] = useState(ALL_FILTER_VALUE);
+  const [filterPayeeId, setFilterPayeeId] = useState(ALL_FILTER_VALUE);
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
 
   const trackersQuery = useQuery({
     queryKey: ["trackers"],
@@ -229,6 +239,9 @@ export function SchedulesClient({
   );
 
   const activePayees = (payeesQuery.data?.items || []).filter(
+    (item) => item.isActive,
+  );
+  const allActiveCategories = (categoriesQuery.data?.items || []).filter(
     (item) => item.isActive,
   );
   const parsedIntervalValue = Number(intervalValue);
@@ -477,11 +490,63 @@ export function SchedulesClient({
     });
   }
 
+  function matchesFilters(item: Schedule) {
+    if (filterDirection !== ALL_FILTER_VALUE && item.direction !== filterDirection) {
+      return false;
+    }
+    if (filterCategoryId !== ALL_FILTER_VALUE && item.categoryId !== filterCategoryId) {
+      return false;
+    }
+    if (filterPayeeId !== ALL_FILTER_VALUE && item.payeeId !== filterPayeeId) {
+      return false;
+    }
+    if (filterFrom && item.nextDueDate < filterFrom) {
+      return false;
+    }
+    if (filterTo && item.nextDueDate > filterTo) {
+      return false;
+    }
+    if (filterQuery.trim()) {
+      const haystack = [item.name, item.payeeName, item.categoryName, item.notesTemplate]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(filterQuery.trim().toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function resetFilters() {
+    setFilterQuery("");
+    setFilterDirection(ALL_FILTER_VALUE);
+    setFilterCategoryId(ALL_FILTER_VALUE);
+    setFilterPayeeId(ALL_FILTER_VALUE);
+    setFilterFrom("");
+    setFilterTo("");
+  }
+
+  const activeFilterCount = [
+    filterQuery.trim(),
+    filterDirection !== ALL_FILTER_VALUE ? filterDirection : "",
+    filterCategoryId !== ALL_FILTER_VALUE ? filterCategoryId : "",
+    filterPayeeId !== ALL_FILTER_VALUE ? filterPayeeId : "",
+    filterFrom,
+    filterTo,
+  ].filter(Boolean).length;
+
   const currency = tracker?.currency || "EUR";
   const trackers = trackersQuery.data?.items || [];
-  const dueCount = dueQuery.data?.items.length ?? 0;
-  const upcomingCount = upcomingQuery.data?.items.length ?? 0;
-  const inactiveCount = inactiveQuery.data?.items.length ?? 0;
+  const dueItems = dueQuery.data?.items ?? [];
+  const upcomingItems = upcomingQuery.data?.items ?? [];
+  const inactiveItems = inactiveQuery.data?.items ?? [];
+  const filteredDueItems = dueItems.filter(matchesFilters);
+  const filteredUpcomingItems = upcomingItems.filter(matchesFilters);
+  const filteredInactiveItems = inactiveItems.filter(matchesFilters);
+  const dueCount = dueItems.length;
+  const upcomingCount = upcomingItems.length;
+  const inactiveCount = inactiveItems.length;
 
   function renderEditPanel(item: Schedule) {
     if (!editState) return null;
@@ -704,8 +769,29 @@ export function SchedulesClient({
     items: Schedule[],
     emptyTitle: string,
     emptyText: string,
+    unfilteredCount: number,
   ) {
     if (items.length === 0) {
+      if (activeFilterCount > 0 && unfilteredCount > 0) {
+        return (
+          <EmptyState
+            icon={CalendarClock}
+            title="Keine Treffer für diese Filter"
+            description="Lockere die Filter, um mehr zu sehen."
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                shape="pill"
+                onClick={resetFilters}
+              >
+                <X className="h-3.5 w-3.5" />
+                Filter zurücksetzen
+              </Button>
+            }
+          />
+        );
+      }
       return (
         <EmptyState
           icon={CalendarClock}
@@ -887,12 +973,16 @@ export function SchedulesClient({
   }
 
   const tabs = [
-    { value: "due" as const, label: "Fällig", count: dueCount },
-    { value: "upcoming" as const, label: "Demnächst", count: upcomingCount },
+    { value: "due" as const, label: "Fällig", count: filteredDueItems.length },
+    {
+      value: "upcoming" as const,
+      label: "Demnächst",
+      count: filteredUpcomingItems.length,
+    },
     {
       value: "inactive" as const,
       label: "Abgeschlossen",
-      count: inactiveCount,
+      count: filteredInactiveItems.length,
     },
   ];
 
@@ -924,9 +1014,107 @@ export function SchedulesClient({
         />
       </div>
 
+      {/* Filters stay on screen, mirroring the transactions page: what you
+          are looking at is never hidden behind a disclosure you have to
+          remember to open. */}
+      <div className="space-y-3 rounded-xl border border-border bg-card p-3 shadow-card">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-56 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Name, Kategorie, Einzahler oder Notiz suchen"
+              aria-label="Termine durchsuchen"
+              value={filterQuery}
+              onChange={(event) => setFilterQuery(event.target.value)}
+            />
+          </div>
+
+          <Segmented
+            label="Nach Typ filtern"
+            size={isMobile ? "sm" : "md"}
+            className="min-w-0 flex-1 sm:flex-none"
+            items={[
+              { value: ALL_FILTER_VALUE, label: "Alle" },
+              { value: "expense", label: "Ausgaben" },
+              { value: "income", label: "Einnahmen" },
+            ]}
+            value={filterDirection}
+            onValueChange={setFilterDirection}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filterCategoryId} onValueChange={setFilterCategoryId}>
+            <SelectTrigger
+              aria-label="Nach Kategorie filtern"
+              className="min-w-36 flex-1 sm:w-44 sm:flex-none"
+            >
+              <SelectValue placeholder="Alle Kategorien" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
+              {allActiveCategories.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPayeeId} onValueChange={setFilterPayeeId}>
+            <SelectTrigger
+              aria-label="Nach Einzahler filtern"
+              className="min-w-36 flex-1 sm:w-44 sm:flex-none"
+            >
+              <SelectValue placeholder="Alle Einzahler" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
+              {activePayees.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex min-w-56 flex-1 items-center gap-2 sm:flex-none">
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={filterFrom}
+              onChange={setFilterFrom}
+              placeholder="Von"
+              aria-label="Startdatum für Datumsfilter"
+            />
+            <span className="text-muted-foreground">–</span>
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={filterTo}
+              onChange={setFilterTo}
+              placeholder="Bis"
+              aria-label="Enddatum für Datumsfilter"
+            />
+          </div>
+
+          {activeFilterCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              shape="pill"
+              className="ml-auto"
+              onClick={resetFilters}
+            >
+              <X className="h-3.5 w-3.5" />
+              {activeFilterCount} Filter zurücksetzen
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
       <div className="space-y-4">
         <Segmented
-          label="Termine filtern"
+          label="Nach Status filtern"
           items={tabs.map((entry) => ({
             value: entry.value,
             label: `${entry.label} (${entry.count})`,
@@ -937,23 +1125,26 @@ export function SchedulesClient({
 
         {tab === "due"
           ? renderItems(
-              dueQuery.data?.items || [],
+              filteredDueItems,
               "Nichts fällig",
               "Aktuell steht kein Termin zur Buchung an.",
+              dueItems.length,
             )
           : null}
         {tab === "upcoming"
           ? renderItems(
-              upcomingQuery.data?.items || [],
+              filteredUpcomingItems,
               "Nichts in Sicht",
               "Es sind keine kommenden Termine angelegt.",
+              upcomingItems.length,
             )
           : null}
         {tab === "inactive"
           ? renderItems(
-              inactiveQuery.data?.items || [],
+              filteredInactiveItems,
               "Noch nichts abgeschlossen",
               "Abgeschlossene und archivierte Termine landen hier.",
+              inactiveItems.length,
             )
           : null}
       </div>
