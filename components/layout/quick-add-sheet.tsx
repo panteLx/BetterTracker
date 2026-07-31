@@ -60,17 +60,29 @@ export function QuickAddSheet({
   open,
   onOpenChange,
   defaultTrackerId,
+  initialStep = "pick",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Preselects a tracker. Defaults to the one you last worked in. Ignored if
    *  that tracker no longer exists or has been archived. */
   defaultTrackerId?: string;
+  /** Skips the "Buchung or Termin" picker and opens straight into that form. */
+  initialStep?: Step;
 }) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const [step, setStep] = useState<Step>("pick");
+  const [step, setStep] = useState<Step>(initialStep);
   const [done, setDone] = useState<Step | null>(null);
+
+  // Jumps straight to `initialStep` whenever the sheet opens, without
+  // resetting on every re-render — adjusting state during render (rather
+  // than in an effect) per https://react.dev/learn/you-might-not-need-an-effect.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setStep(initialStep);
+  }
 
   // Shared state
   const [selectedTrackerId, setSelectedTrackerId] = useState("");
