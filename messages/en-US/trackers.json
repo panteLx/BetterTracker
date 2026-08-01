@@ -1,0 +1,164 @@
+{
+  "settingsPage": {
+    "title": "Tracker settings",
+    "description": "Base data, sharing, categories and payees for this tracker."
+  },
+  "categoryType": {
+    "expense": "Expense",
+    "income": "Income",
+    "transfer": "Transfer"
+  },
+  "toast": {
+    "trackerSaved": "Tracker saved",
+    "trackerSaveFailed": "Tracker could not be saved",
+    "trackerHidden": "Tracker hidden",
+    "trackerHideFailed": "Tracker could not be hidden",
+    "categoryDeleted": "Category deleted",
+    "categoryDeleteFailed": "Category could not be deleted",
+    "payeeDeleted": "Payee deleted",
+    "payeeDeleteFailed": "Payee could not be deleted",
+    "categoryReactivated": "Category reactivated",
+    "categoryArchived": "Category archived",
+    "payeeReactivated": "Payee reactivated",
+    "payeeArchived": "Payee archived",
+    "actionFailed": "Action failed",
+    "memberAdded": "Share added",
+    "memberAddFailed": "Share could not be created",
+    "memberUpdated": "Share updated",
+    "memberUpdateFailed": "Share could not be updated",
+    "memberRemoved": "Share removed",
+    "memberRemoveFailed": "Share could not be removed",
+    "noActiveTracker": "No active tracker",
+    "nameRequired": "Please enter a tracker name"
+  },
+  "confirm": {
+    "deleteCategory": "Really delete category \"{name}\"?",
+    "deletePayee": "Really delete payee \"{name}\"?",
+    "removeMember": "Really remove the share for \"{label}\"?",
+    "deleteTracker": "Really delete tracker \"{name}\"? It can only be restored by an administrator."
+  },
+  "empty": {
+    "noTrackerTitle": "No tracker available",
+    "noTrackerDescription": "Create a tracker first before managing its settings.",
+    "backToTransactions": "Back to transactions",
+    "noCategories": "No categories yet.",
+    "noPayees": "No payees yet."
+  },
+  "back": "Back",
+  "form": {
+    "sectionTitle": "Tracker settings",
+    "name": "Name",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional context for this tracker",
+    "color": "Color",
+    "currency": "Currency",
+    "webhookUrl": "Discord webhook URL",
+    "pingRoleId": "Discord ping role ID",
+    "optional": "Optional",
+    "discordDebug": "Discord debug",
+    "discordDebugDescription": "Send extra info along.",
+    "archiveTracker": "Archive tracker",
+    "archiveTrackerDescription": "No new transactions can be created.",
+    "saving": "Saving...",
+    "save": "Save tracker"
+  },
+  "dangerZone": {
+    "title": "Danger zone",
+    "deleting": "Deleting…",
+    "delete": "Delete tracker",
+    "note": "This action cannot be undone by users."
+  },
+  "members": {
+    "title": "Sharing",
+    "searchPlaceholder": "Search name or email",
+    "permissionRead": "Read",
+    "permissionWrite": "Write",
+    "permissionAdmin": "Admin",
+    "grant": "Share",
+    "noResults": "No matching users found.",
+    "searchHint": "Enter at least 2 characters.",
+    "owner": "Owner",
+    "remove": "Remove",
+    "removeAriaLabel": "Remove share for {email}"
+  },
+  "csvImportCard": {
+    "title": "CSV import",
+    "importButton": "Import",
+    "description": "Import transactions from Actual Budget."
+  },
+  "categories": {
+    "title": "Categories",
+    "archived": "Archived",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "archiveAriaLabel": "Archive category {name}",
+    "reactivateAriaLabel": "Reactivate category {name}",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete category {name}"
+  },
+  "payees": {
+    "title": "Payees",
+    "archived": "Archived",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "archiveAriaLabel": "Archive payee {name}",
+    "reactivateAriaLabel": "Reactivate payee {name}",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete payee {name}"
+  },
+  "publicShare": {
+    "title": "Share publicly",
+    "description": "Read access for guests without signing in.",
+    "copyLinkAriaLabel": "Copy link"
+  },
+  "colorPicker": {
+    "selectAriaLabel": "Select color",
+    "title": "Tracker color",
+    "presetAriaLabel": "Color {hex}"
+  },
+  "pillRow": {
+    "archivedLabel": "{name} (Archived)",
+    "selectLabel": "Select tracker"
+  },
+  "csvImport": {
+    "dialogTitle": "CSV import (Actual Budget)",
+    "descriptionUpload": "Choose an exported CSV file from Actual Budget.",
+    "descriptionConfigure": "{count} rows detected – choose the columns to import.",
+    "descriptionResult": "Import complete.",
+    "cancel": "Cancel",
+    "back": "Back",
+    "importingButton": "Importing…",
+    "importButton": "Import {count} rows",
+    "close": "Close",
+    "errorTooFewRows": "The file contains too few rows.",
+    "errorMissingColumns": "Missing required columns: {columns}",
+    "errorImportFailed": "Import failed",
+    "errorUnknown": "Unknown error",
+    "upload": {
+      "cta": "Choose CSV file",
+      "hint": "Actual Budget export (.csv)",
+      "expectedColumnsLabel": "Expected columns:",
+      "expectedColumnsValue": "Account, Date, Payee, Notes, Category, Amount",
+      "ignoredColumnsNote": "Split_Amount and Cleared are ignored."
+    },
+    "configure": {
+      "columnsHeading": "Import columns",
+      "columnAccount": "Account",
+      "columnPayee": "Payee",
+      "columnNotes": "Notes",
+      "columnCategory": "Category",
+      "alwaysImportedNote": "Date and amount are always imported.",
+      "previewHeading": "Preview (first {shown} of {total} rows)",
+      "columnDate": "Date",
+      "columnAmount": "Amount"
+    },
+    "result": {
+      "failed": "Import failed",
+      "transactionsImported": "{count, plural, one {# transaction imported} other {# transactions imported}}",
+      "categoriesCreated": "{count, plural, one {# new category created} other {# new categories created}}",
+      "payeesCreated": "{count, plural, one {# new payee created} other {# new payees created}}",
+      "rowsSkipped": "{count, plural, one {# row skipped} other {# rows skipped}}",
+      "skippedRowsHeading": "Skipped rows"
+    }
+  }
+}

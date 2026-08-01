@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { getTrackerMemberByUser } from "@/lib/auth/tracker-access";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
@@ -14,6 +15,8 @@ export async function POST(
   const access = await requireAdmin(request.headers);
   if (access.response) return access.response;
 
+  const t = await getTranslations("Errors");
+
   try {
     const trackerRows = await db.select().from(trackers).where(eq(trackers.id, id)).limit(1);
     if (!trackerRows[0]) {
@@ -22,7 +25,7 @@ export async function POST(
 
     const existing = await getTrackerMemberByUser(id, access.user!.id);
     if (existing?.permission === "owner") {
-      return badRequest("Tracker gehoert dir bereits");
+      return badRequest(t("api.trackerAlreadyOwned"));
     }
 
     let item;

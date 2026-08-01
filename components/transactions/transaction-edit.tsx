@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
@@ -47,6 +48,7 @@ type EditablePayee = { id: string; name: string };
  */
 export function useTransactionEdit(trackerId: string) {
   const queryClient = useQueryClient();
+  const t = useTranslations("Transactions.edit");
   const [editingTransactionId, setEditingTransactionId] = useState("");
   const [editState, setEditState] = useState<EditTransactionState | null>(null);
 
@@ -63,7 +65,7 @@ export function useTransactionEdit(trackerId: string) {
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Transaktion aktualisiert");
+      toast.success(t("updated"));
       setEditingTransactionId("");
       setEditState(null);
       queryClient.invalidateQueries({ queryKey: ["transactions", trackerId] });
@@ -72,7 +74,7 @@ export function useTransactionEdit(trackerId: string) {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen",
+        error instanceof Error ? error.message : t("updateFailed"),
       );
     },
   });
@@ -81,12 +83,12 @@ export function useTransactionEdit(trackerId: string) {
     mutationFn: (id: string) =>
       fetchJson(`/api/transactions/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Transaktion gelöscht");
+      toast.success(t("deleted"));
       queryClient.invalidateQueries({ queryKey: ["transactions", trackerId] });
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
+        error instanceof Error ? error.message : t("deleteFailed"),
       );
     },
   });
@@ -121,7 +123,7 @@ export function useTransactionEdit(trackerId: string) {
     if (!editState) return;
 
     if (!editState.date || !editState.amount.trim() || !editState.categoryId) {
-      toast.error("Datum, Betrag und Kategorie sind Pflichtfelder");
+      toast.error(t("requiredFields"));
       return;
     }
 
@@ -178,6 +180,7 @@ export function TransactionEditForm({
   onSubmit,
   isSaving,
 }: TransactionEditFormProps) {
+  const t = useTranslations("Transactions.edit");
   const filteredCategories = categories.filter(
     (category) =>
       category.type === editState.direction || category.type === "transfer",
@@ -187,7 +190,7 @@ export function TransactionEditForm({
     <div className="grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Datum</Label>
+          <Label>{t("dateLabel")}</Label>
           <DatePicker
             value={editState.date}
             onChange={(value) =>
@@ -196,7 +199,7 @@ export function TransactionEditForm({
           />
         </div>
         <div className="space-y-2">
-          <Label>Betrag</Label>
+          <Label>{t("amountLabel")}</Label>
           <Input
             value={editState.amount}
             onChange={(event) =>
@@ -205,14 +208,14 @@ export function TransactionEditForm({
                 amount: event.target.value,
               }))
             }
-            placeholder="12,50"
+            placeholder={t("amountPlaceholder")}
             inputMode="decimal"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>Typ</Label>
+        <Label>{t("typeLabel")}</Label>
         <DirectionToggle
           size="sm"
           value={editState.direction}
@@ -231,7 +234,7 @@ export function TransactionEditForm({
           kind="category"
           trackerId={trackerId}
           locale={locale}
-          label="Kategorie"
+          label={t("categoryLabel")}
           options={filteredCategories.map((category) => ({
             value: category.id,
             label: category.name,
@@ -248,7 +251,7 @@ export function TransactionEditForm({
           kind="payee"
           trackerId={trackerId}
           locale={locale}
-          label="Einzahler"
+          label={t("payeeLabel")}
           options={payees.map((payee) => ({
             value: payee.id,
             label: payee.name,
@@ -275,7 +278,7 @@ export function TransactionEditForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Notizen (optional)</Label>
+        <Label>{t("notesLabel")}</Label>
         <Textarea
           value={editState.notes}
           onChange={(event) =>
@@ -285,16 +288,16 @@ export function TransactionEditForm({
             }))
           }
           rows={2}
-          placeholder="Optional"
+          placeholder={t("notesPlaceholder")}
         />
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-          Abbrechen
+          {t("cancel")}
         </Button>
         <Button type="button" size="sm" onClick={onSubmit} disabled={isSaving}>
-          {isSaving ? "Speichert..." : "Speichern"}
+          {isSaving ? t("saving") : t("save")}
         </Button>
       </div>
     </div>
@@ -320,6 +323,7 @@ export function TransactionRowActions({
   onToggleEdit,
   onDelete,
 }: TransactionRowActionsProps) {
+  const t = useTranslations("Transactions.rowActions");
   if (isArchived || (!item.canEdit && !item.canDelete)) return null;
 
   return (
@@ -329,8 +333,10 @@ export function TransactionRowActions({
           variant="ghost"
           size="icon-sm"
           shape="pill"
-          title="Bearbeiten"
-          aria-label={`Buchung vom ${formatDateShort(item.date, locale)} bearbeiten`}
+          title={t("editTitle")}
+          aria-label={t("editAriaLabel", {
+            date: formatDateShort(item.date, locale),
+          })}
           disabled={isSaving}
           onClick={onToggleEdit}
         >
@@ -342,8 +348,10 @@ export function TransactionRowActions({
           variant="ghost"
           size="icon-sm"
           shape="pill"
-          title="Löschen"
-          aria-label={`Buchung vom ${formatDateShort(item.date, locale)} löschen`}
+          title={t("deleteTitle")}
+          aria-label={t("deleteAriaLabel", {
+            date: formatDateShort(item.date, locale),
+          })}
           className="text-expense hover:bg-expense-muted hover:text-expense"
           disabled={isDeleting}
           onClick={onDelete}

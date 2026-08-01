@@ -1,0 +1,82 @@
+{
+  "loading": "Loading…",
+  "close": "Close",
+  "appDescription": "Track your spending and stay on top of your finances with BetterTracker.",
+  "direction": {
+    "expense": "Expense",
+    "expenseHint": "Subscriptions, rent, fixed costs",
+    "income": "Income",
+    "incomeHint": "Salary, credits"
+  },
+  "datePicker": {
+    "placeholder": "Pick a date"
+  },
+  "frequency": {
+    "monthly": "Monthly",
+    "monthlyInterval": "Every {count} months",
+    "yearly": "Yearly",
+    "yearlyInterval": "Every {count} years",
+    "daily": "Daily",
+    "dailyInterval": "Every {count} days"
+  },
+  "dayLabel": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow"
+  },
+  "quickAdd": {
+    "fabLabel": "New entry",
+    "sheetTitle": "Add",
+    "sheetDescription": "Create a new transaction or schedule",
+    "backAria": "Back",
+    "picker": {
+      "prompt": "What would you like to add?",
+      "transactionTitle": "Transaction",
+      "transactionDescription": "Record income or an expense",
+      "scheduleTitle": "Schedule",
+      "scheduleDescription": "Set up a recurring payment"
+    },
+    "transactionForm": {
+      "header": "New transaction",
+      "trackerLabel": "Tracker",
+      "dateLabel": "Date",
+      "amountLabel": "Amount",
+      "categoryLabel": "Category",
+      "payeeLabel": "Payee",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "Short context for the transaction",
+      "submit": "Save entry",
+      "submitting": "Saving...",
+      "errorAmount": "Please enter a valid amount.",
+      "errorCategory": "Please choose a category.",
+      "errorGeneric": "Failed to save",
+      "success": "Transaction saved!"
+    },
+    "scheduleForm": {
+      "header": "New schedule",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Rent, Netflix",
+      "amountLabel": "Amount",
+      "rhythmLabel": "Rhythm",
+      "frequencyLabel": "Frequency",
+      "frequencyMonthly": "Monthly",
+      "frequencyYearly": "Yearly",
+      "frequencyCustomDays": "Every X days",
+      "intervalLabel": "Interval",
+      "startDateLabel": "Start date",
+      "notesTemplateLabel": "Notes template (optional)",
+      "notesTemplatePlaceholder": "Carried over when booked",
+      "submit": "Create schedule",
+      "submitting": "Saving...",
+      "errorAmount": "Please enter a valid amount.",
+      "errorName": "Please enter a name.",
+      "errorCategory": "Please choose a category.",
+      "errorPayee": "Please specify a payee/payer.",
+      "success": "Schedule saved!"
+    },
+    "successView": {
+      "addAnother": "Add another",
+      "close": "Close"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { PaintBucket } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,6 +25,7 @@ export function TrackerColorPicker({
   onChange,
   className,
 }: TrackerColorPickerProps) {
+  const t = useTranslations("Trackers");
   const [textValue, setTextValue] = useState(value);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -56,7 +58,7 @@ export function TrackerColorPicker({
             type="button"
             variant="outline"
             className="h-10 w-14 shrink-0 rounded-xl px-0"
-            aria-label="Farbe auswählen"
+            aria-label={t("colorPicker.selectAriaLabel")}
           >
             <span
               className="h-6 w-6 rounded-full border border-black/10 shadow-sm"
@@ -67,7 +69,7 @@ export function TrackerColorPicker({
         <PopoverContent align="start" className="w-[260px] space-y-4 rounded-2xl">
           <div className="flex items-center gap-2 text-sm font-medium">
             <PaintBucket className="h-4 w-4" />
-            Tracker-Farbe
+            {t("colorPicker.title")}
           </div>
           <HexColorPicker color={value} onChange={onChange} className="h-40! w-full!" />
           <div className="grid grid-cols-4 gap-2">
@@ -81,7 +83,7 @@ export function TrackerColorPicker({
                   preset === value ? "border-foreground" : "border-border"
                 )}
                 style={{ backgroundColor: preset }}
-                aria-label={`Farbe ${preset}`}
+                aria-label={t("colorPicker.presetAriaLabel", { hex: preset })}
               />
             ))}
           </div>

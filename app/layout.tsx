@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { getLocale, getMessages, getTimeZone, getTranslations } from "next-intl/server";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ACCENT_BOOT_SCRIPT } from "@/lib/appearance";
@@ -22,20 +23,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "BetterTracker",
-  description:
-    "Erfasse deine Ausgaben und behalte den Überblick über deine Finanzen mit BetterTracker.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Common");
+  return {
+    title: "BetterTracker",
+    description: t("appDescription"),
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const timeZone = await getTimeZone();
+
   return (
     <html
-      lang="de"
+      lang={locale}
       className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
@@ -44,7 +51,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: ACCENT_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        <Providers>{children}</Providers>
+        <Providers locale={locale} messages={messages} timeZone={timeZone}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { LogOut, Settings, User2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +21,12 @@ type UserMenuProps = {
 };
 
 export function UserMenu({ name, email, role }: UserMenuProps) {
+  const t = useTranslations("Nav.userMenu");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" shape="pill" aria-label="Benutzermenü">
+        <Button variant="outline" size="sm" shape="pill" aria-label={t("ariaLabel")}>
           <User2 className="h-4 w-4" />
           <span className="hidden sm:inline">{name}</span>
         </Button>
@@ -40,14 +43,14 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
         <DropdownMenuItem asChild>
           <Link href="/profile">
             <User2 className="mr-2 h-4 w-4" />
-            Profil
+            {t("profile")}
           </Link>
         </DropdownMenuItem>
         {(role === "admin" || role === "superadmin") && (
           <DropdownMenuItem asChild>
             <Link href="/admin">
               <Settings className="mr-2 h-4 w-4" />
-              Admin
+              {t("admin")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -64,7 +67,7 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Abmelden
+          {t("signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

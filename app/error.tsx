@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export default function Error({
@@ -11,6 +12,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("Errors");
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -21,13 +24,13 @@ export default function Error({
         <AlertTriangle className="h-5 w-5 text-expense" />
       </div>
       <div className="space-y-1 text-center">
-        <p className="font-semibold">Etwas ist schiefgelaufen</p>
+        <p className="font-semibold">{t("boundary.title")}</p>
         <p className="text-sm text-muted-foreground">
-          {error.message || "Ein unbekannter Fehler ist aufgetreten."}
+          {error.message || t("boundary.unknownError")}
         </p>
       </div>
       <Button onClick={reset} variant="outline" size="sm">
-        Erneut versuchen
+        {t("boundary.retry")}
       </Button>
     </div>
   );

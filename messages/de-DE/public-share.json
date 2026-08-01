@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "notFoundTitle": "Tracker nicht gefunden"
+  },
+  "header": {
+    "publicView": "Öffentliche Ansicht",
+    "dashboard": "Dashboard",
+    "login": "Anmelden"
+  },
+  "stats": {
+    "balance": "Saldo",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben"
+  },
+  "monthly": {
+    "title": "Monatliche Übersicht"
+  },
+  "transactions": {
+    "title": "Buchungen",
+    "total": "{count} gesamt",
+    "emptyTitle": "Keine Buchungen vorhanden",
+    "emptyDescription": "Noch keine Buchungen für diesen Tracker.",
+    "anonymousPayee": "Anonym",
+    "noCategory": "Ohne Kategorie",
+    "showingRecent": "Die letzten {recentCount} von {totalCount} Buchungen"
+  },
+  "error": {
+    "title": "Tracker nicht erreichbar",
+    "defaultMessage": "Dieser Tracker konnte nicht geladen werden.",
+    "loginButton": "Zum Login"
+  }
+}

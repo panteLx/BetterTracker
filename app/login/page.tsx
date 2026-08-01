@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { AuthRedirectAlert } from "@/components/auth/auth-redirect-alert";
 import { LoginForm } from "@/components/auth/login-form";
@@ -18,6 +19,7 @@ function getFirstValue(value?: string | string[]) {
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const t = await getTranslations("Auth");
   const registrationEnabled = await getRegistrationEnabled();
   const query = await searchParams;
   const error = getFirstValue(query.error);
@@ -47,17 +49,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </Link>
         <div className="relative space-y-4">
           <h1 className="text-3xl font-semibold leading-snug tracking-tight sm:text-4xl">
-            Behalte den Überblick
+            {t("login.page.heroTitleLine1")}
             <br />
-            über deine Finanzen.
+            {t("login.page.heroTitleLine2")}
           </h1>
           <p className="max-w-sm font-subtext text-sm leading-relaxed text-brand-canvas-foreground/70">
-            Erfasse Ausgaben und Einnahmen, analysiere Trends und plane mit
-            Terminen — alles in einem Ort.
+            {t("login.page.heroSubtext")}
           </p>
         </div>
         <p className="relative font-subtext text-xs text-brand-canvas-foreground/50">
-          Self-hosted - Open Source - Wunderschön.
+          {t("login.page.tagline")}
         </p>
       </div>
 
@@ -79,10 +80,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <div className="space-y-1 text-center md:text-left">
             <h2 className="text-2xl font-semibold tracking-tight">
-              Willkommen zurück
+              {t("login.page.welcomeTitle")}
             </h2>
             <p className="font-subtext text-sm text-muted-foreground">
-              Melde dich an, um fortzufahren.
+              {t("login.page.welcomeSubtext")}
             </p>
           </div>
 
@@ -100,12 +101,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {registrationEnabled ? (
             <p className="text-center font-subtext text-sm text-muted-foreground">
-              Noch kein Konto?{" "}
+              {t("login.page.noAccount")}{" "}
               <Link
                 href="/register"
                 className="font-medium text-primary-on hover:underline"
               >
-                Jetzt registrieren
+                {t("login.page.registerLink")}
               </Link>
             </p>
           ) : null}

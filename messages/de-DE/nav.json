@@ -1,0 +1,60 @@
+{
+  "ariaMainNav": "Hauptnavigation",
+  "items": {
+    "dashboard": "Dashboard",
+    "transactions": "Buchungen",
+    "schedules": "Termine",
+    "statistics": "Statistik"
+  },
+  "login": "Anmelden",
+  "register": "Registrieren",
+  "theme": {
+    "label": "Farbmodus",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System",
+    "toLight": "Zu hellem Modus wechseln",
+    "toDark": "Zu dunklem Modus wechseln",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus"
+  },
+  "userMenu": {
+    "ariaLabel": "Benutzermenü",
+    "profile": "Profil",
+    "admin": "Admin",
+    "signOut": "Abmelden"
+  },
+  "mobileNav": {
+    "newEntryAria": "Neue Buchung erfassen"
+  },
+  "footer": {
+    "supportAria": "Auf Buy Me a Coffee unterstützen",
+    "githubAria": "GitHub-Repository"
+  },
+  "commandPalette": {
+    "openAria": "Befehlspalette öffnen",
+    "search": "Suche",
+    "title": "Befehlspalette",
+    "description": "Nach einem Befehl suchen, den du ausführen möchtest …",
+    "placeholder": "Seite, Aktion oder Buchung suchen…",
+    "noResults": "Keine Ergebnisse gefunden.",
+    "groupNavigation": "Navigation",
+    "groupActions": "Aktionen",
+    "groupSettings": "Einstellungen",
+    "transactionsInTracker": "Buchungen in {name}",
+    "transactions": "Buchungen",
+    "transactionFallback": "Buchung",
+    "searching": "Suche läuft…",
+    "showAllResults": "Alle Treffer für „{query}“ anzeigen",
+    "newTransaction": "Neue Buchung",
+    "newSchedule": "Neuer Termin",
+    "adminArea": "Admin-Bereich",
+    "routes": {
+      "dashboard": "Dashboard",
+      "transactions": "Transaktionen",
+      "schedules": "Termine",
+      "statistics": "Statistiken",
+      "profile": "Profil"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "boundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "unknownError": "Ein unbekannter Fehler ist aufgetreten.",
+    "retry": "Erneut versuchen"
+  },
+  "api": {
+    "invalidYear": "Ungültiges Jahr",
+    "trackerArchived": "Tracker ist archiviert und kann nicht bearbeitet werden",
+    "invalidJsonBody": "Ungültiger JSON-Body",
+    "trackerAlreadyOwned": "Tracker gehoert dir bereits",
+    "importRowsRequired": "rows ist erforderlich und darf nicht leer sein",
+    "importRowNoAmount": "Zeile {rowNum}: Kein Betrag",
+    "importRowInvalidAmount": "Zeile {rowNum}: Ungültiger Betrag \"{amount}\"",
+    "importRowInvalidDate": "Zeile {rowNum}: Ungültiges Datum \"{date}\"",
+    "importRowNoCategory": "Zeile {rowNum}: Keine Kategorie",
+    "importRowNoCategoryNamed": "Zeile {rowNum}: Keine Kategorie \"{catName}\"",
+    "importRowError": "Zeile {rowNum}: {message}",
+    "importRowGenericError": "Fehler"
+  }
+}

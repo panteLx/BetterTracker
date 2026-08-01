@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import {
   Alert,
   AlertDescription,
@@ -20,12 +21,15 @@ type AlertContent = {
   linkLabel?: string;
 };
 
-function getAlertContent({
-  error,
-  errorDescription,
-  registrationEnabled,
-  variant,
-}: AuthRedirectAlertProps): AlertContent | null {
+function getAlertContent(
+  {
+    error,
+    errorDescription,
+    registrationEnabled,
+    variant,
+  }: AuthRedirectAlertProps,
+  t: Awaited<ReturnType<typeof getTranslations>>
+): AlertContent | null {
   if (!error) {
     return null;
   }
@@ -33,52 +37,48 @@ function getAlertContent({
   switch (error) {
     case "BANNED_USER":
       return {
-        title: "Dein Konto wurde gesperrt.",
-        description:
-          "Bitte kontaktiere einen Administrator, wenn das ein Fehler sein sollte.",
+        title: t("redirectAlert.banned.title"),
+        description: t("redirectAlert.banned.description"),
       };
     case "signup_disabled":
       if (variant === "login" && registrationEnabled) {
         return {
-          title: "Dieses Konto existiert noch nicht.",
-          description:
-            "Bitte registriere dich zuerst und versuche die Anmeldung danach erneut.",
+          title: t("redirectAlert.accountNotFound.title"),
+          description: t("redirectAlert.accountNotFound.description"),
           linkHref: "/register",
-          linkLabel: "Zur Registrierung",
+          linkLabel: t("redirectAlert.accountNotFound.linkLabel"),
         };
       }
 
       return {
-        title: "Registrierungen sind aktuell deaktiviert.",
-        description:
-          "Ein neues Konto kann derzeit nicht erstellt werden. Bitte wende dich an einen Administrator.",
+        title: t("redirectAlert.registrationDisabled.title"),
+        description: t("redirectAlert.registrationDisabled.description"),
       };
     case "access_denied":
       return {
-        title: "Die Anmeldung wurde beim Identity-Provider abgebrochen.",
+        title: t("redirectAlert.accessDenied.title"),
       };
     case "email_is_missing":
       return {
-        title: "Der Identity-Provider hat keine E-Mail-Adresse geliefert.",
-        description:
-          "Bitte verwende einen Account mit freigegebener E-Mail-Adresse oder passe die OIDC-Konfiguration an.",
+        title: t("redirectAlert.emailMissing.title"),
+        description: t("redirectAlert.emailMissing.description"),
       };
     case "oauth_code_verification_failed":
       return {
-        title: "Die OIDC-Anmeldung konnte nicht abgeschlossen werden.",
-        description:
-          "Bitte versuche es erneut. Wenn der Fehler bleibt, prüfe die OIDC-Konfiguration.",
+        title: t("redirectAlert.oidcVerificationFailed.title"),
+        description: t("redirectAlert.oidcVerificationFailed.description"),
       };
     default:
       return {
-        title: "Die Anmeldung konnte nicht abgeschlossen werden.",
+        title: t("redirectAlert.default.title"),
         description: errorDescription || error,
       };
   }
 }
 
-export function AuthRedirectAlert(props: AuthRedirectAlertProps) {
-  const content = getAlertContent(props);
+export async function AuthRedirectAlert(props: AuthRedirectAlertProps) {
+  const t = await getTranslations("Auth");
+  const content = getAlertContent(props, t);
 
   if (!content) {
     return null;

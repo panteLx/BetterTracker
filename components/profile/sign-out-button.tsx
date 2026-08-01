@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
 import { signOut } from "@/lib/auth/client";
 
 export function SignOutButton() {
+  const t = useTranslations("Profile.signOut");
   const [isPending, setIsPending] = useState(false);
 
   async function handleSignOut() {
@@ -35,24 +37,24 @@ export function SignOutButton() {
       <AlertDialogTrigger asChild>
         <Button variant="outline" className="gap-2 text-expense border-expense/30 hover:bg-expense-muted hover:text-expense">
           <LogOut className="h-4 w-4" />
-          Abmelden
+          {t("button")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Wirklich abmelden?</AlertDialogTitle>
+          <AlertDialogTitle>{t("confirmTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Du wirst aus deiner aktuellen Sitzung abgemeldet und zur Anmeldeseite weitergeleitet.
+            {t("confirmDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleSignOut}
             disabled={isPending}
             className="bg-expense text-expense-foreground hover:bg-expense/90"
           >
-            {isPending ? "Abmelden…" : "Abmelden"}
+            {isPending ? t("signingOut") : t("button")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

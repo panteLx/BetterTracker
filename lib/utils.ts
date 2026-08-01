@@ -28,11 +28,23 @@ export function formatDateTime(
   }).format(new Date(value));
 }
 
+export type DayLabels = { today: string; yesterday: string; tomorrow: string };
+
+const DEFAULT_DAY_LABELS: DayLabels = {
+  today: "Heute",
+  yesterday: "Gestern",
+  tomorrow: "Morgen",
+};
+
 /**
  * Day heading for grouped lists. Near dates are named rather than dated —
  * "Heute" tells you where you are faster than "Mi, 29. Juli" does.
  */
-export function formatDayLabel(dateString: string, locale = "de-DE") {
+export function formatDayLabel(
+  dateString: string,
+  locale = "de-DE",
+  labels: DayLabels = DEFAULT_DAY_LABELS,
+) {
   const date = new Date(`${dateString}T00:00:00`);
   if (Number.isNaN(date.getTime())) {
     return dateString;
@@ -44,9 +56,9 @@ export function formatDayLabel(dateString: string, locale = "de-DE") {
     (date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
   );
 
-  if (dayOffset === 0) return "Heute";
-  if (dayOffset === -1) return "Gestern";
-  if (dayOffset === 1) return "Morgen";
+  if (dayOffset === 0) return labels.today;
+  if (dayOffset === -1) return labels.yesterday;
+  if (dayOffset === 1) return labels.tomorrow;
 
   return new Intl.DateTimeFormat(locale, {
     weekday: "short",
@@ -124,17 +136,36 @@ export function sortByName<T extends { name: string }>(items: T[], locale: strin
   return [...items].sort((left, right) => left.name.localeCompare(right.name, locale));
 }
 
+type FrequencyLabels = {
+  monthly: string;
+  monthlyInterval: (count: number) => string;
+  yearly: string;
+  yearlyInterval: (count: number) => string;
+  daily: string;
+  dailyInterval: (count: number) => string;
+};
+
+const DEFAULT_FREQUENCY_LABELS: FrequencyLabels = {
+  monthly: "Monatlich",
+  monthlyInterval: (count) => `Alle ${count} Monate`,
+  yearly: "Jährlich",
+  yearlyInterval: (count) => `Alle ${count} Jahre`,
+  daily: "Täglich",
+  dailyInterval: (count) => `Alle ${count} Tage`,
+};
+
 export function getFrequencyLabel(
   frequency: "monthly" | "yearly" | "custom_days",
-  intervalValue: number
+  intervalValue: number,
+  labels: FrequencyLabels = DEFAULT_FREQUENCY_LABELS,
 ): string {
   if (frequency === "monthly") {
-    return intervalValue === 1 ? "Monatlich" : `Alle ${intervalValue} Monate`;
+    return intervalValue === 1 ? labels.monthly : labels.monthlyInterval(intervalValue);
   }
   if (frequency === "yearly") {
-    return intervalValue === 1 ? "Jährlich" : `Alle ${intervalValue} Jahre`;
+    return intervalValue === 1 ? labels.yearly : labels.yearlyInterval(intervalValue);
   }
-  return intervalValue === 1 ? "Täglich" : `Alle ${intervalValue} Tage`;
+  return intervalValue === 1 ? labels.daily : labels.dailyInterval(intervalValue);
 }
 
 /** Sentinel for select components that can't represent "no selection" as an empty string value. */

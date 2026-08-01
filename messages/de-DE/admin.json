@@ -1,0 +1,178 @@
+{
+  "nav": {
+    "ariaLabel": "Administrationsbereiche",
+    "groups": {
+      "management": "Verwaltung",
+      "system": "System"
+    },
+    "links": {
+      "overview": "Übersicht",
+      "users": "Benutzer",
+      "trackers": "Tracker",
+      "settings": "Einstellungen",
+      "logs": "Protokoll"
+    }
+  },
+  "page": {
+    "title": "Administration",
+    "description": "Kennzahlen des Systems sowie Benutzer-, Tracker- und Einstellungsverwaltung."
+  },
+  "overview": {
+    "users": "Benutzer",
+    "trackers": "Tracker",
+    "transactions": "Buchungen",
+    "schedules": "Termine",
+    "balanceTotal": "Saldo gesamt",
+    "incomeTotal": "Einnahmen gesamt",
+    "expenseTotal": "Ausgaben gesamt"
+  },
+  "logs": {
+    "page": {
+      "title": "Protokoll",
+      "description": "Die letzten Änderungen am System, mit Zeitpunkt und Verursacher."
+    },
+    "filters": {
+      "action": "Aktion",
+      "actionPlaceholder": "z. B. transaction_created",
+      "actor": "Akteur (E-Mail)",
+      "actorPlaceholder": "user@example.com",
+      "severity": "Severity",
+      "severityAll": "Alle",
+      "from": "Von",
+      "to": "Bis"
+    },
+    "loading": "Lädt…",
+    "entriesCount": "{count} Einträge",
+    "limitSuffix": " (Limit)",
+    "deleteAll": "Alle löschen",
+    "deleteConfirm": "Wirklich alle Audit-Logs unwiderruflich löschen?",
+    "deleteSuccess": "Alle Logs gelöscht",
+    "deleteError": "Löschen fehlgeschlagen",
+    "empty": "Keine Logs gefunden.",
+    "expand": "Anzeigen",
+    "collapse": "Einklappen",
+    "systemActor": "System"
+  },
+  "trackers": {
+    "page": {
+      "title": "Tracker",
+      "description": "Tracker anlegen, archivieren und ihre Discord-Anbindung verwalten."
+    },
+    "title": "Tracker",
+    "fields": {
+      "name": "Name",
+      "currency": "Währung",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Optional",
+      "color": "Farbe"
+    },
+    "discord": {
+      "title": "Discord",
+      "webhookUrl": "Webhook URL",
+      "pingRoleId": "Ping Role ID",
+      "debug": "Discord Debug"
+    },
+    "toggles": {
+      "archivedTitle": "Archiviert",
+      "archivedDescription": "Buchungen deaktiviert",
+      "hiddenTitle": "Ausgeblendet",
+      "hiddenDescription": "Für alle User unsichtbar",
+      "publicTitle": "Öffentlich",
+      "publicDescription": "Lesbar ohne Login"
+    },
+    "status": {
+      "active": "Aktiv",
+      "archived": "Archiviert",
+      "hidden": "Ausgeblendet",
+      "visible": "Sichtbar",
+      "public": "Öffentlich"
+    },
+    "publicLink": {
+      "copyLabel": "Link kopieren"
+    },
+    "actions": {
+      "save": "Speichern",
+      "selfShare": "Mich freigeben",
+      "testDiscord": "Discord testen"
+    },
+    "toasts": {
+      "saved": "Tracker gespeichert",
+      "saveError": "Speichern fehlgeschlagen",
+      "testSent": "Testbenachrichtigung gesendet",
+      "testError": "Test fehlgeschlagen",
+      "selfShared": "Tracker für dich freigegeben",
+      "selfShareError": "Freigabe fehlgeschlagen"
+    }
+  },
+  "settings": {
+    "page": {
+      "title": "Einstellungen",
+      "description": "Systemweite Vorgaben und die Discord-Anbindung."
+    },
+    "system": {
+      "title": "System",
+      "registrationEnabled": {
+        "title": "Registrierung erlaubt",
+        "description": "Neue Benutzer dürfen sich über die öffentliche Registrierung anmelden."
+      }
+    },
+    "discord": {
+      "title": "Discord",
+      "webhookUrl": "Discord-Default Webhook URL",
+      "pingRoleId": "Discord-Default Ping Role ID",
+      "debug": {
+        "title": "Discord-Default Debug",
+        "description": "Neue Tracker übernehmen diesen Discord-Debug-Standardwert."
+      },
+      "applyDefaults": {
+        "title": "Discord-Defaults auf alle Tracker anwenden",
+        "description": "Uebertraegt Webhook, Ping Role ID und Discord-Debug aus dieser Seite in jeden vorhandenen Tracker.",
+        "button": "Auf alle Tracker übernehmen"
+      }
+    },
+    "save": "Settings speichern",
+    "toasts": {
+      "saved": "Settings gespeichert",
+      "saveError": "Speichern fehlgeschlagen",
+      "applyDefaultsSuccess": "{count} Tracker aktualisiert",
+      "applyDefaultsError": "Uebernahme fehlgeschlagen"
+    }
+  },
+  "users": {
+    "page": {
+      "title": "Benutzer",
+      "description": "Rollen vergeben, Konten sperren und Benutzer verwalten."
+    },
+    "title": "Benutzerverwaltung",
+    "table": {
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "banned": "Gesperrt",
+      "active": "Aktiv"
+    },
+    "actions": {
+      "ban": "Sperren",
+      "unban": "Entsperren",
+      "delete": "Löschen"
+    },
+    "deleteConfirm": "Benutzer \"{name}\" ({email}) wirklich löschen?\n\nAlle Buchungen, Schedules und Tracker-Mitgliedschaften dieses Benutzers werden unwiderruflich gelöscht.",
+    "toasts": {
+      "updated": "Benutzer aktualisiert",
+      "updateError": "Aktualisierung fehlgeschlagen",
+      "statusUpdated": "Status aktualisiert",
+      "statusError": "Aktion fehlgeschlagen",
+      "deleted": "Benutzer gelöscht",
+      "deleteError": "Löschen fehlgeschlagen"
+    }
+  },
+  "errors": {
+    "title": "Admin-Fehler",
+    "defaultMessage": "Ein Fehler ist im Admin-Bereich aufgetreten.",
+    "retry": "Erneut versuchen"
+  }
+}

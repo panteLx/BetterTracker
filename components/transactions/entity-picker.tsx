@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export function EntityPicker({
   disabled,
 }: EntityPickerProps) {
   const queryClient = useQueryClient();
+  const t = useTranslations("Transactions.entityPicker");
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"list" | "create">("list");
   const [newName, setNewName] = useState("");
@@ -73,25 +75,29 @@ export function EntityPicker({
 
   const copy = isCategory
     ? {
-        placeholder: "Kategorie wählen",
-        searchPlaceholder: "Kategorie suchen",
-        emptyMessage: "Keine Kategorie gefunden.",
-        createLabel: "Neue Kategorie anlegen",
+        placeholder: t("category.placeholder"),
+        searchPlaceholder: t("category.searchPlaceholder"),
+        emptyMessage: t("category.emptyMessage"),
+        createLabel: t("category.createLabel"),
         namePlaceholder:
-          direction === "expense" ? "z. B. Tanken" : "z. B. Gehalt",
-        toastCreated: "Kategorie angelegt",
-        toastNameRequired: "Bitte einen Kategorienamen eingeben",
-        toastCreateError: "Kategorie konnte nicht angelegt werden",
+          direction === "expense"
+            ? t("category.namePlaceholderExpense")
+            : t("category.namePlaceholderIncome"),
+        toastCreated: t("category.toastCreated"),
+        toastNameRequired: t("category.toastNameRequired"),
+        toastCreateError: t("category.toastCreateError"),
+        noneOption: t("category.noneOption"),
       }
     : {
-        placeholder: "Einzahler wählen",
-        searchPlaceholder: "Einzahler suchen",
-        emptyMessage: "Kein Einzahler gefunden.",
-        createLabel: "Neuen Einzahler anlegen",
-        namePlaceholder: "z. B. Bäckerei",
-        toastCreated: "Einzahler angelegt",
-        toastNameRequired: "Bitte einen Einzahler-Namen eingeben",
-        toastCreateError: "Einzahler konnte nicht angelegt werden",
+        placeholder: t("payee.placeholder"),
+        searchPlaceholder: t("payee.searchPlaceholder"),
+        emptyMessage: t("payee.emptyMessage"),
+        createLabel: t("payee.createLabel"),
+        namePlaceholder: t("payee.namePlaceholder"),
+        toastCreated: t("payee.toastCreated"),
+        toastNameRequired: t("payee.toastNameRequired"),
+        toastCreateError: t("payee.toastCreateError"),
+        noneOption: t("payee.noneOption"),
       };
 
   const createMutation = useMutation({
@@ -136,7 +142,7 @@ export function EntityPicker({
     : [
         {
           value: EMPTY_SELECT_VALUE,
-          label: isCategory ? "Keine Kategorie" : "Anonym",
+          label: copy.noneOption,
         },
         ...options,
       ];
@@ -191,7 +197,7 @@ export function EntityPicker({
                   htmlFor={`new-${kind}-name`}
                   className="text-xs text-muted-foreground"
                 >
-                  Name
+                  {t("nameLabel")}
                 </Label>
                 <Input
                   id={`new-${kind}-name`}
@@ -208,7 +214,12 @@ export function EntityPicker({
                 />
                 {isCategory ? (
                   <p className="text-xs text-muted-foreground">
-                    Typ: {direction === "expense" ? "Ausgabe" : "Einnahme"}
+                    {t("typeLine", {
+                      type:
+                        direction === "expense"
+                          ? t("typeExpense")
+                          : t("typeIncome"),
+                    })}
                   </p>
                 ) : null}
               </div>
@@ -222,7 +233,7 @@ export function EntityPicker({
                     setNewName("");
                   }}
                 >
-                  Abbrechen
+                  {t("cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -230,7 +241,7 @@ export function EntityPicker({
                   onClick={handleCreate}
                   disabled={createMutation.isPending}
                 >
-                  {createMutation.isPending ? "..." : "Anlegen"}
+                  {createMutation.isPending ? t("creating") : t("create")}
                 </Button>
               </div>
             </div>
@@ -243,7 +254,7 @@ export function EntityPicker({
             htmlFor="custom-payee"
             className="text-xs text-muted-foreground"
           >
-            Oder einmaliger Freitext
+            {t("customTextLabel")}
           </Label>
           <Input
             id="custom-payee"
@@ -253,7 +264,7 @@ export function EntityPicker({
               if (event.target.value.trim()) onValueChange(EMPTY_SELECT_VALUE);
             }}
             disabled={disabled}
-            placeholder="z. B. Wochenmarkt"
+            placeholder={t("customTextPlaceholder")}
           />
         </div>
       ) : null}

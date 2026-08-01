@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { format, parseISO, isValid } from "date-fns";
-import { de } from "date-fns/locale";
+import { de, enUS } from "date-fns/locale";
+import { useLocale, useTranslations } from "next-intl";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+const DATE_FNS_LOCALES = { "de-DE": de, "en-US": enUS } as const;
+const DISPLAY_FORMATS = { "de-DE": "dd.MM.yyyy", "en-US": "MM/dd/yyyy" } as const;
 
 type DatePickerProps = {
   id?: string;
@@ -35,11 +39,15 @@ export function DatePicker({
   value,
   onChange,
   disabled,
-  placeholder = "Datum wählen",
+  placeholder,
   className,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const date = toDate(value);
+  const locale = useLocale();
+  const t = useTranslations("Common.datePicker");
+  const dateFnsLocale = DATE_FNS_LOCALES[locale];
+  const displayFormat = DISPLAY_FORMATS[locale];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -57,7 +65,9 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
-          {date ? format(date, "dd.MM.yyyy", { locale: de }) : placeholder}
+          {date
+            ? format(date, displayFormat, { locale: dateFnsLocale })
+            : (placeholder ?? t("placeholder"))}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

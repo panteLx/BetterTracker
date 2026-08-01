@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navItems, isNavItemActive } from "@/components/layout/app-header";
@@ -17,6 +18,7 @@ import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
 export function MobileNav() {
   const pathname = usePathname();
   const [addOpen, setAddOpen] = useState(false);
+  const t = useTranslations("Nav");
 
   function renderItem(item: (typeof navItems)[number]) {
     const Icon = item.icon;
@@ -41,7 +43,7 @@ export function MobileNav() {
             className={cn("h-5 w-5", active ? "stroke-[2.5]" : "stroke-[1.75]")}
           />
           <span className="font-subtext text-[10px] font-medium">
-            {item.label}
+            {t(`items.${item.key}`)}
           </span>
         </span>
       </Link>
@@ -51,7 +53,7 @@ export function MobileNav() {
   return (
     <>
       <nav
-        aria-label="Hauptnavigation"
+        aria-label={t("ariaMainNav")}
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -62,7 +64,7 @@ export function MobileNav() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              aria-label="Neue Buchung erfassen"
+              aria-label={t("mobileNav.newEntryAria")}
               className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors duration-(--motion-duration-fast) hover:bg-primary-hover"
             >
               <Plus className="h-6 w-6" />

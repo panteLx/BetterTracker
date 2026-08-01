@@ -1,0 +1,60 @@
+{
+  "ariaMainNav": "Main navigation",
+  "items": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "schedules": "Schedules",
+    "statistics": "Statistics"
+  },
+  "login": "Sign in",
+  "register": "Register",
+  "theme": {
+    "label": "Color mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode"
+  },
+  "userMenu": {
+    "ariaLabel": "User menu",
+    "profile": "Profile",
+    "admin": "Admin",
+    "signOut": "Sign out"
+  },
+  "mobileNav": {
+    "newEntryAria": "Add new transaction"
+  },
+  "footer": {
+    "supportAria": "Support on Buy Me a Coffee",
+    "githubAria": "GitHub Repository"
+  },
+  "commandPalette": {
+    "openAria": "Open command palette",
+    "search": "Search",
+    "title": "Command Palette",
+    "description": "Search for a command to run...",
+    "placeholder": "Search pages, actions, or transactions…",
+    "noResults": "No results found.",
+    "groupNavigation": "Navigation",
+    "groupActions": "Actions",
+    "groupSettings": "Settings",
+    "transactionsInTracker": "Transactions in {name}",
+    "transactions": "Transactions",
+    "transactionFallback": "Transaction",
+    "searching": "Searching…",
+    "showAllResults": "Show all results for “{query}”",
+    "newTransaction": "New transaction",
+    "newSchedule": "New schedule",
+    "adminArea": "Admin area",
+    "routes": {
+      "dashboard": "Dashboard",
+      "transactions": "Transactions",
+      "schedules": "Schedules",
+      "statistics": "Statistics",
+      "profile": "Profile"
+    }
+  }
+}

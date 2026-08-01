@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { AuthRedirectAlert } from "@/components/auth/auth-redirect-alert";
 import { RegisterForm } from "@/components/auth/register-form";
@@ -18,6 +19,7 @@ function getFirstValue(value?: string | string[]) {
 }
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const t = await getTranslations("Auth");
   const registrationEnabled = await getRegistrationEnabled();
   const query = await searchParams;
   const error = getFirstValue(query.error);
@@ -45,14 +47,16 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
         </Link>
         <div className="relative space-y-4">
           <h1 className="text-3xl font-semibold leading-snug tracking-tight sm:text-4xl">
-            Starte noch heute<br />mit deiner Finanzverwaltung.
+            {t("register.page.heroTitleLine1")}
+            <br />
+            {t("register.page.heroTitleLine2")}
           </h1>
           <p className="max-w-sm font-subtext text-sm leading-relaxed text-brand-canvas-foreground/70">
-            Erstelle ein kostenloses Konto und behalte mit BetterTracker den Überblick über deine Ausgaben und Einnahmen.
+            {t("register.page.heroSubtext")}
           </p>
         </div>
         <p className="relative font-subtext text-xs text-brand-canvas-foreground/50">
-          Self-hosted · Open Source · Datenschutzfreundlich
+          {t("register.page.tagline")}
         </p>
       </div>
 
@@ -71,9 +75,9 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           </div>
 
           <div className="space-y-1 text-center md:text-left">
-            <h2 className="text-2xl font-semibold tracking-tight">Konto erstellen</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">{t("register.page.welcomeTitle")}</h2>
             <p className="text-sm text-muted-foreground">
-              Registriere dich, um zu starten.
+              {t("register.page.welcomeSubtext")}
             </p>
           </div>
 
@@ -92,15 +96,15 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           ) : (
             <div className="rounded-xl border border-border bg-surface-muted p-4 text-center">
               <p className="text-sm text-muted-foreground">
-                Registrierungen sind aktuell deaktiviert.
+                {t("register.page.disabledNotice")}
               </p>
             </div>
           )}
 
           <p className="text-center font-subtext text-sm text-muted-foreground">
-            Bereits registriert?{" "}
+            {t("register.page.alreadyRegistered")}{" "}
             <Link href="/login" className="font-medium text-primary-on hover:underline">
-              Zum Login
+              {t("register.page.loginLink")}
             </Link>
           </p>
         </div>

@@ -39,6 +39,6 @@ export const env = {
   oidcClientSecret: process.env.OIDC_CLIENT_SECRET || "",
   oidcScopes:
     oidcScopes.length > 0 ? oidcScopes : ["openid", "profile", "email"],
-  defaultLocale: process.env.DEFAULT_LOCALE || "de-DE",
+  defaultLocale: process.env.DEFAULT_LOCALE || "en-US",
   timezone: process.env.TZ || "Europe/Berlin",
 };

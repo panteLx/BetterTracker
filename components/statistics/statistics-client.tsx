@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   BarChart,
   Bar,
@@ -45,11 +46,6 @@ import {
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatCurrency, formatDateShort } from "@/lib/utils";
 import { useChartColors } from "@/lib/chart-colors";
-
-const GERMAN_MONTHS = [
-  "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
-];
 
 /** Shared axis/grid treatment — recessive, so the marks stay the loudest thing. */
 const AXIS_TICK = { fontSize: 11 };
@@ -124,10 +120,6 @@ type StatisticsData = {
   } | null;
 };
 
-type StatisticsClientProps = {
-  locale: string;
-};
-
 type Direction = "expense" | "income";
 
 function DirectionFilter({
@@ -137,13 +129,14 @@ function DirectionFilter({
   value: Direction;
   onChange: (value: Direction) => void;
 }) {
+  const t = useTranslations("Statistics");
   return (
     <Segmented
-      label="Richtung wählen"
+      label={t("filters.directionLabel")}
       size="sm"
       items={[
-        { value: "expense", label: "Ausgaben" },
-        { value: "income", label: "Einnahmen" },
+        { value: "expense", label: t("filters.expense") },
+        { value: "income", label: t("filters.income") },
       ]}
       value={value}
       onValueChange={onChange}
@@ -164,11 +157,13 @@ function YoyDelta({
   previous: number;
   positiveIsGood: boolean;
 }) {
+  const t = useTranslations("Statistics");
+
   if (previous === 0) {
     if (current === 0) return null;
     return (
       <span className="inline-flex items-center gap-1 text-muted-foreground">
-        Neu ggü. Vorjahr
+        {t("yoyDelta.new")}
       </span>
     );
   }
@@ -177,7 +172,9 @@ function YoyDelta({
   const rounded = Math.round(change * 10) / 10;
 
   if (rounded === 0) {
-    return <span className="text-muted-foreground">± 0 % ggü. Vorjahr</span>;
+    return (
+      <span className="text-muted-foreground">{t("yoyDelta.noChange")}</span>
+    );
   }
 
   const isIncrease = rounded > 0;
@@ -192,7 +189,7 @@ function YoyDelta({
       )}
     >
       <Icon className="h-3 w-3 shrink-0" />
-      {Math.abs(rounded)} % ggü. Vorjahr
+      {t("yoyDelta.change", { value: Math.abs(rounded) })}
     </span>
   );
 }
@@ -240,12 +237,14 @@ function CategoryChart({
   currency: string;
   locale: string;
 }) {
+  const t = useTranslations("Statistics");
+
   if (items.length === 0) {
     return (
       <EmptyState
         icon={BarChart2}
-        title="Keine Buchungen"
-        description="Für diese Auswahl gibt es in diesem Jahr nichts zu zeigen."
+        title={t("emptyState.noBookings.title")}
+        description={t("emptyState.noBookings.description")}
       />
     );
   }
@@ -333,10 +332,12 @@ function PayeeChart({
   currency: string;
   locale: string;
 }) {
+  const t = useTranslations("Statistics");
   const chartColors = useChartColors();
   const barColor =
     direction === "expense" ? chartColors.expense : chartColors.income;
-  const dataKey = direction === "expense" ? "Ausgaben" : "Einnahmen";
+  const dataKey =
+    direction === "expense" ? t("dataKeys.expense") : t("dataKeys.income");
 
   const data = items
     .slice(0, 6)
@@ -353,8 +354,8 @@ function PayeeChart({
     return (
       <EmptyState
         icon={BarChart2}
-        title="Keine Buchungen"
-        description="Für diese Auswahl gibt es in diesem Jahr nichts zu zeigen."
+        title={t("emptyState.noBookings.title")}
+        description={t("emptyState.noBookings.description")}
       />
     );
   }
@@ -399,7 +400,10 @@ function PayeeChart({
   );
 }
 
-export function StatisticsClient({ locale }: StatisticsClientProps) {
+export function StatisticsClient() {
+  const locale = useLocale();
+  const t = useTranslations("Statistics");
+  const months = t.raw("months") as string[];
   const currentYear = new Date().getFullYear();
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -427,55 +431,61 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
     enabled: !!activeTrackerId,
   });
 
+  const incomeLabel = t("dataKeys.income");
+  const expenseLabel = t("dataKeys.expense");
+  const balanceLabel = t("dataKeys.balance");
+  const thisYearLabel = t("dataKeys.thisYear");
+  const previousYearLabel = t("dataKeys.previousYear");
+
   const monthlyChartData = useMemo(
     () =>
       stats?.monthly.map((month, index) => ({
-        name: GERMAN_MONTHS[index],
-        Einnahmen: month.incomeCents,
-        Ausgaben: month.expenseCents,
+        name: months[index],
+        [incomeLabel]: month.incomeCents,
+        [expenseLabel]: month.expenseCents,
       })) ?? [],
-    [stats],
+    [stats, months, incomeLabel, expenseLabel],
   );
 
   const balanceTrendData = useMemo(
     () =>
       stats?.balanceTrend.map((entry, index) => ({
-        name: GERMAN_MONTHS[index],
-        Kontostand: entry.balanceCents,
+        name: months[index],
+        [balanceLabel]: entry.balanceCents,
       })) ?? [],
-    [stats],
+    [stats, months, balanceLabel],
   );
 
   const weekdayChartData = useMemo(
     () =>
       stats?.weekday.map((entry) => ({
         name: entry.weekday,
-        Einnahmen: entry.incomeCents,
-        Ausgaben: entry.expenseCents,
+        [incomeLabel]: entry.incomeCents,
+        [expenseLabel]: entry.expenseCents,
       })) ?? [],
-    [stats],
+    [stats, incomeLabel, expenseLabel],
   );
 
   const yearComparisonData = useMemo(() => {
     if (!stats) return [];
     return [
       {
-        name: "Einnahmen",
-        "Dieses Jahr": stats.summary.incomeCents,
-        Vorjahr: stats.previousYear.incomeCents,
+        name: t("statTiles.income"),
+        [thisYearLabel]: stats.summary.incomeCents,
+        [previousYearLabel]: stats.previousYear.incomeCents,
       },
       {
-        name: "Ausgaben",
-        "Dieses Jahr": stats.summary.expenseCents,
-        Vorjahr: stats.previousYear.expenseCents,
+        name: t("statTiles.expenses"),
+        [thisYearLabel]: stats.summary.expenseCents,
+        [previousYearLabel]: stats.previousYear.expenseCents,
       },
       {
-        name: "Saldo",
-        "Dieses Jahr": stats.summary.balanceCents,
-        Vorjahr: stats.previousYear.balanceCents,
+        name: t("statTiles.balance"),
+        [thisYearLabel]: stats.summary.balanceCents,
+        [previousYearLabel]: stats.previousYear.balanceCents,
       },
     ];
-  }, [stats]);
+  }, [stats, t, thisYearLabel, previousYearLabel]);
 
   const savingsRate =
     stats && stats.summary.incomeCents > 0
@@ -502,8 +512,8 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
     return (
       <EmptyState
         icon={BarChart2}
-        title="Noch kein Tracker"
-        description="Leg auf dem Dashboard einen Tracker an, dann erscheint hier die Auswertung."
+        title={t("emptyState.noTracker.title")}
+        description={t("emptyState.noTracker.description")}
       />
     );
   }
@@ -516,8 +526,8 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
           value={activeTrackerId ?? ""}
           onValueChange={(value) => setSelectedTrackerId(value)}
         >
-          <SelectTrigger className="w-48" aria-label="Tracker wählen">
-            <SelectValue placeholder="Tracker wählen" />
+          <SelectTrigger className="w-48" aria-label={t("filters.trackerLabel")}>
+            <SelectValue placeholder={t("filters.trackerLabel")} />
           </SelectTrigger>
           <SelectContent>
             {trackers.map((item) => (
@@ -539,7 +549,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
           value={String(selectedYear)}
           onValueChange={(value) => setSelectedYear(Number.parseInt(value, 10))}
         >
-          <SelectTrigger className="w-28" aria-label="Jahr wählen">
+          <SelectTrigger className="w-28" aria-label={t("filters.yearLabel")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -559,14 +569,14 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
       ) : !hasData ? (
         <EmptyState
           icon={BarChart2}
-          title={`Keine Buchungen in ${selectedYear}`}
-          description="Wähle ein anderes Jahr oder einen anderen Tracker."
+          title={t("emptyState.noBookingsInYear.title", { year: selectedYear })}
+          description={t("emptyState.noBookingsInYear.description")}
         />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile
-              label="Saldo"
+              label={t("statTiles.balance")}
               tone="inverse"
               icon={Wallet}
               value={
@@ -588,7 +598,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               className="col-span-2 lg:col-span-1"
             />
             <StatTile
-              label="Einnahmen"
+              label={t("statTiles.income")}
               icon={TrendingUp}
               value={
                 <Amount
@@ -608,7 +618,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               }
             />
             <StatTile
-              label="Ausgaben"
+              label={t("statTiles.expenses")}
               icon={TrendingDown}
               value={
                 <Amount
@@ -628,7 +638,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               }
             />
             <StatTile
-              label="Buchungen"
+              label={t("statTiles.transactions")}
               icon={Receipt}
               value={stats!.summary.transactionCount}
               sublabel={
@@ -644,13 +654,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <StatTile
-              label="Sparquote"
+              label={t("statTiles.savingsRate")}
               icon={PiggyBank}
               value={savingsRate === null ? "–" : `${savingsRate} %`}
-              helperText="Anteil der Einnahmen, der übrig bleibt"
+              helperText={t("statTiles.savingsRateHelper")}
             />
             <StatTile
-              label="Ø pro Buchung"
+              label={t("statTiles.avgPerTransaction")}
               icon={Scale}
               value={
                 <Amount
@@ -661,10 +671,10 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   tone="none"
                 />
               }
-              helperText="Über Einnahmen und Ausgaben hinweg"
+              helperText={t("statTiles.avgPerTransactionHelper")}
             />
             <StatTile
-              label="Größte Ausgabe"
+              label={t("statTiles.topExpense")}
               icon={Flame}
               value={
                 stats!.topExpense ? (
@@ -681,14 +691,17 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               }
               helperText={
                 stats!.topExpense
-                  ? `${stats!.topExpense.payeeName} · ${formatDateShort(stats!.topExpense.date, locale)}`
-                  : "Keine Ausgaben in diesem Jahr"
+                  ? t("statTiles.topExpenseHelper", {
+                      payee: stats!.topExpense.payeeName,
+                      date: formatDateShort(stats!.topExpense.date, locale),
+                    })
+                  : t("statTiles.noExpensesThisYear")
               }
               className="col-span-2 lg:col-span-1"
             />
           </div>
 
-          <SectionCard title={`Monat für Monat ${selectedYear}`}>
+          <SectionCard title={t("charts.monthly", { year: selectedYear })}>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
                 data={monthlyChartData}
@@ -728,13 +741,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                   )}
                 />
                 <Bar
-                  dataKey="Einnahmen"
+                  dataKey={incomeLabel}
                   fill={colors.income}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={22}
                 />
                 <Bar
-                  dataKey="Ausgaben"
+                  dataKey={expenseLabel}
                   fill={colors.expense}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={22}
@@ -744,7 +757,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
           </SectionCard>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <SectionCard title="Wochentag-Muster">
+            <SectionCard title={t("charts.weekday")}>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart
                   data={weekdayChartData}
@@ -776,13 +789,13 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                     }
                   />
                   <Bar
-                    dataKey="Einnahmen"
+                    dataKey={incomeLabel}
                     fill={colors.income}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={18}
                   />
                   <Bar
-                    dataKey="Ausgaben"
+                    dataKey={expenseLabel}
                     fill={colors.expense}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={18}
@@ -791,7 +804,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
               </ResponsiveContainer>
             </SectionCard>
 
-            <SectionCard title="Jahresvergleich">
+            <SectionCard title={t("charts.yearComparison")}>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart
                   data={yearComparisonData}
@@ -832,14 +845,14 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                     )}
                   />
                   <Bar
-                    dataKey="Vorjahr"
+                    dataKey={previousYearLabel}
                     fill="var(--muted-foreground)"
                     fillOpacity={0.35}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={28}
                   />
                   <Bar
-                    dataKey="Dieses Jahr"
+                    dataKey={thisYearLabel}
                     fill={colors.chart1}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={28}
@@ -851,7 +864,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
 
           <div className="grid gap-6 md:grid-cols-2">
             <SectionCard
-              title="Nach Kategorie"
+              title={t("charts.category")}
               titleRight={
                 <DirectionFilter
                   value={categoryDirection}
@@ -867,7 +880,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
             </SectionCard>
 
             <SectionCard
-              title="Größte Posten"
+              title={t("charts.payee")}
               titleRight={
                 <DirectionFilter
                   value={payeeDirection}
@@ -884,7 +897,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
             </SectionCard>
           </div>
 
-          <SectionCard title={`Kontostand ${selectedYear}`}>
+          <SectionCard title={t("charts.balanceTrend", { year: selectedYear })}>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart
                 data={balanceTrendData}
@@ -931,7 +944,7 @@ export function StatisticsClient({ locale }: StatisticsClientProps) {
                 />
                 <Area
                   type="monotone"
-                  dataKey="Kontostand"
+                  dataKey={balanceLabel}
                   stroke={colors.chart1}
                   strokeWidth={2}
                   fill="url(#balanceGradient)"

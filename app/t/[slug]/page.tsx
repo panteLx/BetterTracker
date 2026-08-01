@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -23,14 +24,14 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
-function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(
+function formatDate(dateStr: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     new Date(dateStr),
   );
 }
 
-function formatMonth(dateStr: string) {
-  return new Intl.DateTimeFormat("de-DE", {
+function formatMonth(dateStr: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     year: "numeric",
   }).format(new Date(dateStr + "-01"));
@@ -38,6 +39,7 @@ function formatMonth(dateStr: string) {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
+  const t = await getTranslations("PublicShare");
   const rows = await db
     .select({ name: trackers.name, description: trackers.description })
     .from(trackers)
@@ -50,7 +52,7 @@ export async function generateMetadata({ params }: Props) {
     )
     .limit(1);
   const tracker = rows[0];
-  if (!tracker) return { title: "Tracker nicht gefunden" };
+  if (!tracker) return { title: t("metadata.notFoundTitle") };
   return {
     title: tracker.name,
     description: tracker.description ?? undefined,
@@ -59,6 +61,8 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function PublicTrackerPage({ params }: Props) {
   const { slug } = await params;
+  const locale = await getLocale();
+  const t = await getTranslations("PublicShare");
 
   const [session, trackerRows] = await Promise.all([
     getServerSession(),
@@ -163,7 +167,7 @@ export default async function PublicTrackerPage({ params }: Props) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="hidden rounded-pill border border-border bg-card px-2.5 py-0.5 font-subtext text-xs text-muted-foreground sm:inline-flex">
-              Öffentliche Ansicht
+              {t("header.publicView")}
             </span>
             {isLoggedIn ? (
               <Link
@@ -171,7 +175,7 @@ export default async function PublicTrackerPage({ params }: Props) {
                 className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-card px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
-                Dashboard
+                {t("header.dashboard")}
               </Link>
             ) : (
               <Link
@@ -179,7 +183,7 @@ export default async function PublicTrackerPage({ params }: Props) {
                 className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-card px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
               >
                 <LogIn className="h-3.5 w-3.5" />
-                Anmelden
+                {t("header.login")}
               </Link>
             )}
           </div>
@@ -196,7 +200,7 @@ export default async function PublicTrackerPage({ params }: Props) {
         {/* Summary tiles */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatTile
-            label="Saldo"
+            label={t("stats.balance")}
             tone="inverse"
             icon={Landmark}
             value={
@@ -210,7 +214,7 @@ export default async function PublicTrackerPage({ params }: Props) {
             className="col-span-2 sm:col-span-1"
           />
           <StatTile
-            label="Einnahmen"
+            label={t("stats.income")}
             icon={ArrowUpRight}
             value={
               <Amount
@@ -222,7 +226,7 @@ export default async function PublicTrackerPage({ params }: Props) {
             }
           />
           <StatTile
-            label="Ausgaben"
+            label={t("stats.expenses")}
             icon={ArrowDownLeft}
             value={
               <Amount
@@ -237,7 +241,7 @@ export default async function PublicTrackerPage({ params }: Props) {
 
         {/* Monthly breakdown (last 6 months) */}
         {monthlyRows.length > 0 && (
-          <SectionCard title="Monatliche Übersicht">
+          <SectionCard title={t("monthly.title")}>
             <div className="divide-y divide-border">
               {monthlyRows.map((row) => {
                 const net = row.incomeCents - row.expenseCents;
@@ -247,7 +251,7 @@ export default async function PublicTrackerPage({ params }: Props) {
                     className="flex items-center justify-between gap-4 py-2.5"
                   >
                     <span className="text-sm font-medium">
-                      {formatMonth(row.month)}
+                      {formatMonth(row.month, locale)}
                     </span>
                     <div className="flex items-center gap-4">
                       <Amount
@@ -281,18 +285,18 @@ export default async function PublicTrackerPage({ params }: Props) {
 
         {/* Transaction list */}
         <SectionCard
-          title="Buchungen"
+          title={t("transactions.title")}
           titleRight={
             <span className="rounded-pill border border-border bg-card px-2.5 py-0.5 font-subtext text-xs font-medium text-muted-foreground">
-              {items.length} gesamt
+              {t("transactions.total", { count: items.length })}
             </span>
           }
           noPadding
         >
           {items.length === 0 ? (
             <EmptyState
-              title="Keine Buchungen vorhanden"
-              description="Noch keine Buchungen für diesen Tracker."
+              title={t("transactions.emptyTitle")}
+              description={t("transactions.emptyDescription")}
               className="py-10"
             />
           ) : (
@@ -315,13 +319,20 @@ export default async function PublicTrackerPage({ params }: Props) {
                       }
                     />
                   }
-                  title={item.payeeName ?? item.customPayeeName ?? "Anonym"}
-                  subtitle={[item.categoryName ?? "Ohne Kategorie", item.notes]
+                  title={
+                    item.payeeName ??
+                    item.customPayeeName ??
+                    t("transactions.anonymousPayee")
+                  }
+                  subtitle={[
+                    item.categoryName ?? t("transactions.noCategory"),
+                    item.notes,
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
                   meta={
                     <span className="font-subtext text-xs text-muted-foreground">
-                      {formatDate(item.date)}
+                      {formatDate(item.date, locale)}
                     </span>
                   }
                   trailing={
@@ -337,7 +348,10 @@ export default async function PublicTrackerPage({ params }: Props) {
               ))}
               {items.length > recentItems.length ? (
                 <p className="py-3 text-center font-subtext text-xs text-muted-foreground">
-                  Die letzten {recentItems.length} von {items.length} Buchungen
+                  {t("transactions.showingRecent", {
+                    recentCount: recentItems.length,
+                    totalCount: items.length,
+                  })}
                 </p>
               ) : null}
             </div>

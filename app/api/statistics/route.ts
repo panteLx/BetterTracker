@@ -1,4 +1,5 @@
 import { and, eq, gte, lt, lte, sql } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { categories, payees, transactions } from "@/lib/db/schema";
@@ -149,6 +150,7 @@ async function queryTopExpense(trackerId: string, from: string, to: string) {
 }
 
 export async function GET(request: Request) {
+  const t = await getTranslations("Errors");
   const { searchParams } = new URL(request.url);
   const trackerId = searchParams.get("trackerId");
   if (!trackerId) return badRequest("trackerId is required");
@@ -158,7 +160,8 @@ export async function GET(request: Request) {
 
   const rawYear = searchParams.get("year");
   const year = parseInt(rawYear || String(new Date().getFullYear()));
-  if (isNaN(year) || year < 2000 || year > 2100) return badRequest("Ungültiges Jahr");
+  if (isNaN(year) || year < 2000 || year > 2100)
+    return badRequest(t("api.invalidYear"));
 
   const from = `${year}-01-01`;
   const to = `${year}-12-31`;

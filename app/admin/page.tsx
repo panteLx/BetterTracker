@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { getTranslations } from "next-intl/server";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { PageContainer } from "@/components/layout/page-container";
@@ -14,6 +15,7 @@ export default async function AdminPage() {
   if (user.role !== "admin" && user.role !== "superadmin") {
     redirect("/");
   }
+  const t = await getTranslations("Admin.page");
 
   const queryClient = makeQueryClient();
   await queryClient.prefetchQuery({
@@ -24,8 +26,8 @@ export default async function AdminPage() {
   return (
     <PageContainer
       user={user}
-      title="Administration"
-      description="Kennzahlen des Systems sowie Benutzer-, Tracker- und Einstellungsverwaltung."
+      title={t("title")}
+      description={t("description")}
     >
       <AdminShell>
       <HydrationBoundary state={dehydrate(queryClient)}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   CalendarClock,
   ReceiptText,
@@ -14,6 +15,7 @@ import { Amount } from "@/components/ui/amount";
 import { StatTile } from "@/components/ui/stat-tile";
 
 export function AdminOverview() {
+  const t = useTranslations("Admin.overview");
   const statsQuery = useQuery({
     queryKey: ["admin-stats"],
     queryFn: () =>
@@ -33,15 +35,15 @@ export function AdminOverview() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatTile label="Benutzer" icon={Users} value={stats?.users ?? 0} />
-        <StatTile label="Tracker" icon={Wallet} value={stats?.trackers ?? 0} />
+        <StatTile label={t("users")} icon={Users} value={stats?.users ?? 0} />
+        <StatTile label={t("trackers")} icon={Wallet} value={stats?.trackers ?? 0} />
         <StatTile
-          label="Buchungen"
+          label={t("transactions")}
           icon={ReceiptText}
           value={stats?.transactions ?? 0}
         />
         <StatTile
-          label="Termine"
+          label={t("schedules")}
           icon={CalendarClock}
           value={stats?.schedules ?? 0}
         />
@@ -49,14 +51,14 @@ export function AdminOverview() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatTile
-          label="Saldo gesamt"
+          label={t("balanceTotal")}
           tone="inverse"
           icon={Wallet}
           value={<Amount cents={balanceCents} size="lg" tone="none" />}
           className="col-span-2 lg:col-span-1"
         />
         <StatTile
-          label="Einnahmen gesamt"
+          label={t("incomeTotal")}
           icon={ArrowUpRight}
           value={
             <Amount
@@ -67,7 +69,7 @@ export function AdminOverview() {
           }
         />
         <StatTile
-          label="Ausgaben gesamt"
+          label={t("expenseTotal")}
           icon={ArrowDownLeft}
           value={
             <Amount

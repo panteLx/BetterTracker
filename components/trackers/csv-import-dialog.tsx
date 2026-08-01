@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { AlertCircle, CheckCircle2, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,9 +62,9 @@ type ParsedCSV = {
   rows: Record<string, string>[];
 };
 
-function parseCSV(text: string): ParsedCSV | { error: string } {
+function parseCSV(text: string): ParsedCSV | { errorCode: "tooFewRows" } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return { error: "Die Datei enthält zu wenig Zeilen." };
+  if (lines.length < 2) return { errorCode: "tooFewRows" };
 
   const delimiter = detectDelimiter(lines[0]);
   const headers = parseCSVLine(lines[0], delimiter).map((h) => h.trim());
@@ -129,6 +130,7 @@ export function CsvImportDialog({
   trackerId,
   onSuccess,
 }: CsvImportDialogProps) {
+  const t = useTranslations("Trackers");
   const [step, setStep] = useState<Step>("upload");
   const [parsed, setParsed] = useState<ParsedCSV | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -165,8 +167,8 @@ export function CsvImportDialog({
       const text = e.target?.result as string;
       const outcome = parseCSV(text);
 
-      if ("error" in outcome) {
-        setParseError(outcome.error);
+      if ("errorCode" in outcome) {
+        setParseError(t("csvImport.errorTooFewRows"));
         return;
       }
 
@@ -176,7 +178,9 @@ export function CsvImportDialog({
       ].filter(Boolean);
 
       if (missing.length > 0) {
-        setParseError(`Fehlende Pflicht-Spalten: ${missing.join(", ")}`);
+        setParseError(
+          t("csvImport.errorMissingColumns", { columns: missing.join(", ") }),
+        );
         return;
       }
 
@@ -224,7 +228,7 @@ export function CsvImportDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Import fehlgeschlagen");
+        throw new Error(data.error || t("csvImport.errorImportFailed"));
       }
 
       setResult(data.result);
@@ -235,7 +239,9 @@ export function CsvImportDialog({
         transactions: 0,
         categories: 0,
         payees: 0,
-        errors: [error instanceof Error ? error.message : "Unbekannter Fehler"],
+        errors: [
+          error instanceof Error ? error.message : t("csvImport.errorUnknown"),
+        ],
       });
       setStep("result");
     } finally {
@@ -249,24 +255,34 @@ export function CsvImportDialog({
   );
 
   const visiblePreviewColumns = [
-    { key: "Date", label: "Datum" },
-    { key: "Amount", label: "Betrag" },
-    ...(columns.account && hasColumn("Account") ? [{ key: "Account", label: "Konto" }] : []),
-    ...(columns.payee && hasColumn("Payee") ? [{ key: "Payee", label: "Einzahler" }] : []),
-    ...(columns.notes && hasColumn("Notes") ? [{ key: "Notes", label: "Notiz" }] : []),
-    ...(columns.category && hasColumn("Category") ? [{ key: "Category", label: "Kategorie" }] : []),
+    { key: "Date", label: t("csvImport.configure.columnDate") },
+    { key: "Amount", label: t("csvImport.configure.columnAmount") },
+    ...(columns.account && hasColumn("Account")
+      ? [{ key: "Account", label: t("csvImport.configure.columnAccount") }]
+      : []),
+    ...(columns.payee && hasColumn("Payee")
+      ? [{ key: "Payee", label: t("csvImport.configure.columnPayee") }]
+      : []),
+    ...(columns.notes && hasColumn("Notes")
+      ? [{ key: "Notes", label: t("csvImport.configure.columnNotes") }]
+      : []),
+    ...(columns.category && hasColumn("Category")
+      ? [{ key: "Category", label: t("csvImport.configure.columnCategory") }]
+      : []),
   ];
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>CSV-Import (Actual Budget)</DialogTitle>
+          <DialogTitle>{t("csvImport.dialogTitle")}</DialogTitle>
           <DialogDescription>
-            {step === "upload" && "Wähle eine exportierte CSV-Datei aus Actual Budget aus."}
+            {step === "upload" && t("csvImport.descriptionUpload")}
             {step === "configure" &&
-              `${parsed?.rows.length ?? 0} Zeilen erkannt – wähle die zu importierenden Spalten.`}
-            {step === "result" && "Import abgeschlossen."}
+              t("csvImport.descriptionConfigure", {
+                count: parsed?.rows.length ?? 0,
+              })}
+            {step === "result" && t("csvImport.descriptionResult")}
           </DialogDescription>
         </DialogHeader>
 
@@ -295,7 +311,7 @@ export function CsvImportDialog({
         <DialogFooter className="p-6 pt-0">
           {step === "upload" && (
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              {t("csvImport.cancel")}
             </Button>
           )}
 
@@ -308,18 +324,18 @@ export function CsvImportDialog({
                   setParsed(null);
                 }}
               >
-                Zurück
+                {t("csvImport.back")}
               </Button>
               <Button onClick={handleImport} disabled={importing}>
                 {importing
-                  ? "Importiert…"
-                  : `${parsed?.rows.length ?? 0} Zeilen importieren`}
+                  ? t("csvImport.importingButton")
+                  : t("csvImport.importButton", { count: parsed?.rows.length ?? 0 })}
               </Button>
             </>
           )}
 
           {step === "result" && (
-            <Button onClick={() => onOpenChange(false)}>Schließen</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("csvImport.close")}</Button>
           )}
         </DialogFooter>
       </DialogContent>
@@ -338,6 +354,7 @@ function UploadStep({
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   parseError: string | null;
 }) {
+  const t = useTranslations("Trackers");
   return (
     <div className="space-y-4">
       <button
@@ -349,8 +366,8 @@ function UploadStep({
           <Upload className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-medium">CSV-Datei auswählen</p>
-          <p className="text-xs text-muted-foreground">Actual Budget Export (.csv)</p>
+          <p className="text-sm font-medium">{t("csvImport.upload.cta")}</p>
+          <p className="text-xs text-muted-foreground">{t("csvImport.upload.hint")}</p>
         </div>
       </button>
 
@@ -370,9 +387,9 @@ function UploadStep({
       )}
 
       <div className="rounded-xl bg-surface-muted p-3 text-xs text-muted-foreground space-y-1">
-        <p className="font-medium">Erwartete Spalten:</p>
-        <p>Account, Date, Payee, Notes, Category, Amount</p>
-        <p className="opacity-70">Split_Amount und Cleared werden ignoriert.</p>
+        <p className="font-medium">{t("csvImport.upload.expectedColumnsLabel")}</p>
+        <p>{t("csvImport.upload.expectedColumnsValue")}</p>
+        <p className="opacity-70">{t("csvImport.upload.ignoredColumnsNote")}</p>
       </div>
     </div>
   );
@@ -391,19 +408,20 @@ function ConfigureStep({
   hasColumn: (name: string) => boolean;
   visiblePreviewColumns: { key: string; label: string }[];
 }) {
+  const t = useTranslations("Trackers");
   const previewRows = parsed.rows.slice(0, 5);
 
   const toggleOptions = [
-    { key: "account" as const, label: "Konto (Account)", col: "Account" },
-    { key: "payee" as const, label: "Einzahler (Payee)", col: "Payee" },
-    { key: "notes" as const, label: "Notiz (Notes)", col: "Notes" },
-    { key: "category" as const, label: "Kategorie (Category)", col: "Category" },
+    { key: "account" as const, label: t("csvImport.configure.columnAccount"), col: "Account" },
+    { key: "payee" as const, label: t("csvImport.configure.columnPayee"), col: "Payee" },
+    { key: "notes" as const, label: t("csvImport.configure.columnNotes"), col: "Notes" },
+    { key: "category" as const, label: t("csvImport.configure.columnCategory"), col: "Category" },
   ];
 
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-3 text-sm font-medium">Spalten importieren</p>
+        <p className="mb-3 text-sm font-medium">{t("csvImport.configure.columnsHeading")}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {toggleOptions.map(({ key, label, col }) => (
             <div
@@ -428,14 +446,16 @@ function ConfigureStep({
           ))}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Datum und Betrag werden immer importiert.
+          {t("csvImport.configure.alwaysImportedNote")}
         </p>
       </div>
 
       <div>
         <p className="mb-2 text-sm font-medium">
-          Vorschau (erste {Math.min(5, previewRows.length)} von {parsed.rows.length}{" "}
-          Zeilen)
+          {t("csvImport.configure.previewHeading", {
+            shown: Math.min(5, previewRows.length),
+            total: parsed.rows.length,
+          })}
         </p>
         <div className="overflow-x-auto rounded-xl border border-border">
           <Table>
@@ -503,6 +523,7 @@ function ConfigureStep({
 }
 
 function ResultStep({ result }: { result: ImportResult }) {
+  const t = useTranslations("Trackers");
   const allFailed = result.transactions === 0 && result.errors.length > 0;
 
   return (
@@ -523,19 +544,19 @@ function ResultStep({ result }: { result: ImportResult }) {
         <div className="space-y-1">
           <p className="text-sm font-medium">
             {allFailed
-              ? "Import fehlgeschlagen"
-              : `${result.transactions} Transaktion${result.transactions !== 1 ? "en" : ""} importiert`}
+              ? t("csvImport.result.failed")
+              : t("csvImport.result.transactionsImported", { count: result.transactions })}
           </p>
           <div className="space-y-0.5 text-xs text-muted-foreground">
             {result.categories > 0 && (
-              <p>{result.categories} neue Kategorie{result.categories !== 1 ? "n" : ""} angelegt</p>
+              <p>{t("csvImport.result.categoriesCreated", { count: result.categories })}</p>
             )}
             {result.payees > 0 && (
-              <p>{result.payees} neue{result.payees !== 1 ? "" : "r"} Einzahler angelegt</p>
+              <p>{t("csvImport.result.payeesCreated", { count: result.payees })}</p>
             )}
             {result.errors.length > 0 && (
               <p className="text-destructive">
-                {result.errors.length} Zeile{result.errors.length !== 1 ? "n" : ""} übersprungen
+                {t("csvImport.result.rowsSkipped", { count: result.errors.length })}
               </p>
             )}
           </div>
@@ -544,7 +565,7 @@ function ResultStep({ result }: { result: ImportResult }) {
 
       {result.errors.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-destructive">Übersprungene Zeilen</p>
+          <p className="text-sm font-medium text-destructive">{t("csvImport.result.skippedRowsHeading")}</p>
           <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-destructive/20 bg-destructive/5 p-3">
             {result.errors.map((error, i) => (
               <p key={i} className="text-xs text-destructive">

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -123,18 +124,20 @@ type EditScheduleState = {
 };
 
 type SchedulesClientProps = {
-  locale: string;
   currentUserId: string;
 };
 
 const ALL_FILTER_VALUE = "all";
 
-function getScheduleStatusLabel(status: Schedule["status"]) {
-  if (status === "overdue") return "Überfällig";
-  if (status === "due") return "Fällig";
-  if (status === "upcoming") return "Demnächst";
-  if (status === "completed") return "Abgeschlossen";
-  return "Unvollständig";
+function getScheduleStatusLabel(
+  status: Schedule["status"],
+  t: ReturnType<typeof useTranslations>,
+) {
+  if (status === "overdue") return t("status.overdue");
+  if (status === "due") return t("status.due");
+  if (status === "upcoming") return t("status.upcoming");
+  if (status === "completed") return t("status.completed");
+  return t("status.incomplete");
 }
 
 function getStatusVariant(status: Schedule["status"]) {
@@ -145,9 +148,11 @@ function getStatusVariant(status: Schedule["status"]) {
 }
 
 export function SchedulesClient({
-  locale,
   currentUserId,
 }: SchedulesClientProps) {
+  const locale = useLocale();
+  const t = useTranslations("Schedules");
+  const commonT = useTranslations("Common");
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [selectedTracker, setSelectedTracker] = useState("");
@@ -257,7 +262,7 @@ export function SchedulesClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Termin gespeichert");
+      toast.success(t("toast.created"));
       setSheetOpen(false);
       setName("");
       setAmount("");
@@ -273,7 +278,7 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.createError"),
       );
     },
   });
@@ -291,7 +296,7 @@ export function SchedulesClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Termin aktualisiert");
+      toast.success(t("toast.updated"));
       setEditingScheduleId("");
       setEditState(null);
       setReactivatingScheduleId("");
@@ -306,7 +311,7 @@ export function SchedulesClient({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Aktualisierung fehlgeschlagen",
+          : t("toast.updateError"),
       );
     },
   });
@@ -317,7 +322,7 @@ export function SchedulesClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Termin gelöscht");
+      toast.success(t("toast.deleted"));
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -327,7 +332,7 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.deleteError"),
       );
     },
   });
@@ -338,7 +343,7 @@ export function SchedulesClient({
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Termin als Transaktion gebucht");
+      toast.success(t("toast.booked"));
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -351,7 +356,7 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.bookError"),
       );
     },
   });
@@ -362,7 +367,7 @@ export function SchedulesClient({
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Termin übersprungen");
+      toast.success(t("toast.skipped"));
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -372,7 +377,7 @@ export function SchedulesClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Überspringen fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.skipError"),
       );
     },
   });
@@ -381,12 +386,12 @@ export function SchedulesClient({
     event.preventDefault();
 
     if (!activeTrackerId) {
-      toast.error("Bitte zuerst einen Tracker wählen");
+      toast.error(t("toast.selectTrackerFirst"));
       return;
     }
 
     if (categoryId === EMPTY_SELECT_VALUE || payeeId === EMPTY_SELECT_VALUE) {
-      toast.error("Kategorie und Einzahler sind Pflichtfelder");
+      toast.error(t("toast.categoryAndPayeeRequired"));
       return;
     }
 
@@ -437,9 +442,7 @@ export function SchedulesClient({
       editState.categoryId === EMPTY_SELECT_VALUE ||
       editState.payeeId === EMPTY_SELECT_VALUE
     ) {
-      toast.error(
-        "Name, Betrag, Datum, Kategorie und Einzahler sind Pflichtfelder",
-      );
+      toast.error(t("toast.allFieldsRequired"));
       return;
     }
 
@@ -477,7 +480,7 @@ export function SchedulesClient({
 
   function submitReactivate(id: string) {
     if (!reactivationDate) {
-      toast.error("Bitte ein neues nächstes Datum angeben");
+      toast.error(t("toast.reactivationDateRequired"));
       return;
     }
 
@@ -555,7 +558,7 @@ export function SchedulesClient({
       <div className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>{t("edit.name")}</Label>
             <Input
               value={editState.name}
               onChange={(event) =>
@@ -563,11 +566,11 @@ export function SchedulesClient({
                   current ? { ...current, name: event.target.value } : current,
                 )
               }
-              placeholder="z. B. Miete"
+              placeholder={t("edit.namePlaceholder")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Betrag</Label>
+            <Label>{t("edit.amount")}</Label>
             <Input
               value={editState.amount}
               onChange={(event) =>
@@ -584,7 +587,7 @@ export function SchedulesClient({
         </div>
 
         <div className="space-y-2">
-          <Label>Typ</Label>
+          <Label>{t("edit.type")}</Label>
           <DirectionToggle
             size="sm"
             value={editState.direction}
@@ -601,7 +604,7 @@ export function SchedulesClient({
             kind="category"
             trackerId={activeTrackerId}
             locale={locale}
-            label="Kategorie"
+            label={t("edit.category")}
             options={(categoriesQuery.data?.items || [])
               .filter(
                 (entry) =>
@@ -625,7 +628,7 @@ export function SchedulesClient({
             kind="payee"
             trackerId={activeTrackerId}
             locale={locale}
-            label="Einzahler"
+            label={t("edit.payee")}
             options={(payeesQuery.data?.items || []).map((entry) => ({
               value: entry.id,
               label: entry.name,
@@ -642,7 +645,7 @@ export function SchedulesClient({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label>Frequenz</Label>
+            <Label>{t("edit.frequency")}</Label>
             <Select
               value={editState.frequency}
               onValueChange={(value) =>
@@ -663,14 +666,14 @@ export function SchedulesClient({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">Monatlich</SelectItem>
-                <SelectItem value="yearly">Jährlich</SelectItem>
-                <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                <SelectItem value="monthly">{t("edit.frequencyMonthly")}</SelectItem>
+                <SelectItem value="yearly">{t("edit.frequencyYearly")}</SelectItem>
+                <SelectItem value="custom_days">{t("edit.frequencyCustomDays")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Intervall</Label>
+            <Label>{t("edit.interval")}</Label>
             <Input
               value={editState.intervalValue}
               onChange={(event) =>
@@ -688,7 +691,7 @@ export function SchedulesClient({
             />
           </div>
           <div className="space-y-2">
-            <Label>Nächster Termin</Label>
+            <Label>{t("edit.nextDueDate")}</Label>
             <DatePicker
               value={editState.nextDueDate}
               onChange={(value) =>
@@ -701,7 +704,7 @@ export function SchedulesClient({
         </div>
 
         <div className="space-y-2">
-          <Label>Notizvorlage (optional)</Label>
+          <Label>{t("edit.notesTemplate")}</Label>
           <Input
             value={editState.notesTemplate}
             onChange={(event) =>
@@ -711,7 +714,7 @@ export function SchedulesClient({
                   : current,
               )
             }
-            placeholder="Wird beim Buchen übernommen"
+            placeholder={t("edit.notesTemplatePlaceholder")}
           />
         </div>
 
@@ -722,7 +725,7 @@ export function SchedulesClient({
             size="sm"
             onClick={cancelEdit}
           >
-            Abbrechen
+            {t("edit.cancel")}
           </Button>
           <Button
             type="button"
@@ -730,7 +733,7 @@ export function SchedulesClient({
             onClick={() => submitEdit(item.id)}
             disabled={updateMutation.isPending}
           >
-            {updateMutation.isPending ? "Speichert..." : "Speichern"}
+            {updateMutation.isPending ? t("edit.saving") : t("edit.save")}
           </Button>
         </div>
       </div>
@@ -746,14 +749,14 @@ export function SchedulesClient({
           onClick={() => submitReactivate(item.id)}
           disabled={updateMutation.isPending}
         >
-          {updateMutation.isPending ? "Speichert..." : "Jetzt reaktivieren"}
+          {updateMutation.isPending ? t("reactivate.saving") : t("reactivate.confirm")}
         </Button>
         <Button
           type="button"
           variant="ghost"
           onClick={() => setReactivatingScheduleId("")}
         >
-          Abbrechen
+          {t("reactivate.cancel")}
         </Button>
       </div>
     );
@@ -776,8 +779,8 @@ export function SchedulesClient({
         return (
           <EmptyState
             icon={CalendarClock}
-            title="Keine Treffer für diese Filter"
-            description="Lockere die Filter, um mehr zu sehen."
+            title={t("empty.noMatchesTitle")}
+            description={t("empty.noMatchesDescription")}
             action={
               <Button
                 variant="outline"
@@ -786,7 +789,7 @@ export function SchedulesClient({
                 onClick={resetFilters}
               >
                 <X className="h-3.5 w-3.5" />
-                Filter zurücksetzen
+                {t("empty.resetFilters")}
               </Button>
             }
           />
@@ -815,7 +818,7 @@ export function SchedulesClient({
           const overflowItems = [
             item.isActive && {
               key: "skip",
-              label: "Überspringen",
+              label: t("actions.skip"),
               icon: SkipForward,
               disabled: busy || !isTrackerMutable,
               onSelect: () => skipScheduleMutation.mutate(item.id),
@@ -823,7 +826,7 @@ export function SchedulesClient({
             item.isActive &&
               item.canEdit && {
                 key: "complete",
-                label: "Abschließen",
+                label: t("actions.complete"),
                 icon: CheckCircle2,
                 disabled: busy || !isTrackerMutable,
                 onSelect: () => completeSchedule(item.id),
@@ -831,21 +834,21 @@ export function SchedulesClient({
             !item.isActive &&
               item.canEdit && {
                 key: "reactivate",
-                label: "Reaktivieren",
+                label: t("actions.reactivate"),
                 icon: RotateCcw,
                 disabled: busy || !isTrackerMutable,
                 onSelect: () => openReactivate(item),
               },
             item.canEdit && {
               key: "edit",
-              label: "Bearbeiten",
+              label: t("actions.edit"),
               icon: Pencil,
               disabled: busy || !isTrackerMutable,
               onSelect: () => (isEditing ? cancelEdit() : startEdit(item)),
             },
             item.canDelete && {
               key: "delete",
-              label: "Löschen",
+              label: t("actions.delete"),
               icon: Trash2,
               destructive: true,
               disabled: deleteMutation.isPending || !isTrackerMutable,
@@ -861,10 +864,12 @@ export function SchedulesClient({
           }>;
 
           const subtitleParts = [
-            item.payeeName || "Einzahler fehlt",
-            item.categoryName || "Kategorie fehlt",
-            `nächster Termin ${formatDateShort(item.nextDueDate, locale)}`,
-            isOwnSchedule ? "von dir" : null,
+            item.payeeName || t("item.payeeMissing"),
+            item.categoryName || t("item.categoryMissing"),
+            t("item.nextDue", {
+              date: formatDateShort(item.nextDueDate, locale),
+            }),
+            isOwnSchedule ? t("item.byYou") : null,
           ].filter(Boolean);
 
           return (
@@ -886,14 +891,24 @@ export function SchedulesClient({
               meta={
                 <>
                   <Badge variant={getStatusVariant(item.status)}>
-                    {getScheduleStatusLabel(item.status)}
+                    {getScheduleStatusLabel(item.status, t)}
                   </Badge>
                   <span className="font-subtext text-xs text-muted-foreground">
-                    {getFrequencyLabel(item.frequency, item.intervalValue)}
+                    {getFrequencyLabel(item.frequency, item.intervalValue, {
+                      monthly: commonT("frequency.monthly"),
+                      monthlyInterval: (count) =>
+                        commonT("frequency.monthlyInterval", { count }),
+                      yearly: commonT("frequency.yearly"),
+                      yearlyInterval: (count) =>
+                        commonT("frequency.yearlyInterval", { count }),
+                      daily: commonT("frequency.daily"),
+                      dailyInterval: (count) =>
+                        commonT("frequency.dailyInterval", { count }),
+                    })}
                   </span>
                   {!item.isComplete ? (
                     <Badge variant="warning">
-                      Einzahler und Kategorie fehlen
+                      {t("item.incompleteBadge")}
                     </Badge>
                   ) : null}
                 </>
@@ -921,7 +936,7 @@ export function SchedulesClient({
                         busy || !tracker?.isActive || !item.canCreateTransaction
                       }
                     >
-                      Buchen
+                      {t("item.book")}
                     </Button>
                   ) : null}
                 </>
@@ -934,7 +949,7 @@ export function SchedulesClient({
                         variant="ghost"
                         size="icon-sm"
                         shape="pill"
-                        aria-label={`Weitere Aktionen für ${item.name}`}
+                        aria-label={t("item.moreActionsAria", { name: item.name })}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -973,15 +988,19 @@ export function SchedulesClient({
   }
 
   const tabs = [
-    { value: "due" as const, label: "Fällig", count: filteredDueItems.length },
+    {
+      value: "due" as const,
+      label: t("tabs.due"),
+      count: filteredDueItems.length,
+    },
     {
       value: "upcoming" as const,
-      label: "Demnächst",
+      label: t("tabs.upcoming"),
       count: filteredUpcomingItems.length,
     },
     {
       value: "inactive" as const,
-      label: "Abgeschlossen",
+      label: t("tabs.inactive"),
       count: filteredInactiveItems.length,
     },
   ];
@@ -1001,14 +1020,14 @@ export function SchedulesClient({
           inverted tile. */}
       <div className="grid grid-cols-3 gap-3">
         <StatTile
-          label="Fällig"
+          label={t("stats.due")}
           tone="inverse"
           icon={AlertCircle}
           value={dueCount}
         />
-        <StatTile label="Demnächst" icon={Clock} value={upcomingCount} />
+        <StatTile label={t("stats.upcoming")} icon={Clock} value={upcomingCount} />
         <StatTile
-          label="Abgeschlossen"
+          label={t("stats.completed")}
           icon={CheckCircle2}
           value={inactiveCount}
         />
@@ -1023,21 +1042,21 @@ export function SchedulesClient({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Name, Kategorie, Einzahler oder Notiz suchen"
-              aria-label="Termine durchsuchen"
+              placeholder={t("filters.searchPlaceholder")}
+              aria-label={t("filters.searchAria")}
               value={filterQuery}
               onChange={(event) => setFilterQuery(event.target.value)}
             />
           </div>
 
           <Segmented
-            label="Nach Typ filtern"
+            label={t("filters.typeLabel")}
             size={isMobile ? "sm" : "md"}
             className="min-w-0 flex-1 sm:flex-none"
             items={[
-              { value: ALL_FILTER_VALUE, label: "Alle" },
-              { value: "expense", label: "Ausgaben" },
-              { value: "income", label: "Einnahmen" },
+              { value: ALL_FILTER_VALUE, label: t("filters.typeAll") },
+              { value: "expense", label: t("filters.typeExpense") },
+              { value: "income", label: t("filters.typeIncome") },
             ]}
             value={filterDirection}
             onValueChange={setFilterDirection}
@@ -1047,13 +1066,13 @@ export function SchedulesClient({
         <div className="flex flex-wrap items-center gap-2">
           <Select value={filterCategoryId} onValueChange={setFilterCategoryId}>
             <SelectTrigger
-              aria-label="Nach Kategorie filtern"
+              aria-label={t("filters.categoryAria")}
               className="min-w-36 flex-1 sm:w-44 sm:flex-none"
             >
-              <SelectValue placeholder="Alle Kategorien" />
+              <SelectValue placeholder={t("filters.categoryAll")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
+              <SelectItem value={ALL_FILTER_VALUE}>{t("filters.categoryAll")}</SelectItem>
               {allActiveCategories.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.name}
@@ -1064,13 +1083,13 @@ export function SchedulesClient({
 
           <Select value={filterPayeeId} onValueChange={setFilterPayeeId}>
             <SelectTrigger
-              aria-label="Nach Einzahler filtern"
+              aria-label={t("filters.payeeAria")}
               className="min-w-36 flex-1 sm:w-44 sm:flex-none"
             >
-              <SelectValue placeholder="Alle Einzahler" />
+              <SelectValue placeholder={t("filters.payeeAll")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
+              <SelectItem value={ALL_FILTER_VALUE}>{t("filters.payeeAll")}</SelectItem>
               {activePayees.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.name}
@@ -1084,16 +1103,16 @@ export function SchedulesClient({
               className="min-w-0 flex-1 sm:w-36 sm:flex-none"
               value={filterFrom}
               onChange={setFilterFrom}
-              placeholder="Von"
-              aria-label="Startdatum für Datumsfilter"
+              placeholder={t("filters.dateFrom")}
+              aria-label={t("filters.dateFromAria")}
             />
             <span className="text-muted-foreground">–</span>
             <DatePicker
               className="min-w-0 flex-1 sm:w-36 sm:flex-none"
               value={filterTo}
               onChange={setFilterTo}
-              placeholder="Bis"
-              aria-label="Enddatum für Datumsfilter"
+              placeholder={t("filters.dateTo")}
+              aria-label={t("filters.dateToAria")}
             />
           </div>
 
@@ -1106,7 +1125,7 @@ export function SchedulesClient({
               onClick={resetFilters}
             >
               <X className="h-3.5 w-3.5" />
-              {activeFilterCount} Filter zurücksetzen
+              {t("filters.reset", { count: activeFilterCount })}
             </Button>
           ) : null}
         </div>
@@ -1114,7 +1133,7 @@ export function SchedulesClient({
 
       <div className="space-y-4">
         <Segmented
-          label="Nach Status filtern"
+          label={t("filters.statusLabel")}
           items={tabs.map((entry) => ({
             value: entry.value,
             label: `${entry.label} (${entry.count})`,
@@ -1126,24 +1145,24 @@ export function SchedulesClient({
         {tab === "due"
           ? renderItems(
               filteredDueItems,
-              "Nichts fällig",
-              "Aktuell steht kein Termin zur Buchung an.",
+              t("empty.dueTitle"),
+              t("empty.dueDescription"),
               dueItems.length,
             )
           : null}
         {tab === "upcoming"
           ? renderItems(
               filteredUpcomingItems,
-              "Nichts in Sicht",
-              "Es sind keine kommenden Termine angelegt.",
+              t("empty.upcomingTitle"),
+              t("empty.upcomingDescription"),
               upcomingItems.length,
             )
           : null}
         {tab === "inactive"
           ? renderItems(
               filteredInactiveItems,
-              "Noch nichts abgeschlossen",
-              "Abgeschlossene und archivierte Termine landen hier.",
+              t("empty.inactiveTitle"),
+              t("empty.inactiveDescription"),
               inactiveItems.length,
             )
           : null}
@@ -1159,26 +1178,28 @@ export function SchedulesClient({
             <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted" />
           )}
           <div className="shrink-0 border-b border-border p-5 pr-12">
-            <SheetTitle>Neuer Termin</SheetTitle>
-            <SheetDescription>für {tracker?.name}</SheetDescription>
+            <SheetTitle>{t("form.sheetTitle")}</SheetTitle>
+            <SheetDescription>
+              {t("form.sheetDescriptionFor", { trackerName: tracker?.name ?? "" })}
+            </SheetDescription>
           </div>
           <div className="flex-1 overflow-y-auto">
             <form onSubmit={onSubmit} className="space-y-5 p-5">
               {/* Basic data */}
               <div className="space-y-4">
-                <p className="text-sm font-semibold">Grunddaten</p>
+                <p className="text-sm font-semibold">{t("form.basicsHeading")}</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">{t("form.name")}</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      placeholder="z. B. Miete Juli"
+                      placeholder={t("form.namePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Betrag</Label>
+                    <Label htmlFor="amount">{t("form.amount")}</Label>
                     <Input
                       id="amount"
                       value={amount}
@@ -1199,7 +1220,7 @@ export function SchedulesClient({
                 kind="category"
                 trackerId={activeTrackerId}
                 locale={locale}
-                label="Kategorie"
+                label={t("form.category")}
                 options={filteredCategories.map((item) => ({
                   value: item.id,
                   label: item.name,
@@ -1216,7 +1237,7 @@ export function SchedulesClient({
                 kind="payee"
                 trackerId={activeTrackerId}
                 locale={locale}
-                label="Einzahler"
+                label={t("form.payee")}
                 options={activePayees.map((item) => ({
                   value: item.id,
                   label: item.name,
@@ -1229,10 +1250,10 @@ export function SchedulesClient({
 
               {/* Frequency */}
               <div className="space-y-3">
-                <p className="text-sm font-semibold">Rhythmus</p>
+                <p className="text-sm font-semibold">{t("form.rhythmHeading")}</p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-2 sm:col-span-1">
-                    <Label>Frequenz</Label>
+                    <Label>{t("form.frequency")}</Label>
                     <Select
                       value={frequency}
                       onValueChange={(value) =>
@@ -1245,14 +1266,14 @@ export function SchedulesClient({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="monthly">Monatlich</SelectItem>
-                        <SelectItem value="yearly">Jährlich</SelectItem>
-                        <SelectItem value="custom_days">Alle X Tage</SelectItem>
+                        <SelectItem value="monthly">{t("form.frequencyMonthly")}</SelectItem>
+                        <SelectItem value="yearly">{t("form.frequencyYearly")}</SelectItem>
+                        <SelectItem value="custom_days">{t("form.frequencyCustomDays")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="interval">Intervall</Label>
+                    <Label htmlFor="interval">{t("form.interval")}</Label>
                     <Input
                       id="interval"
                       value={intervalValue}
@@ -1261,7 +1282,7 @@ export function SchedulesClient({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nextDueDate">Startdatum</Label>
+                    <Label htmlFor="nextDueDate">{t("form.startDate")}</Label>
                     <DatePicker
                       id="nextDueDate"
                       value={nextDueDate}
@@ -1270,18 +1291,28 @@ export function SchedulesClient({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {getFrequencyLabel(frequency, normalizedIntervalValue)}
+                  {getFrequencyLabel(frequency, normalizedIntervalValue, {
+                    monthly: commonT("frequency.monthly"),
+                    monthlyInterval: (count) =>
+                      commonT("frequency.monthlyInterval", { count }),
+                    yearly: commonT("frequency.yearly"),
+                    yearlyInterval: (count) =>
+                      commonT("frequency.yearlyInterval", { count }),
+                    daily: commonT("frequency.daily"),
+                    dailyInterval: (count) =>
+                      commonT("frequency.dailyInterval", { count }),
+                  })}
                 </p>
               </div>
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="notesTemplate">Notizvorlage (optional)</Label>
+                <Label htmlFor="notesTemplate">{t("form.notesTemplate")}</Label>
                 <Textarea
                   id="notesTemplate"
                   value={notesTemplate}
                   onChange={(event) => setNotesTemplate(event.target.value)}
-                  placeholder="Wird beim Buchen übernommen"
+                  placeholder={t("form.notesTemplatePlaceholder")}
                   rows={3}
                 />
               </div>
@@ -1291,7 +1322,7 @@ export function SchedulesClient({
                 className="w-full"
                 disabled={createMutation.isPending || !isTrackerMutable}
               >
-                {createMutation.isPending ? "Speichere..." : "Termin anlegen"}
+                {createMutation.isPending ? t("form.submitting") : t("form.submit")}
               </Button>
             </form>
           </div>

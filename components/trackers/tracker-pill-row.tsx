@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Segmented, type SegmentedItem } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 
@@ -37,11 +38,14 @@ export function TrackerPillRow({
   onDrop,
   className,
 }: TrackerPillRowProps) {
+  const t = useTranslations("Trackers");
   const draggable = Boolean(onDragStart || onDragEnd || onDrop);
 
   const items: SegmentedItem<string>[] = trackers.map((tracker) => ({
     value: tracker.id,
-    label: tracker.isActive ? tracker.name : `${tracker.name} (Archiv)`,
+    label: tracker.isActive
+      ? tracker.name
+      : t("pillRow.archivedLabel", { name: tracker.name }),
     dot: tracker.color,
     buttonProps: draggable
       ? {
@@ -57,7 +61,7 @@ export function TrackerPillRow({
 
   return (
     <Segmented
-      label="Tracker auswählen"
+      label={t("pillRow.selectLabel")}
       items={items}
       value={activeTrackerId}
       onValueChange={onSelect}

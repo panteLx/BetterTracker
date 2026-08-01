@@ -1,0 +1,66 @@
+{
+  "title": "Dashboard",
+  "description": "Wo du gerade stehst und was als Nächstes ansteht.",
+  "trackerForm": {
+    "nameLabel": "Name",
+    "namePlaceholder": "z. B. Urlaub",
+    "colorLabel": "Farbe",
+    "currencyLabel": "Währung",
+    "webhookLabel": "Discord Webhook URL",
+    "roleLabel": "Discord Ping Role ID",
+    "rolePlaceholder": "Optional",
+    "debugLabel": "Discord Debug",
+    "debugDescription": "Zusätzliche Debug-Infos in Discord mitsenden.",
+    "submitting": "Speichert…",
+    "createTitle": "Ersten Tracker anlegen",
+    "createDescription": "Sobald der erste Tracker steht, kannst du Buchungen, Kategorien und Termine erfassen.",
+    "createSubmit": "Tracker anlegen"
+  },
+  "newTrackerButton": "Neuer Tracker",
+  "trackerSettingsAria": "Einstellungen für {name}",
+  "stats": {
+    "balance": "Saldo",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben",
+    "transactions": "Buchungen",
+    "forecast": "In {days} Tagen etwa {amount}",
+    "scheduledCount": "{count} geplant in {days} Tagen"
+  },
+  "recent": {
+    "title": "Letzte Buchungen",
+    "viewAll": "Alle ansehen",
+    "anonymousPayee": "Anonym",
+    "noCategory": "Ohne Kategorie",
+    "emptyTitle": "Noch keine Buchungen",
+    "emptyDescription": "Leg mit dem Plus-Button unten rechts die erste Einnahme oder Ausgabe an."
+  },
+  "upcoming": {
+    "title": "Nächste {days} Tage",
+    "viewAll": "Termine",
+    "status": {
+      "overdue": "Überfällig",
+      "due": "Heute fällig",
+      "upcoming": "Demnächst"
+    },
+    "bookTitle": "Als Buchung übernehmen",
+    "bookAria": "{name} als Buchung übernehmen",
+    "skipTitle": "Diesen Termin überspringen",
+    "skipAria": "{name} überspringen",
+    "emptyTitle": "Keine Termine in Sicht",
+    "emptyDescription": "In den nächsten {days} Tagen steht nichts an."
+  },
+  "newTrackerSheet": {
+    "title": "Neuer Tracker",
+    "description": "Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt Discord."
+  },
+  "toast": {
+    "scheduleBooked": "Termin gebucht",
+    "bookingFailed": "Buchen fehlgeschlagen",
+    "scheduleSkipped": "Termin übersprungen",
+    "skipFailed": "Überspringen fehlgeschlagen",
+    "trackerCreated": "Tracker angelegt",
+    "trackerCreateFailed": "Tracker konnte nicht angelegt werden",
+    "reorderFailed": "Tracker-Reihenfolge konnte nicht gespeichert werden",
+    "nameRequired": "Bitte einen Tracker-Namen eingeben"
+  }
+}

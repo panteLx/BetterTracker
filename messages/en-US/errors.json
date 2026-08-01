@@ -1,0 +1,21 @@
+{
+  "boundary": {
+    "title": "Something went wrong",
+    "unknownError": "An unknown error occurred.",
+    "retry": "Try again"
+  },
+  "api": {
+    "invalidYear": "Invalid year",
+    "trackerArchived": "Tracker is archived and cannot be edited",
+    "invalidJsonBody": "Invalid JSON body",
+    "trackerAlreadyOwned": "You already own this tracker",
+    "importRowsRequired": "rows is required and must not be empty",
+    "importRowNoAmount": "Row {rowNum}: No amount",
+    "importRowInvalidAmount": "Row {rowNum}: Invalid amount \"{amount}\"",
+    "importRowInvalidDate": "Row {rowNum}: Invalid date \"{date}\"",
+    "importRowNoCategory": "Row {rowNum}: No category",
+    "importRowNoCategoryNamed": "Row {rowNum}: No category \"{catName}\"",
+    "importRowError": "Row {rowNum}: {message}",
+    "importRowGenericError": "Error"
+  }
+}

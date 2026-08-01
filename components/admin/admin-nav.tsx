@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   FileText,
   LayoutDashboard,
@@ -18,36 +19,37 @@ import { cn } from "@/lib/utils";
  */
 const adminGroups = [
   {
-    label: "Verwaltung",
+    groupKey: "management",
     links: [
-      { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true },
-      { href: "/admin/users", label: "Benutzer", icon: Users, exact: false },
-      { href: "/admin/trackers", label: "Tracker", icon: Shield, exact: false },
+      { href: "/admin", labelKey: "overview", icon: LayoutDashboard, exact: true },
+      { href: "/admin/users", labelKey: "users", icon: Users, exact: false },
+      { href: "/admin/trackers", labelKey: "trackers", icon: Shield, exact: false },
     ],
   },
   {
-    label: "System",
+    groupKey: "system",
     links: [
       {
         href: "/admin/settings",
-        label: "Einstellungen",
+        labelKey: "settings",
         icon: Settings,
         exact: false,
       },
-      { href: "/admin/logs", label: "Protokoll", icon: FileText, exact: false },
+      { href: "/admin/logs", labelKey: "logs", icon: FileText, exact: false },
     ],
   },
-];
+] as const;
 
 export function AdminNav() {
   const pathname = usePathname();
+  const t = useTranslations("Admin.nav");
 
   function isActive(href: string, exact: boolean) {
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
   return (
-    <nav aria-label="Administrationsbereiche">
+    <nav aria-label={t("ariaLabel")}>
       {/* Phones get a single scrollable row — a sidebar would eat the screen. */}
       <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:hidden">
         {adminGroups.flatMap((group) =>
@@ -68,7 +70,7 @@ export function AdminNav() {
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {link.label}
+                {t(`links.${link.labelKey}`)}
               </Link>
             );
           }),
@@ -77,8 +79,10 @@ export function AdminNav() {
 
       <div className="hidden space-y-5 lg:block">
         {adminGroups.map((group) => (
-          <div key={group.label} className="space-y-1">
-            <MicroLabel className="px-3 pb-1">{group.label}</MicroLabel>
+          <div key={group.groupKey} className="space-y-1">
+            <MicroLabel className="px-3 pb-1">
+              {t(`groups.${group.groupKey}`)}
+            </MicroLabel>
             {group.links.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.href, link.exact);
@@ -96,7 +100,7 @@ export function AdminNav() {
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  {link.label}
+                  {t(`links.${link.labelKey}`)}
                 </Link>
               );
             })}

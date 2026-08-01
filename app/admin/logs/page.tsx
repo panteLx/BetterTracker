@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminLogsClient } from "@/components/admin/admin-logs-client";
 import { PageContainer } from "@/components/layout/page-container";
@@ -38,6 +39,7 @@ export default async function AdminLogsPage() {
     redirect("/");
   }
 
+  const t = await getTranslations("Admin.logs.page");
   const queryClient = makeQueryClient();
   await queryClient.prefetchQuery({
     queryKey: ["admin-logs", ""],
@@ -47,12 +49,12 @@ export default async function AdminLogsPage() {
   return (
     <PageContainer
       user={loggedInUser}
-      title="Protokoll"
-      description="Die letzten Änderungen am System, mit Zeitpunkt und Verursacher."
+      title={t("title")}
+      description={t("description")}
     >
       <AdminShell>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <AdminLogsClient locale={env.defaultLocale} timezone={env.timezone} currentRole={loggedInUser.role} />
+        <AdminLogsClient timezone={env.timezone} currentRole={loggedInUser.role} />
       </HydrationBoundary>
       </AdminShell>
     </PageContainer>

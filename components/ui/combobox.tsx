@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ export function Combobox({
   triggerClassName,
 }: ComboboxProps) {
   const isMobile = useIsMobile();
+  const t = useTranslations("Common");
   const selectedItem = items.find((item) => item.value === value);
 
   const trigger = (
@@ -97,7 +99,7 @@ export function Combobox({
       {loading ? (
         <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Lädt…
+          {t("loading")}
         </div>
       ) : (
         <CommandList

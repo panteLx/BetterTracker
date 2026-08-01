@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export function AdminSettingsClient({
 }: {
   currentRole: "admin" | "superadmin";
 }) {
+  const t = useTranslations("Admin.settings");
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-settings"],
@@ -37,13 +39,13 @@ export function AdminSettingsClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Settings gespeichert");
+      toast.success(t("toasts.saved"));
       setDraft(null);
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+        error instanceof Error ? error.message : t("toasts.saveError"),
       );
     },
   });
@@ -63,12 +65,12 @@ export function AdminSettingsClient({
         },
       ),
     onSuccess: (data) => {
-      toast.success(`${data.updatedCount} Tracker aktualisiert`);
+      toast.success(t("toasts.applyDefaultsSuccess", { count: data.updatedCount }));
       queryClient.invalidateQueries({ queryKey: ["trackers"] });
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Uebernahme fehlgeschlagen",
+        error instanceof Error ? error.message : t("toasts.applyDefaultsError"),
       );
     },
   });
@@ -95,15 +97,14 @@ export function AdminSettingsClient({
       {currentRole === "superadmin" ? (
         <Card>
           <CardHeader>
-            <CardTitle>System</CardTitle>
+            <CardTitle>{t("system.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between rounded-2xl border border-border p-4">
               <div>
-                <p className="font-medium">Registrierung erlaubt</p>
+                <p className="font-medium">{t("system.registrationEnabled.title")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Neue Benutzer dürfen sich über die öffentliche Registrierung
-                  anmelden.
+                  {t("system.registrationEnabled.description")}
                 </p>
               </div>
               <Switch
@@ -119,12 +120,12 @@ export function AdminSettingsClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Discord</CardTitle>
+          <CardTitle>{t("discord.title")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="discordWebhookUrl">
-              Discord-Default Webhook URL
+              {t("discord.webhookUrl")}
             </Label>
             <Input
               id="discordWebhookUrl"
@@ -136,7 +137,7 @@ export function AdminSettingsClient({
           </div>
           <div className="space-y-2">
             <Label htmlFor="discordPingRoleId">
-              Discord-Default Ping Role ID
+              {t("discord.pingRoleId")}
             </Label>
             <Input
               id="discordPingRoleId"
@@ -148,9 +149,9 @@ export function AdminSettingsClient({
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-border p-4">
             <div>
-              <p className="font-medium">Discord-Default Debug</p>
+              <p className="font-medium">{t("discord.debug.title")}</p>
               <p className="text-sm text-muted-foreground">
-                Neue Tracker übernehmen diesen Discord-Debug-Standardwert.
+                {t("discord.debug.description")}
               </p>
             </div>
             <Switch
@@ -162,11 +163,10 @@ export function AdminSettingsClient({
           </div>
           <div className="rounded-2xl border border-border p-4 md:col-span-2">
             <p className="font-medium">
-              Discord-Defaults auf alle Tracker anwenden
+              {t("discord.applyDefaults.title")}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Uebertraegt Webhook, Ping Role ID und Discord-Debug aus dieser
-              Seite in jeden vorhandenen Tracker.
+              {t("discord.applyDefaults.description")}
             </p>
             <Button
               type="button"
@@ -181,7 +181,7 @@ export function AdminSettingsClient({
               }
               disabled={applyDiscordDefaultsMutation.isPending}
             >
-              Auf alle Tracker übernehmen
+              {t("discord.applyDefaults.button")}
             </Button>
           </div>
         </CardContent>
@@ -189,7 +189,7 @@ export function AdminSettingsClient({
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={patchMutation.isPending}>
-          Settings speichern
+          {t("save")}
         </Button>
       </div>
     </form>

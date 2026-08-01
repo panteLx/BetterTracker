@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
@@ -12,6 +13,7 @@ import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
  */
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("Common.quickAdd");
 
   return (
     <>
@@ -22,7 +24,7 @@ export function QuickAddFab() {
         onClick={() => setOpen(true)}
       >
         <Plus className="h-4 w-4" />
-        Neuer Eintrag
+        {t("fabLabel")}
       </Button>
 
       <QuickAddSheet open={open} onOpenChange={setOpen} />

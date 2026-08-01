@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -137,10 +138,10 @@ function sortTrackers(items: Tracker[], locale: string) {
   });
 }
 
-const scheduleStatusBadge = {
-  overdue: { label: "Überfällig", variant: "expense" as const },
-  due: { label: "Heute fällig", variant: "warning" as const },
-  upcoming: { label: "Demnächst", variant: "outline" as const },
+const scheduleStatusVariant = {
+  overdue: "expense" as const,
+  due: "warning" as const,
+  upcoming: "outline" as const,
 };
 
 type TrackerCreateFormProps = {
@@ -184,6 +185,8 @@ function TrackerCreateForm({
   onDiscordDebugEnabledChange,
   onSubmit,
 }: TrackerCreateFormProps) {
+  const t = useTranslations("Dashboard.trackerForm");
+
   return (
     <div
       className={cn(
@@ -202,16 +205,16 @@ function TrackerCreateForm({
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-name">Name</Label>
+          <Label htmlFor="new-tracker-name">{t("nameLabel")}</Label>
           <Input
             id="new-tracker-name"
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
-            placeholder="z. B. Urlaub"
+            placeholder={t("namePlaceholder")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-color">Farbe</Label>
+          <Label htmlFor="new-tracker-color">{t("colorLabel")}</Label>
           <TrackerColorPicker
             id="new-tracker-color"
             value={color}
@@ -219,7 +222,7 @@ function TrackerCreateForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-currency">Währung</Label>
+          <Label htmlFor="new-tracker-currency">{t("currencyLabel")}</Label>
           <Input
             id="new-tracker-currency"
             value={currency}
@@ -230,7 +233,7 @@ function TrackerCreateForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-webhook">Discord Webhook URL</Label>
+          <Label htmlFor="new-tracker-webhook">{t("webhookLabel")}</Label>
           <Input
             id="new-tracker-webhook"
             value={discordWebhookUrl}
@@ -239,19 +242,19 @@ function TrackerCreateForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-tracker-role">Discord Ping Role ID</Label>
+          <Label htmlFor="new-tracker-role">{t("roleLabel")}</Label>
           <Input
             id="new-tracker-role"
             value={discordPingRoleId}
             onChange={(event) => onDiscordPingRoleIdChange(event.target.value)}
-            placeholder="Optional"
+            placeholder={t("rolePlaceholder")}
           />
         </div>
         <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
           <div>
-            <p className="text-sm font-medium">Discord Debug</p>
+            <p className="text-sm font-medium">{t("debugLabel")}</p>
             <p className="font-subtext text-xs text-muted-foreground">
-              Zusätzliche Debug-Infos in Discord mitsenden.
+              {t("debugDescription")}
             </p>
           </div>
           <Switch
@@ -260,18 +263,17 @@ function TrackerCreateForm({
           />
         </div>
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? "Speichert…" : submitLabel}
+          {isPending ? t("submitting") : submitLabel}
         </Button>
       </form>
     </div>
   );
 }
 
-type DashboardClientProps = {
-  locale: string;
-};
-
-export function DashboardClient({ locale }: DashboardClientProps) {
+export function DashboardClient() {
+  const locale = useLocale();
+  const t = useTranslations("Dashboard");
+  const commonT = useTranslations("Common");
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [selectedTracker, setSelectedTracker] = useState("");
@@ -400,7 +402,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Termin gebucht");
+      toast.success(t("toast.scheduleBooked"));
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -413,7 +415,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Buchen fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.bookingFailed"),
       );
     },
   });
@@ -424,7 +426,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Termin übersprungen");
+      toast.success(t("toast.scheduleSkipped"));
       queryClient.invalidateQueries({
         queryKey: ["schedules", activeTrackerId],
       });
@@ -434,7 +436,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Überspringen fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.skipFailed"),
       );
     },
   });
@@ -465,7 +467,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
           ),
         }),
       );
-      toast.success("Tracker angelegt");
+      toast.success(t("toast.trackerCreated"));
       handleTrackerSelect(item.id);
       setNewTrackerSheetOpen(false);
       setNewTrackerName("");
@@ -484,7 +486,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Tracker konnte nicht angelegt werden",
+          : t("toast.trackerCreateFailed"),
       );
     },
   });
@@ -533,7 +535,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Tracker-Reihenfolge konnte nicht gespeichert werden",
+          : t("toast.reorderFailed"),
       );
     },
     onSuccess: ({ items }) => {
@@ -583,7 +585,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
     event.preventDefault();
 
     if (!newTrackerName.trim()) {
-      toast.error("Bitte einen Tracker-Namen eingeben");
+      toast.error(t("toast.nameRequired"));
       return;
     }
 
@@ -604,8 +606,8 @@ export function DashboardClient({ locale }: DashboardClientProps) {
   if (!hasTrackers) {
     return (
       <TrackerCreateForm
-        title="Ersten Tracker anlegen"
-        description="Sobald der erste Tracker steht, kannst du Buchungen, Kategorien und Termine erfassen."
+        title={t("trackerForm.createTitle")}
+        description={t("trackerForm.createDescription")}
         name={newTrackerName}
         color={newTrackerColor}
         currency={newTrackerCurrency}
@@ -613,7 +615,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         discordDebugEnabled={newTrackerDiscordDebugEnabled}
         discordPingRoleId={newTrackerDiscordPingRoleId}
         isPending={createTrackerMutation.isPending}
-        submitLabel="Tracker anlegen"
+        submitLabel={t("trackerForm.createSubmit")}
         onNameChange={setNewTrackerName}
         onColorChange={setNewTrackerColor}
         onCurrencyChange={setNewTrackerCurrency}
@@ -650,7 +652,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             onClick={() => setNewTrackerSheetOpen(true)}
           >
             <Plus className="h-4 w-4" />
-            Neuer Tracker
+            {t("newTrackerButton")}
           </Button>
           {tracker && canManageTracker ? (
             <Button
@@ -662,7 +664,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             >
               <Link
                 href={`/trackers/${tracker.id}/settings`}
-                aria-label={`Einstellungen für ${tracker.name}`}
+                aria-label={t("trackerSettingsAria", { name: tracker.name })}
               >
                 <Settings2 className="h-4 w-4" />
               </Link>
@@ -680,7 +682,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             inverted tile on the page. */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile
-            label="Saldo"
+            label={t("stats.balance")}
             tone="inverse"
             icon={Wallet}
             value={
@@ -694,14 +696,20 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             }
             sublabel={
               forecast.projectedDeltaCents !== 0
-                ? `In ${forecast.days} Tagen etwa ${new Intl.NumberFormat(locale, { style: "currency", currency }).format(forecast.projectedBalanceCents / 100)}`
+                ? t("stats.forecast", {
+                    days: forecast.days,
+                    amount: new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency,
+                    }).format(forecast.projectedBalanceCents / 100),
+                  })
                 : undefined
             }
             trend={balanceTrend}
             className="col-span-2 lg:col-span-1"
           />
           <StatTile
-            label="Einnahmen"
+            label={t("stats.income")}
             icon={ArrowUpRight}
             value={
               <Amount
@@ -716,7 +724,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             trendColor={chartColors.income}
           />
           <StatTile
-            label="Ausgaben"
+            label={t("stats.expenses")}
             icon={ArrowDownLeft}
             value={
               <Amount
@@ -731,12 +739,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             trendColor={chartColors.expense}
           />
           <StatTile
-            label="Buchungen"
+            label={t("stats.transactions")}
             icon={ReceiptText}
             value={transactionCount}
             sublabel={
               forecast.items.length > 0
-                ? `${forecast.items.length} geplant in ${forecast.days} Tagen`
+                ? t("stats.scheduledCount", {
+                    count: forecast.items.length,
+                    days: forecast.days,
+                  })
                 : undefined
             }
             trend={transactionTrend}
@@ -747,10 +758,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
         <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
           {/* Recent bookings */}
           <SectionCard
-            title="Letzte Buchungen"
+            title={t("recent.title")}
             titleRight={
               <Button variant="ghost" size="xs" shape="pill" asChild>
-                <Link href="/transactions">Alle ansehen</Link>
+                <Link href="/transactions">{t("recent.viewAll")}</Link>
               </Button>
             }
           >
@@ -759,7 +770,11 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                 {recentGroups.map((group) => (
                   <DayGroup
                     key={group.date}
-                    label={formatDayLabel(group.date, locale)}
+                    label={formatDayLabel(group.date, locale, {
+                      today: commonT("dayLabel.today"),
+                      yesterday: commonT("dayLabel.yesterday"),
+                      tomorrow: commonT("dayLabel.tomorrow"),
+                    })}
                     total={
                       <Amount
                         cents={group.items.reduce(
@@ -796,9 +811,13 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                           />
                         }
                         title={
-                          item.payeeName || item.customPayeeName || "Anonym"
+                          item.payeeName ||
+                          item.customPayeeName ||
+                          t("recent.anonymousPayee")
                         }
-                        subtitle={item.categoryName || "Ohne Kategorie"}
+                        subtitle={
+                          item.categoryName || t("recent.noCategory")
+                        }
                         trailing={
                           <Amount
                             cents={item.amountCents}
@@ -849,25 +868,25 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             ) : (
               <EmptyState
                 icon={ReceiptText}
-                title="Noch keine Buchungen"
-                description="Leg mit dem Plus-Button unten rechts die erste Einnahme oder Ausgabe an."
+                title={t("recent.emptyTitle")}
+                description={t("recent.emptyDescription")}
               />
             )}
           </SectionCard>
 
           {/* Upcoming scheduled items */}
           <SectionCard
-            title={`Nächste ${forecast.days} Tage`}
+            title={t("upcoming.title", { days: forecast.days })}
             titleRight={
               <Button variant="ghost" size="xs" shape="pill" asChild>
-                <Link href="/schedules">Termine</Link>
+                <Link href="/schedules">{t("upcoming.viewAll")}</Link>
               </Button>
             }
           >
             {forecast.items.length > 0 ? (
               <div className="space-y-1.5">
                 {forecast.items.map((item) => {
-                  const badge = scheduleStatusBadge[item.status];
+                  const badgeVariant = scheduleStatusVariant[item.status];
 
                   return (
                     <ListRow
@@ -881,9 +900,15 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                       }
                       meta={
                         <>
-                          <Badge variant={badge.variant}>{badge.label}</Badge>
+                          <Badge variant={badgeVariant}>
+                            {t(`upcoming.status.${item.status}`)}
+                          </Badge>
                           <span className="font-subtext text-xs text-muted-foreground">
-                            {formatDayLabel(item.date, locale)}
+                            {formatDayLabel(item.date, locale, {
+                              today: commonT("dayLabel.today"),
+                              yesterday: commonT("dayLabel.yesterday"),
+                              tomorrow: commonT("dayLabel.tomorrow"),
+                            })}
                           </span>
                         </>
                       }
@@ -906,8 +931,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                               variant="ghost"
                               size="icon-sm"
                               shape="pill"
-                              title="Als Buchung übernehmen"
-                              aria-label={`${item.name} als Buchung übernehmen`}
+                              title={t("upcoming.bookTitle")}
+                              aria-label={t("upcoming.bookAria", {
+                                name: item.name,
+                              })}
                               disabled={schedulesBusy}
                               onClick={() =>
                                 createScheduleTransactionMutation.mutate(
@@ -921,8 +948,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
                               variant="ghost"
                               size="icon-sm"
                               shape="pill"
-                              title="Diesen Termin überspringen"
-                              aria-label={`${item.name} überspringen`}
+                              title={t("upcoming.skipTitle")}
+                              aria-label={t("upcoming.skipAria", {
+                                name: item.name,
+                              })}
                               disabled={schedulesBusy}
                               onClick={() =>
                                 skipScheduleMutation.mutate(item.scheduleId)
@@ -940,8 +969,10 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             ) : (
               <EmptyState
                 icon={CalendarClock}
-                title="Keine Termine in Sicht"
-                description={`In den nächsten ${forecast.days} Tagen steht nichts an.`}
+                title={t("upcoming.emptyTitle")}
+                description={t("upcoming.emptyDescription", {
+                  days: forecast.days,
+                })}
               />
             )}
           </SectionCard>
@@ -958,10 +989,9 @@ export function DashboardClient({ locale }: DashboardClientProps) {
             <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-muted" />
           ) : null}
           <div className="shrink-0 border-b border-border p-5 pr-12">
-            <SheetTitle>Neuer Tracker</SheetTitle>
+            <SheetTitle>{t("newTrackerSheet.title")}</SheetTitle>
             <SheetDescription>
-              Lege einen weiteren Bereich an und verknüpfe auf Wunsch direkt
-              Discord.
+              {t("newTrackerSheet.description")}
             </SheetDescription>
           </div>
           <div className="flex-1 overflow-y-auto p-5">
@@ -975,7 +1005,7 @@ export function DashboardClient({ locale }: DashboardClientProps) {
               discordDebugEnabled={newTrackerDiscordDebugEnabled}
               discordPingRoleId={newTrackerDiscordPingRoleId}
               isPending={createTrackerMutation.isPending}
-              submitLabel="Tracker anlegen"
+              submitLabel={t("trackerForm.createSubmit")}
               className="border-0 bg-transparent p-0 shadow-none"
               onNameChange={setNewTrackerName}
               onColorChange={setNewTrackerColor}

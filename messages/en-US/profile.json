@@ -1,0 +1,37 @@
+{
+  "title": "Profile",
+  "description": "Your account, your sessions, and how the app should look.",
+  "appearance": {
+    "title": "Appearance",
+    "colorMode": "Color mode",
+    "accentColor": "Accent color",
+    "accentDescription": "Colors buttons and active elements. Applies on this device."
+  },
+  "language": {
+    "title": "Language",
+    "label": "App language",
+    "description": "Changes the language of the user interface."
+  },
+  "account": {
+    "title": "Account",
+    "name": "Name",
+    "email": "Email",
+    "status": "Status",
+    "banned": "Banned",
+    "active": "Active"
+  },
+  "sessions": {
+    "title": "Active sessions",
+    "count": "{count} active",
+    "empty": "No active sessions found.",
+    "unknownDevice": "Unknown device",
+    "expiresAt": "Valid until {date}"
+  },
+  "signOut": {
+    "button": "Sign out",
+    "confirmTitle": "Sign out?",
+    "confirmDescription": "You'll be signed out of your current session and redirected to the login page.",
+    "cancel": "Cancel",
+    "signingOut": "Signing out…"
+  }
+}

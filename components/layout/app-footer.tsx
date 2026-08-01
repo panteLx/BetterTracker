@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +20,7 @@ function GithubIcon({ className }: { className?: string }) {
 }
 
 export function AppFooter() {
+  const t = useTranslations("Nav.footer");
   const commitSha = process.env.COMMIT_SHA;
   const version = process.env.APP_VERSION;
 
@@ -47,7 +51,7 @@ export function AppFooter() {
               href="https://buymeacoffee.com/pantel"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Support on Buy Me a Coffee"
+              aria-label={t("supportAria")}
             >
               <Coffee className="size-3.5" />
             </Link>
@@ -57,7 +61,7 @@ export function AppFooter() {
               href="https://github.com/panteLx/BetterTracker"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="GitHub Repository"
+              aria-label={t("githubAria")}
             >
               <GithubIcon className="size-3.5" />
             </Link>
