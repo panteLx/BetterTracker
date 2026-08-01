@@ -1,0 +1,164 @@
+{
+  "settingsPage": {
+    "title": "Tracker-Einstellungen",
+    "description": "Stammdaten, Freigaben, Kategorien und Einzahler dieses Trackers."
+  },
+  "categoryType": {
+    "expense": "Ausgabe",
+    "income": "Einnahme",
+    "transfer": "Umbuchung"
+  },
+  "toast": {
+    "trackerSaved": "Tracker gespeichert",
+    "trackerSaveFailed": "Tracker konnte nicht gespeichert werden",
+    "trackerHidden": "Tracker ausgeblendet",
+    "trackerHideFailed": "Tracker konnte nicht ausgeblendet werden",
+    "categoryDeleted": "Kategorie gelöscht",
+    "categoryDeleteFailed": "Kategorie konnte nicht gelöscht werden",
+    "payeeDeleted": "Einzahler gelöscht",
+    "payeeDeleteFailed": "Einzahler konnte nicht gelöscht werden",
+    "categoryReactivated": "Kategorie reaktiviert",
+    "categoryArchived": "Kategorie archiviert",
+    "payeeReactivated": "Einzahler reaktiviert",
+    "payeeArchived": "Einzahler archiviert",
+    "actionFailed": "Aktion fehlgeschlagen",
+    "memberAdded": "Freigabe hinzugefügt",
+    "memberAddFailed": "Freigabe konnte nicht erstellt werden",
+    "memberUpdated": "Freigabe aktualisiert",
+    "memberUpdateFailed": "Freigabe konnte nicht aktualisiert werden",
+    "memberRemoved": "Freigabe entfernt",
+    "memberRemoveFailed": "Freigabe konnte nicht entfernt werden",
+    "noActiveTracker": "Kein Tracker aktiv",
+    "nameRequired": "Bitte einen Tracker-Namen eingeben"
+  },
+  "confirm": {
+    "deleteCategory": "Kategorie \"{name}\" wirklich löschen?",
+    "deletePayee": "Einzahler \"{name}\" wirklich löschen?",
+    "removeMember": "Freigabe für \"{label}\" wirklich entfernen?",
+    "deleteTracker": "Tracker \"{name}\" wirklich für löschen? Er kann nur von einem Administrator wiederhergestellt werden."
+  },
+  "empty": {
+    "noTrackerTitle": "Kein Tracker verfügbar",
+    "noTrackerDescription": "Lege zuerst einen Tracker an, bevor du die Settings verwaltest.",
+    "backToTransactions": "Zurück zu den Buchungen",
+    "noCategories": "Noch keine Kategorien vorhanden.",
+    "noPayees": "Noch keine Einzahler vorhanden."
+  },
+  "back": "Zurück",
+  "form": {
+    "sectionTitle": "Tracker-Einstellungen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Optionaler Kontext für diesen Tracker",
+    "color": "Farbe",
+    "currency": "Währung",
+    "webhookUrl": "Discord Webhook URL",
+    "pingRoleId": "Discord Ping Role ID",
+    "optional": "Optional",
+    "discordDebug": "Discord Debug",
+    "discordDebugDescription": "Zusatzinfos mitsenden.",
+    "archiveTracker": "Tracker archivieren",
+    "archiveTrackerDescription": "Es können keine neuen Buchungen angelegt werden.",
+    "saving": "Speichert...",
+    "save": "Tracker speichern"
+  },
+  "dangerZone": {
+    "title": "Gefahrenzone",
+    "deleting": "Wird gelöscht…",
+    "delete": "Tracker löschen",
+    "note": "Diese Aktion kann durch User nicht rückgängig gemacht werden."
+  },
+  "members": {
+    "title": "Freigaben",
+    "searchPlaceholder": "Name oder E-Mail suchen",
+    "permissionRead": "Read",
+    "permissionWrite": "Write",
+    "permissionAdmin": "Admin",
+    "grant": "Freigeben",
+    "noResults": "Keine passenden Benutzer gefunden.",
+    "searchHint": "Mindestens 2 Zeichen eingeben.",
+    "owner": "Owner",
+    "remove": "Entfernen",
+    "removeAriaLabel": "Freigabe für {email} entfernen"
+  },
+  "csvImportCard": {
+    "title": "CSV-Import",
+    "importButton": "Importieren",
+    "description": "Transaktionen aus Actual Budget importieren."
+  },
+  "categories": {
+    "title": "Kategorien",
+    "archived": "Archiviert",
+    "archive": "Archivieren",
+    "reactivate": "Reaktivieren",
+    "archiveAriaLabel": "Kategorie {name} archivieren",
+    "reactivateAriaLabel": "Kategorie {name} reaktivieren",
+    "delete": "Löschen",
+    "deleteAriaLabel": "Kategorie {name} löschen"
+  },
+  "payees": {
+    "title": "Einzahler",
+    "archived": "Archiviert",
+    "archive": "Archivieren",
+    "reactivate": "Reaktivieren",
+    "archiveAriaLabel": "Einzahler {name} archivieren",
+    "reactivateAriaLabel": "Einzahler {name} reaktivieren",
+    "delete": "Löschen",
+    "deleteAriaLabel": "Einzahler {name} löschen"
+  },
+  "publicShare": {
+    "title": "Öffentlich freigeben",
+    "description": "Lesezugriff für Gäste ohne Anmeldung.",
+    "copyLinkAriaLabel": "Link kopieren"
+  },
+  "colorPicker": {
+    "selectAriaLabel": "Farbe auswählen",
+    "title": "Tracker-Farbe",
+    "presetAriaLabel": "Farbe {hex}"
+  },
+  "pillRow": {
+    "archivedLabel": "{name} (Archiv)",
+    "selectLabel": "Tracker auswählen"
+  },
+  "csvImport": {
+    "dialogTitle": "CSV-Import (Actual Budget)",
+    "descriptionUpload": "Wähle eine exportierte CSV-Datei aus Actual Budget aus.",
+    "descriptionConfigure": "{count} Zeilen erkannt – wähle die zu importierenden Spalten.",
+    "descriptionResult": "Import abgeschlossen.",
+    "cancel": "Abbrechen",
+    "back": "Zurück",
+    "importingButton": "Importiert…",
+    "importButton": "{count} Zeilen importieren",
+    "close": "Schließen",
+    "errorTooFewRows": "Die Datei enthält zu wenig Zeilen.",
+    "errorMissingColumns": "Fehlende Pflicht-Spalten: {columns}",
+    "errorImportFailed": "Import fehlgeschlagen",
+    "errorUnknown": "Unbekannter Fehler",
+    "upload": {
+      "cta": "CSV-Datei auswählen",
+      "hint": "Actual Budget Export (.csv)",
+      "expectedColumnsLabel": "Erwartete Spalten:",
+      "expectedColumnsValue": "Account, Date, Payee, Notes, Category, Amount",
+      "ignoredColumnsNote": "Split_Amount und Cleared werden ignoriert."
+    },
+    "configure": {
+      "columnsHeading": "Spalten importieren",
+      "columnAccount": "Konto (Account)",
+      "columnPayee": "Einzahler (Payee)",
+      "columnNotes": "Notiz (Notes)",
+      "columnCategory": "Kategorie (Category)",
+      "alwaysImportedNote": "Datum und Betrag werden immer importiert.",
+      "previewHeading": "Vorschau (erste {shown} von {total} Zeilen)",
+      "columnDate": "Datum",
+      "columnAmount": "Betrag"
+    },
+    "result": {
+      "failed": "Import fehlgeschlagen",
+      "transactionsImported": "{count, plural, one {# Transaktion importiert} other {# Transaktionen importiert}}",
+      "categoriesCreated": "{count, plural, one {# neue Kategorie angelegt} other {# neue Kategorien angelegt}}",
+      "payeesCreated": "{count, plural, one {# neuer Einzahler angelegt} other {# neue Einzahler angelegt}}",
+      "rowsSkipped": "{count, plural, one {# Zeile übersprungen} other {# Zeilen übersprungen}}",
+      "skippedRowsHeading": "Übersprungene Zeilen"
+    }
+  }
+}

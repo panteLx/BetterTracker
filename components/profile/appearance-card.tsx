@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { SectionCard } from "@/components/ui/section-card";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -59,6 +60,7 @@ function AccentSwatch({
  * mirror of localStorage — it never owns the value.
  */
 export function AppearanceCard() {
+  const t = useTranslations("Profile.appearance");
   const stored = useLocalStorageValue(ACCENT_STORAGE_KEY);
   const accent: AccentSchemeId = isAccentScheme(stored) ? stored : DEFAULT_ACCENT;
 
@@ -68,17 +70,17 @@ export function AppearanceCard() {
   }
 
   return (
-    <SectionCard title="Darstellung">
+    <SectionCard title={t("title")}>
       <div className="space-y-5">
         <div className="space-y-2">
-          <MicroLabel>Farbmodus</MicroLabel>
+          <MicroLabel>{t("colorMode")}</MicroLabel>
           <ThemeToggle />
         </div>
 
         <div className="space-y-2">
-          <MicroLabel>Akzentfarbe</MicroLabel>
+          <MicroLabel>{t("accentColor")}</MicroLabel>
           <p className="font-subtext text-sm text-muted-foreground">
-            Färbt Buttons und aktive Elemente. Gilt auf diesem Gerät.
+            {t("accentDescription")}
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             {ACCENT_SCHEMES.map((scheme) => {

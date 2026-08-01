@@ -1,8 +1,8 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { getTranslations } from "next-intl/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { TransactionsClient } from "@/components/transactions/transactions-client";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
-import { env } from "@/lib/env";
 import { requireUser } from "@/lib/auth/session";
 import { listTrackersForUser } from "@/lib/auth/tracker-access";
 import { makeQueryClient } from "@/lib/query-client";
@@ -10,6 +10,7 @@ import { makeQueryClient } from "@/lib/query-client";
 export default async function TransactionsPage() {
   const user = await requireUser();
   await ensureBootstrapForUser(user.id);
+  const t = await getTranslations("Transactions");
 
   const queryClient = makeQueryClient();
   await queryClient.prefetchQuery({
@@ -20,11 +21,11 @@ export default async function TransactionsPage() {
   return (
     <PageContainer
       user={user}
-      title="Buchungen"
-      description="Alle Einnahmen und Ausgaben, filterbar nach Zeitraum, Kategorie und Einzahler."
+      title={t("page.title")}
+      description={t("page.description")}
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <TransactionsClient locale={env.defaultLocale} currentUserId={user.id} />
+        <TransactionsClient currentUserId={user.id} />
       </HydrationBoundary>
     </PageContainer>
   );

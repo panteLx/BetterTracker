@@ -1,0 +1,122 @@
+{
+  "page": {
+    "title": "Buchungen",
+    "description": "Alle Einnahmen und Ausgaben, filterbar nach Zeitraum, Kategorie und Einzahler."
+  },
+  "stats": {
+    "balanceInFilter": "Saldo im Filter",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben"
+  },
+  "filters": {
+    "searchPlaceholder": "Einzahler, Kategorie oder Notiz suchen",
+    "searchAriaLabel": "Buchungen durchsuchen",
+    "typeFilterLabel": "Nach Typ filtern",
+    "all": "Alle",
+    "expenses": "Ausgaben",
+    "income": "Einnahmen",
+    "viewToggleLabel": "Ansicht wechseln",
+    "viewList": "Liste",
+    "viewTable": "Tabelle",
+    "categoryFilterLabel": "Nach Kategorie filtern",
+    "allCategories": "Alle Kategorien",
+    "payeeFilterLabel": "Nach Einzahler filtern",
+    "allPayees": "Alle Einzahler",
+    "fromPlaceholder": "Von",
+    "fromAriaLabel": "Startdatum für Datumsfilter",
+    "toPlaceholder": "Bis",
+    "toAriaLabel": "Enddatum für Datumsfilter",
+    "resetFilters": "Filter zurücksetzen",
+    "resetFiltersCount": "{count} Filter zurücksetzen"
+  },
+  "empty": {
+    "filteredTitle": "Keine Treffer für diese Filter",
+    "filteredDescription": "Lockere die Filter, um mehr zu sehen.",
+    "defaultTitle": "Noch keine Buchungen",
+    "defaultDescription": "Leg mit dem Plus-Button die erste Einnahme oder Ausgabe an."
+  },
+  "results": {
+    "count": "{count, plural, one {1 Buchung} other {# Buchungen}}",
+    "archivedReadOnly": "Archivierter Tracker — nur lesbar"
+  },
+  "row": {
+    "anonymous": "Anonym",
+    "noCategory": "Ohne Kategorie",
+    "byYou": "von dir",
+    "byUser": "von {name}",
+    "unknownUser": "Unbekannt"
+  },
+  "table": {
+    "date": "Datum",
+    "payee": "Einzahler",
+    "category": "Kategorie",
+    "notes": "Notizen",
+    "createdBy": "Erfasst von",
+    "amount": "Betrag",
+    "you": "dir",
+    "emptyValue": "—"
+  },
+  "pagination": {
+    "page": "Seite {page}",
+    "back": "Zurück",
+    "next": "Weiter"
+  },
+  "edit": {
+    "dateLabel": "Datum",
+    "amountLabel": "Betrag",
+    "amountPlaceholder": "12,50",
+    "typeLabel": "Typ",
+    "categoryLabel": "Kategorie",
+    "payeeLabel": "Einzahler",
+    "notesLabel": "Notizen (optional)",
+    "notesPlaceholder": "Optional",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichert...",
+    "requiredFields": "Datum, Betrag und Kategorie sind Pflichtfelder",
+    "updated": "Transaktion aktualisiert",
+    "updateFailed": "Aktualisierung fehlgeschlagen",
+    "deleted": "Transaktion gelöscht",
+    "deleteFailed": "Löschen fehlgeschlagen"
+  },
+  "rowActions": {
+    "editTitle": "Bearbeiten",
+    "editAriaLabel": "Buchung vom {date} bearbeiten",
+    "deleteTitle": "Löschen",
+    "deleteAriaLabel": "Buchung vom {date} löschen"
+  },
+  "entityPicker": {
+    "category": {
+      "placeholder": "Kategorie wählen",
+      "searchPlaceholder": "Kategorie suchen",
+      "emptyMessage": "Keine Kategorie gefunden.",
+      "createLabel": "Neue Kategorie anlegen",
+      "namePlaceholderExpense": "z. B. Tanken",
+      "namePlaceholderIncome": "z. B. Gehalt",
+      "toastCreated": "Kategorie angelegt",
+      "toastNameRequired": "Bitte einen Kategorienamen eingeben",
+      "toastCreateError": "Kategorie konnte nicht angelegt werden",
+      "noneOption": "Keine Kategorie"
+    },
+    "payee": {
+      "placeholder": "Einzahler wählen",
+      "searchPlaceholder": "Einzahler suchen",
+      "emptyMessage": "Kein Einzahler gefunden.",
+      "createLabel": "Neuen Einzahler anlegen",
+      "namePlaceholder": "z. B. Bäckerei",
+      "toastCreated": "Einzahler angelegt",
+      "toastNameRequired": "Bitte einen Einzahler-Namen eingeben",
+      "toastCreateError": "Einzahler konnte nicht angelegt werden",
+      "noneOption": "Anonym"
+    },
+    "nameLabel": "Name",
+    "typeLine": "Typ: {type}",
+    "typeExpense": "Ausgabe",
+    "typeIncome": "Einnahme",
+    "cancel": "Abbrechen",
+    "create": "Anlegen",
+    "creating": "...",
+    "customTextLabel": "Oder einmaliger Freitext",
+    "customTextPlaceholder": "z. B. Wochenmarkt"
+  }
+}

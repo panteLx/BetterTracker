@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,8 @@ export function DirectionToggle({
   icons = false,
   className,
 }: DirectionToggleProps) {
+  const t = useTranslations("Common.direction");
+
   if (size === "md") {
     return (
       <div className={cn("grid grid-cols-2 gap-3", className)}>
@@ -39,8 +42,8 @@ export function DirectionToggle({
               : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
         >
-          <p className="font-medium">Ausgabe</p>
-          <p className="mt-1 text-xs">Abos, Miete, Fixkosten</p>
+          <p className="font-medium">{t("expense")}</p>
+          <p className="mt-1 text-xs">{t("expenseHint")}</p>
         </button>
         <button
           type="button"
@@ -53,8 +56,8 @@ export function DirectionToggle({
               : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
         >
-          <p className="font-medium">Einnahme</p>
-          <p className="mt-1 text-xs">Gehalt, Gutschriften</p>
+          <p className="font-medium">{t("income")}</p>
+          <p className="mt-1 text-xs">{t("incomeHint")}</p>
         </button>
       </div>
     );
@@ -79,7 +82,7 @@ export function DirectionToggle({
         )}
       >
         {icons ? <ArrowDownLeft className="mr-1 inline h-3 w-3" /> : null}
-        Ausgabe
+        {t("expense")}
       </button>
       <button
         type="button"
@@ -93,7 +96,7 @@ export function DirectionToggle({
         )}
       >
         {icons ? <ArrowUpRight className="mr-1 inline h-3 w-3" /> : null}
-        Einnahme
+        {t("income")}
       </button>
     </div>
   );

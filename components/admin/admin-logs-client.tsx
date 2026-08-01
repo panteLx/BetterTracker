@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
@@ -33,7 +34,6 @@ type LogItem = {
 };
 
 type AdminLogsClientProps = {
-  locale: string;
   timezone: string;
   currentRole: string;
 };
@@ -48,6 +48,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 const SEVERITY_ALL = "all";
 
 function MetadataCell({ json }: { json: string | null }) {
+  const t = useTranslations("Admin.logs");
   const [expanded, setExpanded] = useState(false);
   if (!json || json === "null")
     return <span className="text-muted-foreground">—</span>;
@@ -71,7 +72,7 @@ function MetadataCell({ json }: { json: string | null }) {
         ) : (
           <ChevronRight className="h-3 w-3" />
         )}
-        {expanded ? "Einklappen" : "Anzeigen"}
+        {expanded ? t("collapse") : t("expand")}
       </button>
       {expanded ? (
         <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs">
@@ -83,10 +84,11 @@ function MetadataCell({ json }: { json: string | null }) {
 }
 
 export function AdminLogsClient({
-  locale,
   timezone,
   currentRole,
 }: AdminLogsClientProps) {
+  const locale = useLocale();
+  const t = useTranslations("Admin.logs");
   const queryClient = useQueryClient();
   const [actionFilter, setActionFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState(SEVERITY_ALL);
@@ -113,17 +115,17 @@ export function AdminLogsClient({
   const deleteMutation = useMutation({
     mutationFn: () => fetchJson("/api/admin/logs", { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Alle Logs gelöscht");
+      toast.success(t("deleteSuccess"));
       queryClient.invalidateQueries({ queryKey: ["admin-logs"] });
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Löschen fehlgeschlagen",
+        error instanceof Error ? error.message : t("deleteError"),
       ),
   });
 
   function handleDeleteAll() {
-    if (window.confirm("Wirklich alle Audit-Logs unwiderruflich löschen?")) {
+    if (window.confirm(t("deleteConfirm"))) {
       deleteMutation.mutate();
     }
   }
@@ -136,29 +138,29 @@ export function AdminLogsClient({
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
-            <Label>Aktion</Label>
+            <Label>{t("filters.action")}</Label>
             <Input
-              placeholder="z. B. transaction_created"
+              placeholder={t("filters.actionPlaceholder")}
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Akteur (E-Mail)</Label>
+            <Label>{t("filters.actor")}</Label>
             <Input
-              placeholder="user@example.com"
+              placeholder={t("filters.actorPlaceholder")}
               value={actorFilter}
               onChange={(e) => setActorFilter(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Severity</Label>
+            <Label>{t("filters.severity")}</Label>
             <Select value={severityFilter} onValueChange={setSeverityFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={SEVERITY_ALL}>Alle</SelectItem>
+                <SelectItem value={SEVERITY_ALL}>{t("filters.severityAll")}</SelectItem>
                 <SelectItem value="info">info</SelectItem>
                 <SelectItem value="warning">warning</SelectItem>
                 <SelectItem value="error">error</SelectItem>
@@ -168,19 +170,19 @@ export function AdminLogsClient({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label>Von</Label>
+              <Label>{t("filters.from")}</Label>
               <DatePicker
                 value={fromFilter}
                 onChange={setFromFilter}
-                placeholder="Von"
+                placeholder={t("filters.from")}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Bis</Label>
+              <Label>{t("filters.to")}</Label>
               <DatePicker
                 value={toFilter}
                 onChange={setToFilter}
-                placeholder="Bis"
+                placeholder={t("filters.to")}
               />
             </div>
           </div>
@@ -191,8 +193,8 @@ export function AdminLogsClient({
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {logsQuery.isPending
-            ? "Lädt…"
-            : `${items.length} Einträge${items.length === 500 ? " (Limit)" : ""}`}
+            ? t("loading")
+            : `${t("entriesCount", { count: items.length })}${items.length === 500 ? t("limitSuffix") : ""}`}
         </p>
         {currentRole === "superadmin" ? (
           <Button
@@ -203,7 +205,7 @@ export function AdminLogsClient({
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="h-4 w-4" />
-            Alle löschen
+            {t("deleteAll")}
           </Button>
         ) : null}
       </div>
@@ -212,7 +214,7 @@ export function AdminLogsClient({
       <div className="w-full overflow-x-auto rounded-xl border border-border bg-card">
         {items.length === 0 && !logsQuery.isPending ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Keine Logs gefunden.
+            {t("empty")}
           </p>
         ) : logsQuery.isPending ? (
           <div className="divide-y divide-border">
@@ -263,7 +265,7 @@ export function AdminLogsClient({
                       {item.actorUserEmail ? ` (${item.actorUserEmail})` : ""}
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">System</p>
+                    <p className="text-xs text-muted-foreground">{t("systemActor")}</p>
                   )}
                   {item.ipAddress ? (
                     <p className="font-mono text-xs text-muted-foreground">

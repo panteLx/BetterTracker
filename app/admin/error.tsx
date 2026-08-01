@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,8 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("Admin.errors");
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -21,13 +24,13 @@ export default function AdminError({
         <AlertTriangle className="h-5 w-5 text-expense" />
       </div>
       <div className="space-y-1 text-center">
-        <p className="font-semibold">Admin-Fehler</p>
+        <p className="font-semibold">{t("title")}</p>
         <p className="text-sm text-muted-foreground">
-          {error.message || "Ein Fehler ist im Admin-Bereich aufgetreten."}
+          {error.message || t("defaultMessage")}
         </p>
       </div>
       <Button onClick={reset} variant="outline" size="sm">
-        Erneut versuchen
+        {t("retry")}
       </Button>
     </div>
   );

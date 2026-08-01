@@ -1,0 +1,129 @@
+{
+  "page": {
+    "title": "Termine",
+    "description": "Wiederkehrende Zahlungen — fällige Termine übernimmst du mit einem Klick als Buchung."
+  },
+  "status": {
+    "overdue": "Überfällig",
+    "due": "Fällig",
+    "upcoming": "Demnächst",
+    "completed": "Abgeschlossen",
+    "incomplete": "Unvollständig"
+  },
+  "stats": {
+    "due": "Fällig",
+    "upcoming": "Demnächst",
+    "completed": "Abgeschlossen"
+  },
+  "filters": {
+    "searchPlaceholder": "Name, Kategorie, Einzahler oder Notiz suchen",
+    "searchAria": "Termine durchsuchen",
+    "typeLabel": "Nach Typ filtern",
+    "typeAll": "Alle",
+    "typeExpense": "Ausgaben",
+    "typeIncome": "Einnahmen",
+    "categoryAria": "Nach Kategorie filtern",
+    "categoryAll": "Alle Kategorien",
+    "payeeAria": "Nach Einzahler filtern",
+    "payeeAll": "Alle Einzahler",
+    "dateFrom": "Von",
+    "dateFromAria": "Startdatum für Datumsfilter",
+    "dateTo": "Bis",
+    "dateToAria": "Enddatum für Datumsfilter",
+    "reset": "{count} Filter zurücksetzen",
+    "statusLabel": "Nach Status filtern"
+  },
+  "tabs": {
+    "due": "Fällig",
+    "upcoming": "Demnächst",
+    "inactive": "Abgeschlossen"
+  },
+  "empty": {
+    "noMatchesTitle": "Keine Treffer für diese Filter",
+    "noMatchesDescription": "Lockere die Filter, um mehr zu sehen.",
+    "resetFilters": "Filter zurücksetzen",
+    "dueTitle": "Nichts fällig",
+    "dueDescription": "Aktuell steht kein Termin zur Buchung an.",
+    "upcomingTitle": "Nichts in Sicht",
+    "upcomingDescription": "Es sind keine kommenden Termine angelegt.",
+    "inactiveTitle": "Noch nichts abgeschlossen",
+    "inactiveDescription": "Abgeschlossene und archivierte Termine landen hier."
+  },
+  "item": {
+    "payeeMissing": "Einzahler fehlt",
+    "categoryMissing": "Kategorie fehlt",
+    "nextDue": "nächster Termin {date}",
+    "byYou": "von dir",
+    "incompleteBadge": "Einzahler und Kategorie fehlen",
+    "book": "Buchen",
+    "moreActionsAria": "Weitere Aktionen für {name}"
+  },
+  "actions": {
+    "skip": "Überspringen",
+    "complete": "Abschließen",
+    "reactivate": "Reaktivieren",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "edit": {
+    "name": "Name",
+    "namePlaceholder": "z. B. Miete",
+    "amount": "Betrag",
+    "type": "Typ",
+    "category": "Kategorie",
+    "payee": "Einzahler",
+    "frequency": "Frequenz",
+    "frequencyMonthly": "Monatlich",
+    "frequencyYearly": "Jährlich",
+    "frequencyCustomDays": "Alle X Tage",
+    "interval": "Intervall",
+    "nextDueDate": "Nächster Termin",
+    "notesTemplate": "Notizvorlage (optional)",
+    "notesTemplatePlaceholder": "Wird beim Buchen übernommen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichert..."
+  },
+  "reactivate": {
+    "confirm": "Jetzt reaktivieren",
+    "saving": "Speichert...",
+    "cancel": "Abbrechen"
+  },
+  "form": {
+    "sheetTitle": "Neuer Termin",
+    "sheetDescriptionFor": "für {trackerName}",
+    "basicsHeading": "Grunddaten",
+    "name": "Name",
+    "namePlaceholder": "z. B. Miete Juli",
+    "amount": "Betrag",
+    "category": "Kategorie",
+    "payee": "Einzahler",
+    "rhythmHeading": "Rhythmus",
+    "frequency": "Frequenz",
+    "frequencyMonthly": "Monatlich",
+    "frequencyYearly": "Jährlich",
+    "frequencyCustomDays": "Alle X Tage",
+    "interval": "Intervall",
+    "startDate": "Startdatum",
+    "notesTemplate": "Notizvorlage (optional)",
+    "notesTemplatePlaceholder": "Wird beim Buchen übernommen",
+    "submit": "Termin anlegen",
+    "submitting": "Speichere..."
+  },
+  "toast": {
+    "selectTrackerFirst": "Bitte zuerst einen Tracker wählen",
+    "categoryAndPayeeRequired": "Kategorie und Einzahler sind Pflichtfelder",
+    "allFieldsRequired": "Name, Betrag, Datum, Kategorie und Einzahler sind Pflichtfelder",
+    "reactivationDateRequired": "Bitte ein neues nächstes Datum angeben",
+    "created": "Termin gespeichert",
+    "createError": "Speichern fehlgeschlagen",
+    "updated": "Termin aktualisiert",
+    "updateError": "Aktualisierung fehlgeschlagen",
+    "deleted": "Termin gelöscht",
+    "deleteError": "Löschen fehlgeschlagen",
+    "booked": "Termin als Transaktion gebucht",
+    "bookError": "Aktion fehlgeschlagen",
+    "skipped": "Termin übersprungen",
+    "skipError": "Überspringen fehlgeschlagen"
+  }
+}

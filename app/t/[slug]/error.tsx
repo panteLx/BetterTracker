@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -10,6 +11,8 @@ export default function PublicTrackerError({
 }: {
   error: Error & { digest?: string };
 }) {
+  const t = useTranslations("PublicShare");
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -20,13 +23,13 @@ export default function PublicTrackerError({
         <AlertTriangle className="h-5 w-5 text-expense" />
       </div>
       <div className="space-y-1 text-center">
-        <p className="font-semibold">Tracker nicht erreichbar</p>
+        <p className="font-semibold">{t("error.title")}</p>
         <p className="text-sm text-muted-foreground">
-          {error.message || "Dieser Tracker konnte nicht geladen werden."}
+          {error.message || t("error.defaultMessage")}
         </p>
       </div>
       <Button variant="outline" size="sm" asChild>
-        <Link href="/login">Zum Login</Link>
+        <Link href="/login">{t("error.loginButton")}</Link>
       </Button>
     </div>
   );

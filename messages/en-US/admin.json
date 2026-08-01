@@ -1,0 +1,178 @@
+{
+  "nav": {
+    "ariaLabel": "Admin sections",
+    "groups": {
+      "management": "Management",
+      "system": "System"
+    },
+    "links": {
+      "overview": "Overview",
+      "users": "Users",
+      "trackers": "Trackers",
+      "settings": "Settings",
+      "logs": "Logs"
+    }
+  },
+  "page": {
+    "title": "Administration",
+    "description": "System metrics along with user, tracker, and settings management."
+  },
+  "overview": {
+    "users": "Users",
+    "trackers": "Trackers",
+    "transactions": "Transactions",
+    "schedules": "Schedules",
+    "balanceTotal": "Total balance",
+    "incomeTotal": "Total income",
+    "expenseTotal": "Total expenses"
+  },
+  "logs": {
+    "page": {
+      "title": "Logs",
+      "description": "The latest changes to the system, with timestamp and actor."
+    },
+    "filters": {
+      "action": "Action",
+      "actionPlaceholder": "e.g. transaction_created",
+      "actor": "Actor (email)",
+      "actorPlaceholder": "user@example.com",
+      "severity": "Severity",
+      "severityAll": "All",
+      "from": "From",
+      "to": "To"
+    },
+    "loading": "Loading…",
+    "entriesCount": "{count} entries",
+    "limitSuffix": " (limit)",
+    "deleteAll": "Delete all",
+    "deleteConfirm": "Really delete all audit logs? This cannot be undone.",
+    "deleteSuccess": "All logs deleted",
+    "deleteError": "Delete failed",
+    "empty": "No logs found.",
+    "expand": "Show",
+    "collapse": "Collapse",
+    "systemActor": "System"
+  },
+  "trackers": {
+    "page": {
+      "title": "Trackers",
+      "description": "Create and archive trackers, and manage their Discord connection."
+    },
+    "title": "Trackers",
+    "fields": {
+      "name": "Name",
+      "currency": "Currency",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional",
+      "color": "Color"
+    },
+    "discord": {
+      "title": "Discord",
+      "webhookUrl": "Webhook URL",
+      "pingRoleId": "Ping role ID",
+      "debug": "Discord debug"
+    },
+    "toggles": {
+      "archivedTitle": "Archived",
+      "archivedDescription": "Transactions disabled",
+      "hiddenTitle": "Hidden",
+      "hiddenDescription": "Invisible to all users",
+      "publicTitle": "Public",
+      "publicDescription": "Readable without login"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived",
+      "hidden": "Hidden",
+      "visible": "Visible",
+      "public": "Public"
+    },
+    "publicLink": {
+      "copyLabel": "Copy link"
+    },
+    "actions": {
+      "save": "Save",
+      "selfShare": "Share with me",
+      "testDiscord": "Test Discord"
+    },
+    "toasts": {
+      "saved": "Tracker saved",
+      "saveError": "Save failed",
+      "testSent": "Test notification sent",
+      "testError": "Test failed",
+      "selfShared": "Tracker shared with you",
+      "selfShareError": "Sharing failed"
+    }
+  },
+  "settings": {
+    "page": {
+      "title": "Settings",
+      "description": "System-wide defaults and the Discord connection."
+    },
+    "system": {
+      "title": "System",
+      "registrationEnabled": {
+        "title": "Registration allowed",
+        "description": "New users may sign up through public registration."
+      }
+    },
+    "discord": {
+      "title": "Discord",
+      "webhookUrl": "Default Discord webhook URL",
+      "pingRoleId": "Default Discord ping role ID",
+      "debug": {
+        "title": "Default Discord debug",
+        "description": "New trackers inherit this Discord debug default."
+      },
+      "applyDefaults": {
+        "title": "Apply Discord defaults to all trackers",
+        "description": "Copies the webhook, ping role ID, and Discord debug setting from this page to every existing tracker.",
+        "button": "Apply to all trackers"
+      }
+    },
+    "save": "Save settings",
+    "toasts": {
+      "saved": "Settings saved",
+      "saveError": "Save failed",
+      "applyDefaultsSuccess": "{count} trackers updated",
+      "applyDefaultsError": "Applying defaults failed"
+    }
+  },
+  "users": {
+    "page": {
+      "title": "Users",
+      "description": "Assign roles, ban accounts, and manage users."
+    },
+    "title": "User management",
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "banned": "Banned",
+      "active": "Active"
+    },
+    "actions": {
+      "ban": "Ban",
+      "unban": "Unban",
+      "delete": "Delete"
+    },
+    "deleteConfirm": "Really delete user \"{name}\" ({email})?\n\nAll transactions, schedules, and tracker memberships belonging to this user will be permanently deleted.",
+    "toasts": {
+      "updated": "User updated",
+      "updateError": "Update failed",
+      "statusUpdated": "Status updated",
+      "statusError": "Action failed",
+      "deleted": "User deleted",
+      "deleteError": "Delete failed"
+    }
+  },
+  "errors": {
+    "title": "Admin error",
+    "defaultMessage": "An error occurred in the admin area.",
+    "retry": "Try again"
+  }
+}

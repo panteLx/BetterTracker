@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, CalendarClock, CheckCircle2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -72,6 +73,9 @@ export function QuickAddSheet({
 }) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const locale = useLocale();
+  const t = useTranslations("Common.quickAdd");
+  const commonT = useTranslations("Common");
   const [step, setStep] = useState<Step>(initialStep);
   const [done, setDone] = useState<Step | null>(null);
 
@@ -174,7 +178,7 @@ export function QuickAddSheet({
       setDone("buchung");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
+      toast.error(err instanceof Error ? err.message : t("transactionForm.errorGeneric")),
   });
 
   const scheduleMutation = useMutation({
@@ -189,7 +193,7 @@ export function QuickAddSheet({
       setDone("termin");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Fehler beim Speichern"),
+      toast.error(err instanceof Error ? err.message : t("scheduleForm.errorGeneric")),
   });
 
   function resetForm() {
@@ -235,11 +239,11 @@ export function QuickAddSheet({
   function handleSubmitTransaction(e: FormEvent) {
     e.preventDefault();
     if (!amount.trim()) {
-      toast.error("Bitte einen gültigen Betrag eingeben.");
+      toast.error(t("transactionForm.errorAmount"));
       return;
     }
     if (effectiveCategoryId === EMPTY) {
-      toast.error("Bitte eine Kategorie wählen.");
+      toast.error(t("transactionForm.errorCategory"));
       return;
     }
     txMutation.mutate({
@@ -257,19 +261,19 @@ export function QuickAddSheet({
   function handleSubmitSchedule(e: FormEvent) {
     e.preventDefault();
     if (!amount.trim()) {
-      toast.error("Bitte einen gültigen Betrag eingeben.");
+      toast.error(t("scheduleForm.errorAmount"));
       return;
     }
     if (!scheduleName.trim()) {
-      toast.error("Bitte einen Namen eingeben.");
+      toast.error(t("scheduleForm.errorName"));
       return;
     }
     if (categoryId === EMPTY) {
-      toast.error("Bitte eine Kategorie wählen.");
+      toast.error(t("scheduleForm.errorCategory"));
       return;
     }
     if (payeeId === EMPTY) {
-      toast.error("Bitte einen Empfänger/Absender angeben.");
+      toast.error(t("scheduleForm.errorPayee"));
       return;
     }
     scheduleMutation.mutate({
@@ -302,9 +306,9 @@ export function QuickAddSheet({
             : undefined
         }
       >
-        <SheetTitle className="sr-only">Hinzufügen</SheetTitle>
+        <SheetTitle className="sr-only">{t("sheetTitle")}</SheetTitle>
         <SheetDescription className="sr-only">
-          Neue Buchung oder Termin anlegen
+          {t("sheetDescription")}
         </SheetDescription>
 
         {isMobile ? (
@@ -315,7 +319,7 @@ export function QuickAddSheet({
         {step === "pick" && (
           <div className="space-y-3 p-5 pt-4">
             <p className="text-base font-semibold">
-              Was möchtest du hinzufügen?
+              {t("picker.prompt")}
             </p>
             <button
               type="button"
@@ -326,9 +330,9 @@ export function QuickAddSheet({
                 <Receipt className="h-5 w-5 text-primary-on" />
               </div>
               <div>
-                <p className="font-medium">Buchung</p>
+                <p className="font-medium">{t("picker.transactionTitle")}</p>
                 <p className="font-subtext text-sm text-muted-foreground">
-                  Einnahme oder Ausgabe erfassen
+                  {t("picker.transactionDescription")}
                 </p>
               </div>
             </button>
@@ -341,9 +345,9 @@ export function QuickAddSheet({
                 <CalendarClock className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-medium">Termin</p>
+                <p className="font-medium">{t("picker.scheduleTitle")}</p>
                 <p className="font-subtext text-sm text-muted-foreground">
-                  Wiederkehrende Zahlung anlegen
+                  {t("picker.scheduleDescription")}
                 </p>
               </div>
             </button>
@@ -358,11 +362,11 @@ export function QuickAddSheet({
                 type="button"
                 onClick={goBack}
                 className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted"
-                aria-label="Zurück"
+                aria-label={t("backAria")}
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <span className="font-semibold">Neue Buchung</span>
+              <span className="font-semibold">{t("transactionForm.header")}</span>
               <div className="ml-auto">
                 <DirectionToggle
                   value={direction}
@@ -374,7 +378,9 @@ export function QuickAddSheet({
             <div className="flex-1 overflow-y-auto">
               {done === "buchung" ? (
                 <SuccessView
-                  label="Buchung gespeichert!"
+                  label={t("transactionForm.success")}
+                  addAnotherLabel={t("successView.addAnother")}
+                  closeLabel={t("successView.close")}
                   onAnother={resetForm}
                   onClose={() => handleClose(false)}
                 />
@@ -385,7 +391,7 @@ export function QuickAddSheet({
                 >
                   {selectableTrackers.length > 1 ? (
                     <div className="space-y-2">
-                      <Label>Tracker</Label>
+                      <Label>{t("transactionForm.trackerLabel")}</Label>
                       <TrackerPillRow
                         trackers={selectableTrackers}
                         activeTrackerId={activeTrackerId}
@@ -395,7 +401,7 @@ export function QuickAddSheet({
                   ) : null}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="qa-tx-date">Datum</Label>
+                      <Label htmlFor="qa-tx-date">{t("transactionForm.dateLabel")}</Label>
                       <DatePicker
                         id="qa-tx-date"
                         value={date}
@@ -403,7 +409,7 @@ export function QuickAddSheet({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="qa-tx-amount">Betrag</Label>
+                      <Label htmlFor="qa-tx-amount">{t("transactionForm.amountLabel")}</Label>
                       <Input
                         id="qa-tx-amount"
                         inputMode="decimal"
@@ -420,8 +426,8 @@ export function QuickAddSheet({
                     key={`buchung-category-${entryFieldsKey}`}
                     kind="category"
                     trackerId={activeTrackerId}
-                    locale="de"
-                    label="Kategorie"
+                    locale={locale}
+                    label={t("transactionForm.categoryLabel")}
                     direction={direction}
                     options={categoryOptions}
                     value={categoryId}
@@ -433,8 +439,8 @@ export function QuickAddSheet({
                     key={`buchung-payee-${entryFieldsKey}`}
                     kind="payee"
                     trackerId={activeTrackerId}
-                    locale="de"
-                    label="Einzahler"
+                    locale={locale}
+                    label={t("transactionForm.payeeLabel")}
                     options={payeeOptions}
                     value={payeeId}
                     onValueChange={setPayeeId}
@@ -445,10 +451,10 @@ export function QuickAddSheet({
                   />
 
                   <div className="space-y-2">
-                    <Label htmlFor="qa-tx-notes">Notizen (optional)</Label>
+                    <Label htmlFor="qa-tx-notes">{t("transactionForm.notesLabel")}</Label>
                     <Textarea
                       id="qa-tx-notes"
-                      placeholder="Kurzer Kontext für die Buchung"
+                      placeholder={t("transactionForm.notesPlaceholder")}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
@@ -465,8 +471,8 @@ export function QuickAddSheet({
                     }
                   >
                     {txMutation.isPending
-                      ? "Speichere..."
-                      : "Eintrag speichern"}
+                      ? t("transactionForm.submitting")
+                      : t("transactionForm.submit")}
                   </Button>
                 </form>
               )}
@@ -482,16 +488,18 @@ export function QuickAddSheet({
                 type="button"
                 onClick={goBack}
                 className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted"
-                aria-label="Zurück"
+                aria-label={t("backAria")}
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <span className="font-semibold">Neuer Termin</span>
+              <span className="font-semibold">{t("scheduleForm.header")}</span>
             </div>
             <div className="flex-1 overflow-y-auto">
               {done === "termin" ? (
                 <SuccessView
-                  label="Termin gespeichert!"
+                  label={t("scheduleForm.success")}
+                  addAnotherLabel={t("successView.addAnother")}
+                  closeLabel={t("successView.close")}
                   onAnother={resetForm}
                   onClose={() => handleClose(false)}
                 />
@@ -499,7 +507,7 @@ export function QuickAddSheet({
                 <form onSubmit={handleSubmitSchedule} className="space-y-4 p-4">
                   {selectableTrackers.length > 1 ? (
                     <div className="space-y-2">
-                      <Label>Tracker</Label>
+                      <Label>{t("transactionForm.trackerLabel")}</Label>
                       <TrackerPillRow
                         trackers={selectableTrackers}
                         activeTrackerId={activeTrackerId}
@@ -509,10 +517,10 @@ export function QuickAddSheet({
                   ) : null}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="qa-sc-name">Bezeichnung</Label>
+                      <Label htmlFor="qa-sc-name">{t("scheduleForm.nameLabel")}</Label>
                       <Input
                         id="qa-sc-name"
-                        placeholder="z. B. Miete, Netflix"
+                        placeholder={t("scheduleForm.namePlaceholder")}
                         value={scheduleName}
                         onChange={(e) => setScheduleName(e.target.value)}
                         required
@@ -520,7 +528,7 @@ export function QuickAddSheet({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="qa-sc-amount">Betrag</Label>
+                      <Label htmlFor="qa-sc-amount">{t("scheduleForm.amountLabel")}</Label>
                       <Input
                         id="qa-sc-amount"
                         inputMode="decimal"
@@ -546,8 +554,8 @@ export function QuickAddSheet({
                     key={`termin-category-${entryFieldsKey}`}
                     kind="category"
                     trackerId={activeTrackerId}
-                    locale="de"
-                    label="Kategorie"
+                    locale={locale}
+                    label={t("transactionForm.categoryLabel")}
                     direction={direction}
                     options={categoryOptions}
                     value={categoryId}
@@ -560,8 +568,8 @@ export function QuickAddSheet({
                     key={`termin-payee-${entryFieldsKey}`}
                     kind="payee"
                     trackerId={activeTrackerId}
-                    locale="de"
-                    label="Einzahler"
+                    locale={locale}
+                    label={t("transactionForm.payeeLabel")}
                     options={payeeOptions}
                     value={payeeId}
                     onValueChange={setPayeeId}
@@ -570,10 +578,10 @@ export function QuickAddSheet({
 
                   {/* Frequency */}
                   <div className="space-y-3">
-                    <p className="text-sm font-semibold">Rhythmus</p>
+                    <p className="text-sm font-semibold">{t("scheduleForm.rhythmLabel")}</p>
                     <div className="grid gap-3 grid-cols-3">
                       <div className="space-y-2">
-                        <Label>Frequenz</Label>
+                        <Label>{t("scheduleForm.frequencyLabel")}</Label>
                         <Select
                           value={frequency}
                           onValueChange={(v) => setFrequency(v as Frequency)}
@@ -582,16 +590,16 @@ export function QuickAddSheet({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="monthly">Monatlich</SelectItem>
-                            <SelectItem value="yearly">Jährlich</SelectItem>
+                            <SelectItem value="monthly">{t("scheduleForm.frequencyMonthly")}</SelectItem>
+                            <SelectItem value="yearly">{t("scheduleForm.frequencyYearly")}</SelectItem>
                             <SelectItem value="custom_days">
-                              Alle X Tage
+                              {t("scheduleForm.frequencyCustomDays")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Intervall</Label>
+                        <Label>{t("scheduleForm.intervalLabel")}</Label>
                         <Input
                           value={intervalValue}
                           onChange={(e) => setIntervalValue(e.target.value)}
@@ -599,20 +607,27 @@ export function QuickAddSheet({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Startdatum</Label>
+                        <Label>{t("scheduleForm.startDateLabel")}</Label>
                         <DatePicker value={date} onChange={setDate} />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {getFrequencyLabel(frequency, normalizedIntervalValue)}
+                      {getFrequencyLabel(frequency, normalizedIntervalValue, {
+                        monthly: commonT("frequency.monthly"),
+                        monthlyInterval: (count) => commonT("frequency.monthlyInterval", { count }),
+                        yearly: commonT("frequency.yearly"),
+                        yearlyInterval: (count) => commonT("frequency.yearlyInterval", { count }),
+                        daily: commonT("frequency.daily"),
+                        dailyInterval: (count) => commonT("frequency.dailyInterval", { count }),
+                      })}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="qa-sc-notes">Notizvorlage (optional)</Label>
+                    <Label htmlFor="qa-sc-notes">{t("scheduleForm.notesTemplateLabel")}</Label>
                     <Textarea
                       id="qa-sc-notes"
-                      placeholder="Wird beim Buchen übernommen"
+                      placeholder={t("scheduleForm.notesTemplatePlaceholder")}
                       value={notesTemplate}
                       onChange={(e) => setNotesTemplate(e.target.value)}
                       rows={3}
@@ -625,8 +640,8 @@ export function QuickAddSheet({
                     disabled={isMutating || !activeTrackerId}
                   >
                     {scheduleMutation.isPending
-                      ? "Speichere..."
-                      : "Termin anlegen"}
+                      ? t("scheduleForm.submitting")
+                      : t("scheduleForm.submit")}
                   </Button>
                 </form>
               )}
@@ -640,10 +655,14 @@ export function QuickAddSheet({
 
 function SuccessView({
   label,
+  addAnotherLabel,
+  closeLabel,
   onAnother,
   onClose,
 }: {
   label: string;
+  addAnotherLabel: string;
+  closeLabel: string;
   onAnother: () => void;
   onClose: () => void;
 }) {
@@ -653,10 +672,10 @@ function SuccessView({
       <p className="text-base font-semibold">{label}</p>
       <div className="flex gap-3">
         <Button variant="outline" size="sm" onClick={onAnother}>
-          Mehr hinzufügen
+          {addAnotherLabel}
         </Button>
         <Button size="sm" onClick={onClose}>
-          Schließen
+          {closeLabel}
         </Button>
       </div>
     </div>

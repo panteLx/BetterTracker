@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -37,12 +38,12 @@ import { LAST_TRACKER_KEY } from "@/lib/last-tracker";
 import { useLocalStorageValue } from "@/hooks/use-local-storage-value";
 import { formatDateShort } from "@/lib/utils";
 
-const routes = [
-  { href: "/", label: "Dashboard", icon: CreditCard },
-  { href: "/transactions", label: "Transaktionen", icon: ReceiptText },
-  { href: "/schedules", label: "Termine", icon: TimerReset },
-  { href: "/statistics", label: "Statistiken", icon: BarChart2 },
-  { href: "/profile", label: "Profil", icon: User },
+const ROUTE_DEFS = [
+  { href: "/", key: "dashboard" as const, icon: CreditCard },
+  { href: "/transactions", key: "transactions" as const, icon: ReceiptText },
+  { href: "/schedules", key: "schedules" as const, icon: TimerReset },
+  { href: "/statistics", key: "statistics" as const, icon: BarChart2 },
+  { href: "/profile", key: "profile" as const, icon: User },
 ];
 
 type Tracker = {
@@ -96,6 +97,13 @@ export function CommandPalette({ role }: { role?: string | null }) {
   const { resolvedTheme, setTheme } = useTheme();
   const isAdmin = role === "admin" || role === "superadmin";
   const debouncedSearch = useDebouncedValue(search.trim(), 250);
+  const t = useTranslations("Nav.commandPalette");
+  const themeT = useTranslations("Nav.theme");
+  const locale = useLocale();
+  const routes = ROUTE_DEFS.map((route) => ({
+    ...route,
+    label: t(`routes.${route.key}`),
+  }));
 
   const recalledTrackerId = useLocalStorageValue(LAST_TRACKER_KEY) ?? undefined;
   const trackersQuery = useQuery({
@@ -179,22 +187,19 @@ export function CommandPalette({ role }: { role?: string | null }) {
   const actions = [
     {
       key: "new-buchung",
-      label: "Neue Buchung",
+      label: t("newTransaction"),
       icon: Receipt,
       onSelect: () => openQuickAdd("buchung"),
     },
     {
       key: "new-termin",
-      label: "Neuer Termin",
+      label: t("newSchedule"),
       icon: CalendarClock,
       onSelect: () => openQuickAdd("termin"),
     },
     {
       key: "toggle-theme",
-      label:
-        resolvedTheme === "dark"
-          ? "Zu hellem Modus wechseln"
-          : "Zu dunklem Modus wechseln",
+      label: resolvedTheme === "dark" ? themeT("toLight") : themeT("toDark"),
       icon: resolvedTheme === "dark" ? Sun : Moon,
       onSelect: () => {
         setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -205,7 +210,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
   const filteredActions = actions.filter((a) => matchesQuery(a.label, search));
 
   const settingsItems = isAdmin
-    ? [{ href: "/admin", label: "Admin-Bereich", icon: Settings }]
+    ? [{ href: "/admin", label: t("adminArea"), icon: Settings }]
     : [];
   const filteredSettings = settingsItems.filter((s) =>
     matchesQuery(s.label, search),
@@ -225,28 +230,34 @@ export function CommandPalette({ role }: { role?: string | null }) {
         size="sm"
         className="hidden h-8 gap-2 text-muted-foreground md:flex"
         onClick={() => setOpen(true)}
-        aria-label="Befehlspalette öffnen"
+        aria-label={t("openAria")}
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="text-xs">Suche</span>
+        <span className="text-xs">{t("search")}</span>
         <kbd className="pointer-events-none ml-1 hidden select-none rounded border border-border bg-muted px-1 text-[10px] font-mono font-medium sm:inline-flex">
           ⌘K
         </kbd>
       </Button>
 
-      <CommandDialog open={open} onOpenChange={handleOpenChange} shouldFilter={false}>
+      <CommandDialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        shouldFilter={false}
+        title={t("title")}
+        description={t("description")}
+      >
         <CommandInput
           value={search}
           onValueChange={setSearch}
-          placeholder="Seite, Aktion oder Buchung suchen…"
+          placeholder={t("placeholder")}
         />
         <CommandList>
           {nothingFound ? (
-            <CommandEmpty>Keine Ergebnisse gefunden.</CommandEmpty>
+            <CommandEmpty>{t("noResults")}</CommandEmpty>
           ) : null}
 
           {filteredRoutes.length > 0 ? (
-            <CommandGroup heading="Navigation">
+            <CommandGroup heading={t("groupNavigation")}>
               {filteredRoutes.map(({ href, label, icon: Icon }) => (
                 <CommandItem key={href} onSelect={() => navigate(href)}>
                   <Icon className="mr-2 h-4 w-4" />
@@ -259,7 +270,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
           {filteredActions.length > 0 ? (
             <>
               {filteredRoutes.length > 0 ? <CommandSeparator /> : null}
-              <CommandGroup heading="Aktionen">
+              <CommandGroup heading={t("groupActions")}>
                 {filteredActions.map(({ key, label, icon: Icon, onSelect }) => (
                   <CommandItem key={key} onSelect={onSelect}>
                     <Icon className="mr-2 h-4 w-4" />
@@ -278,14 +289,14 @@ export function CommandPalette({ role }: { role?: string | null }) {
               <CommandGroup
                 heading={
                   activeTrackers.length === 1
-                    ? `Buchungen in ${activeTrackers[0].name}`
-                    : "Buchungen"
+                    ? t("transactionsInTracker", { name: activeTrackers[0].name })
+                    : t("transactions")
                 }
               >
                 {isSearching ? (
                   <CommandItem disabled className="justify-center text-muted-foreground">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Suche läuft…
+                    {t("searching")}
                   </CommandItem>
                 ) : (
                   hits.map((hit) => {
@@ -296,7 +307,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
                       hit.payeeName ||
                       hit.customPayeeName ||
                       hit.notes ||
-                      "Buchung";
+                      t("transactionFallback");
                     const subtitle = [
                       showTrackerBadge ? hit.trackerName : null,
                       hit.payeeName || hit.customPayeeName,
@@ -345,7 +356,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
                             size="xs"
                           />
                           <span className="text-[10px] text-muted-foreground">
-                            {formatDateShort(hit.date)}
+                            {formatDateShort(hit.date, locale)}
                           </span>
                         </span>
                       </CommandItem>
@@ -360,7 +371,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
                     }
                   >
                     <Search className="mr-2 h-4 w-4" />
-                    Alle Treffer für „{debouncedSearch}“ anzeigen
+                    {t("showAllResults", { query: debouncedSearch })}
                   </CommandItem>
                 ) : null}
               </CommandGroup>
@@ -370,7 +381,7 @@ export function CommandPalette({ role }: { role?: string | null }) {
           {filteredSettings.length > 0 ? (
             <>
               <CommandSeparator />
-              <CommandGroup heading="Einstellungen">
+              <CommandGroup heading={t("groupSettings")}>
                 {filteredSettings.map(({ href, label, icon: Icon }) => (
                   <CommandItem key={href} onSelect={() => navigate(href)}>
                     <Icon className="mr-2 h-4 w-4" />

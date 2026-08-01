@@ -1,0 +1,129 @@
+{
+  "page": {
+    "title": "Schedules",
+    "description": "Recurring payments — turn a due schedule into a transaction with one click."
+  },
+  "status": {
+    "overdue": "Overdue",
+    "due": "Due",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
+    "incomplete": "Incomplete"
+  },
+  "stats": {
+    "due": "Due",
+    "upcoming": "Upcoming",
+    "completed": "Completed"
+  },
+  "filters": {
+    "searchPlaceholder": "Search name, category, payee, or note",
+    "searchAria": "Search schedules",
+    "typeLabel": "Filter by type",
+    "typeAll": "All",
+    "typeExpense": "Expenses",
+    "typeIncome": "Income",
+    "categoryAria": "Filter by category",
+    "categoryAll": "All categories",
+    "payeeAria": "Filter by payee",
+    "payeeAll": "All payees",
+    "dateFrom": "From",
+    "dateFromAria": "Start date for date filter",
+    "dateTo": "To",
+    "dateToAria": "End date for date filter",
+    "reset": "Reset {count} filters",
+    "statusLabel": "Filter by status"
+  },
+  "tabs": {
+    "due": "Due",
+    "upcoming": "Upcoming",
+    "inactive": "Completed"
+  },
+  "empty": {
+    "noMatchesTitle": "No matches for these filters",
+    "noMatchesDescription": "Loosen the filters to see more.",
+    "resetFilters": "Reset filters",
+    "dueTitle": "Nothing due",
+    "dueDescription": "No schedule is currently ready to book.",
+    "upcomingTitle": "Nothing on the horizon",
+    "upcomingDescription": "There are no upcoming schedules set up.",
+    "inactiveTitle": "Nothing completed yet",
+    "inactiveDescription": "Completed and archived schedules end up here."
+  },
+  "item": {
+    "payeeMissing": "Missing payee",
+    "categoryMissing": "Missing category",
+    "nextDue": "next due {date}",
+    "byYou": "by you",
+    "incompleteBadge": "Payee and category missing",
+    "book": "Book",
+    "moreActionsAria": "More actions for {name}"
+  },
+  "actions": {
+    "skip": "Skip",
+    "complete": "Complete",
+    "reactivate": "Reactivate",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "edit": {
+    "name": "Name",
+    "namePlaceholder": "e.g. Rent",
+    "amount": "Amount",
+    "type": "Type",
+    "category": "Category",
+    "payee": "Payee",
+    "frequency": "Frequency",
+    "frequencyMonthly": "Monthly",
+    "frequencyYearly": "Yearly",
+    "frequencyCustomDays": "Every X days",
+    "interval": "Interval",
+    "nextDueDate": "Next due date",
+    "notesTemplate": "Notes template (optional)",
+    "notesTemplatePlaceholder": "Applied when booking",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "reactivate": {
+    "confirm": "Reactivate now",
+    "saving": "Saving...",
+    "cancel": "Cancel"
+  },
+  "form": {
+    "sheetTitle": "New schedule",
+    "sheetDescriptionFor": "for {trackerName}",
+    "basicsHeading": "Basics",
+    "name": "Name",
+    "namePlaceholder": "e.g. Rent July",
+    "amount": "Amount",
+    "category": "Category",
+    "payee": "Payee",
+    "rhythmHeading": "Rhythm",
+    "frequency": "Frequency",
+    "frequencyMonthly": "Monthly",
+    "frequencyYearly": "Yearly",
+    "frequencyCustomDays": "Every X days",
+    "interval": "Interval",
+    "startDate": "Start date",
+    "notesTemplate": "Notes template (optional)",
+    "notesTemplatePlaceholder": "Applied when booking",
+    "submit": "Create schedule",
+    "submitting": "Saving..."
+  },
+  "toast": {
+    "selectTrackerFirst": "Please select a tracker first",
+    "categoryAndPayeeRequired": "Category and payee are required",
+    "allFieldsRequired": "Name, amount, date, category, and payee are required",
+    "reactivationDateRequired": "Please provide a new next date",
+    "created": "Schedule saved",
+    "createError": "Failed to save",
+    "updated": "Schedule updated",
+    "updateError": "Failed to update",
+    "deleted": "Schedule deleted",
+    "deleteError": "Failed to delete",
+    "booked": "Schedule booked as transaction",
+    "bookError": "Action failed",
+    "skipped": "Schedule skipped",
+    "skipError": "Failed to skip"
+  }
+}

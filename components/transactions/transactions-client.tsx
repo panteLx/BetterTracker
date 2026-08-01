@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -95,14 +96,15 @@ type Transaction = {
 };
 
 type TransactionsClientProps = {
-  locale: string;
   currentUserId: string;
 };
 
 export function TransactionsClient({
-  locale,
   currentUserId,
 }: TransactionsClientProps) {
+  const locale = useLocale();
+  const t = useTranslations("Transactions");
+  const commonT = useTranslations("Common");
   const isMobile = useIsMobile();
   // Deep-links (e.g. from the command palette) land on the matching filter.
   // Typing afterwards is purely local state, not synced back to the URL —
@@ -279,18 +281,24 @@ export function TransactionsClient({
     );
   }
 
+  const dayLabels = {
+    today: commonT("dayLabel.today"),
+    yesterday: commonT("dayLabel.yesterday"),
+    tomorrow: commonT("dayLabel.tomorrow"),
+  };
+
   const emptyState = (
     <EmptyState
       icon={ReceiptText}
       title={
         activeFilterCount > 0
-          ? "Keine Treffer für diese Filter"
-          : "Noch keine Buchungen"
+          ? t("empty.filteredTitle")
+          : t("empty.defaultTitle")
       }
       description={
         activeFilterCount > 0
-          ? "Lockere die Filter, um mehr zu sehen."
-          : "Leg mit dem Plus-Button die erste Einnahme oder Ausgabe an."
+          ? t("empty.filteredDescription")
+          : t("empty.defaultDescription")
       }
       action={
         activeFilterCount > 0 ? (
@@ -301,7 +309,7 @@ export function TransactionsClient({
             onClick={resetFilters}
           >
             <X className="h-3.5 w-3.5" />
-            Filter zurücksetzen
+            {t("filters.resetFilters")}
           </Button>
         ) : null
       }
@@ -322,7 +330,7 @@ export function TransactionsClient({
           so it carries the inverted tile. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatTile
-          label="Saldo im Filter"
+          label={t("stats.balanceInFilter")}
           tone="inverse"
           icon={Wallet}
           value={
@@ -337,7 +345,7 @@ export function TransactionsClient({
           className="col-span-2 lg:col-span-1"
         />
         <StatTile
-          label="Einnahmen"
+          label={t("stats.income")}
           icon={ArrowUpRight}
           value={
             <Amount
@@ -350,7 +358,7 @@ export function TransactionsClient({
           }
         />
         <StatTile
-          label="Ausgaben"
+          label={t("stats.expenses")}
           icon={ArrowDownLeft}
           value={
             <Amount
@@ -372,8 +380,8 @@ export function TransactionsClient({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Einzahler, Kategorie oder Notiz suchen"
-              aria-label="Buchungen durchsuchen"
+              placeholder={t("filters.searchPlaceholder")}
+              aria-label={t("filters.searchAriaLabel")}
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -387,13 +395,13 @@ export function TransactionsClient({
               dissolves the wrapper back into the flex-wrap row at sm+. */}
           <div className="flex w-full items-center gap-2 sm:contents">
             <Segmented
-              label="Nach Typ filtern"
+              label={t("filters.typeFilterLabel")}
               size={isMobile ? "sm" : "md"}
               className="min-w-0 flex-1 sm:flex-none"
               items={[
-                { value: ALL_FILTER_VALUE, label: "Alle" },
-                { value: "expense", label: "Ausgaben" },
-                { value: "income", label: "Einnahmen" },
+                { value: ALL_FILTER_VALUE, label: t("filters.all") },
+                { value: "expense", label: t("filters.expenses") },
+                { value: "income", label: t("filters.income") },
               ]}
               value={direction}
               onValueChange={(value) => {
@@ -403,12 +411,12 @@ export function TransactionsClient({
             />
 
             <Segmented
-              label="Ansicht wechseln"
+              label={t("filters.viewToggleLabel")}
               size={isMobile ? "sm" : "md"}
               className="shrink-0 sm:ml-auto"
               items={[
-                { value: "list", label: "Liste", icon: LayoutList },
-                { value: "table", label: "Tabelle", icon: Rows3 },
+                { value: "list", label: t("filters.viewList"), icon: LayoutList },
+                { value: "table", label: t("filters.viewTable"), icon: Rows3 },
               ]}
               value={view}
               onValueChange={(value) => changeView(value as ViewMode)}
@@ -425,13 +433,13 @@ export function TransactionsClient({
             }}
           >
             <SelectTrigger
-              aria-label="Nach Kategorie filtern"
+              aria-label={t("filters.categoryFilterLabel")}
               className="min-w-36 flex-1 sm:w-44 sm:flex-none"
             >
-              <SelectValue placeholder="Alle Kategorien" />
+              <SelectValue placeholder={t("filters.allCategories")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Kategorien</SelectItem>
+              <SelectItem value={ALL_FILTER_VALUE}>{t("filters.allCategories")}</SelectItem>
               {(categoriesQuery.data?.items || []).map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.name}
@@ -448,13 +456,13 @@ export function TransactionsClient({
             }}
           >
             <SelectTrigger
-              aria-label="Nach Einzahler filtern"
+              aria-label={t("filters.payeeFilterLabel")}
               className="min-w-36 flex-1 sm:w-44 sm:flex-none"
             >
-              <SelectValue placeholder="Alle Einzahler" />
+              <SelectValue placeholder={t("filters.allPayees")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_FILTER_VALUE}>Alle Einzahler</SelectItem>
+              <SelectItem value={ALL_FILTER_VALUE}>{t("filters.allPayees")}</SelectItem>
               {(payeesQuery.data?.items || []).map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.name}
@@ -471,8 +479,8 @@ export function TransactionsClient({
                 setFrom(value);
                 setPage(1);
               }}
-              placeholder="Von"
-              aria-label="Startdatum für Datumsfilter"
+              placeholder={t("filters.fromPlaceholder")}
+              aria-label={t("filters.fromAriaLabel")}
             />
             <span className="text-muted-foreground">–</span>
             <DatePicker
@@ -482,8 +490,8 @@ export function TransactionsClient({
                 setTo(value);
                 setPage(1);
               }}
-              placeholder="Bis"
-              aria-label="Enddatum für Datumsfilter"
+              placeholder={t("filters.toPlaceholder")}
+              aria-label={t("filters.toAriaLabel")}
             />
           </div>
 
@@ -496,7 +504,7 @@ export function TransactionsClient({
               onClick={resetFilters}
             >
               <X className="h-3.5 w-3.5" />
-              {activeFilterCount} Filter zurücksetzen
+              {t("filters.resetFiltersCount", { count: activeFilterCount })}
             </Button>
           ) : null}
         </div>
@@ -506,11 +514,11 @@ export function TransactionsClient({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3 px-1">
           <MicroLabel>
-            {totalCount === 1 ? "1 Buchung" : `${totalCount} Buchungen`}
+            {t("results.count", { count: totalCount })}
           </MicroLabel>
           {isArchived ? (
             <span className="font-subtext text-xs text-muted-foreground">
-              Archivierter Tracker — nur lesbar
+              {t("results.archivedReadOnly")}
             </span>
           ) : null}
         </div>
@@ -522,7 +530,7 @@ export function TransactionsClient({
             {dayGroups.map((group) => (
               <DayGroup
                 key={group.date}
-                label={formatDayLabel(group.date, locale)}
+                label={formatDayLabel(group.date, locale, dayLabels)}
                 total={
                   <Amount
                     cents={group.items.reduce(
@@ -558,13 +566,19 @@ export function TransactionsClient({
                         }
                       />
                     }
-                    title={item.payeeName || item.customPayeeName || "Anonym"}
+                    title={
+                      item.payeeName ||
+                      item.customPayeeName ||
+                      t("row.anonymous")
+                    }
                     subtitle={[
-                      item.categoryName || "Ohne Kategorie",
+                      item.categoryName || t("row.noCategory"),
                       item.notes,
                       item.createdByUserId === currentUserId
-                        ? "von dir"
-                        : `von ${item.createdByUserName ?? "Unbekannt"}`,
+                        ? t("row.byYou")
+                        : t("row.byUser", {
+                            name: item.createdByUserName ?? t("row.unknownUser"),
+                          }),
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -593,12 +607,12 @@ export function TransactionsClient({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Datum</TableHead>
-                  <TableHead>Einzahler</TableHead>
-                  <TableHead>Kategorie</TableHead>
-                  <TableHead>Notizen</TableHead>
-                  <TableHead>Erfasst von</TableHead>
-                  <TableHead className="text-right">Betrag</TableHead>
+                  <TableHead>{t("table.date")}</TableHead>
+                  <TableHead>{t("table.payee")}</TableHead>
+                  <TableHead>{t("table.category")}</TableHead>
+                  <TableHead>{t("table.notes")}</TableHead>
+                  <TableHead>{t("table.createdBy")}</TableHead>
+                  <TableHead className="text-right">{t("table.amount")}</TableHead>
                   <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
@@ -666,7 +680,7 @@ export function TransactionsClient({
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page === 1 || transactionsQuery.isFetching}
               >
-                Zurück
+                {t("pagination.back")}
               </Button>
               <Button
                 variant="outline"
@@ -675,7 +689,7 @@ export function TransactionsClient({
                 onClick={() => setPage((current) => current + 1)}
                 disabled={!hasMore || transactionsQuery.isFetching}
               >
-                Weiter
+                {t("pagination.next")}
               </Button>
             </div>
           </div>

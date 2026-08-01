@@ -1,0 +1,37 @@
+{
+  "title": "Profil",
+  "description": "Dein Konto, deine Sitzungen und wie die App aussehen soll.",
+  "appearance": {
+    "title": "Darstellung",
+    "colorMode": "Farbmodus",
+    "accentColor": "Akzentfarbe",
+    "accentDescription": "Färbt Buttons und aktive Elemente. Gilt auf diesem Gerät."
+  },
+  "language": {
+    "title": "Sprache",
+    "label": "App-Sprache",
+    "description": "Ändert die Sprache der Benutzeroberfläche."
+  },
+  "account": {
+    "title": "Account",
+    "name": "Name",
+    "email": "E-Mail",
+    "status": "Status",
+    "banned": "Gesperrt",
+    "active": "Aktiv"
+  },
+  "sessions": {
+    "title": "Aktive Sessions",
+    "count": "{count} aktiv",
+    "empty": "Keine aktiven Sessions gefunden.",
+    "unknownDevice": "Unbekanntes Gerät",
+    "expiresAt": "Läuft bis {date}"
+  },
+  "signOut": {
+    "button": "Abmelden",
+    "confirmTitle": "Wirklich abmelden?",
+    "confirmDescription": "Du wirst aus deiner aktuellen Sitzung abgemeldet und zur Anmeldeseite weitergeleitet.",
+    "cancel": "Abbrechen",
+    "signingOut": "Abmelden…"
+  }
+}

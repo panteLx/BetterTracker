@@ -1,3 +1,6 @@
+"use client";
+
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -49,13 +52,15 @@ type AmountProps = {
 export function Amount({
   cents,
   currency = "EUR",
-  locale = "de-DE",
+  locale,
   direction = null,
   signed = false,
   size = "md",
   tone = "auto",
   className,
 }: AmountProps) {
+  const activeLocale = useLocale();
+  const resolvedLocale = locale ?? activeLocale;
   const magnitude = Math.abs(cents) / 100;
   const value =
     direction === "expense"
@@ -64,7 +69,7 @@ export function Amount({
         ? magnitude
         : cents / 100;
 
-  const parts = new Intl.NumberFormat(locale, {
+  const parts = new Intl.NumberFormat(resolvedLocale, {
     style: "currency",
     currency,
     signDisplay: signed && direction === "income" ? "always" : "auto",

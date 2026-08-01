@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { categories, payees, transactions } from "@/lib/db/schema";
 import { requireTrackerManageAccess } from "@/lib/auth/guards";
@@ -49,9 +50,11 @@ export async function POST(
   const access = await requireTrackerManageAccess(request.headers, trackerId);
   if (access.response) return access.response;
 
+  const t = await getTranslations("Errors");
+
   if (!access.trackerAccess?.tracker.isActive) {
     return NextResponse.json(
-      { error: "Tracker ist archiviert und kann nicht bearbeitet werden" },
+      { error: t("api.trackerArchived") },
       { status: 409 },
     );
   }
@@ -60,11 +63,11 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return badRequest("Ungültiger JSON-Body");
+    return badRequest(t("api.invalidJsonBody"));
   }
 
   if (!Array.isArray(body.rows) || body.rows.length === 0) {
-    return badRequest("rows ist erforderlich und darf nicht leer sein");
+    return badRequest(t("api.importRowsRequired"));
   }
 
   const rows = body.rows as ImportRow[];
@@ -166,19 +169,21 @@ export async function POST(
     try {
       const amountStr = row.amount?.replace(",", ".").trim();
       if (!amountStr) {
-        errors.push(`Zeile ${rowNum}: Kein Betrag`);
+        errors.push(t("api.importRowNoAmount", { rowNum }));
         continue;
       }
 
       const rawAmount = parseFloat(amountStr);
       if (isNaN(rawAmount) || rawAmount === 0) {
-        errors.push(`Zeile ${rowNum}: Ungültiger Betrag "${row.amount}"`);
+        errors.push(
+          t("api.importRowInvalidAmount", { rowNum, amount: row.amount }),
+        );
         continue;
       }
 
       const date = normalizeDate(row.date ?? "");
       if (!date) {
-        errors.push(`Zeile ${rowNum}: Ungültiges Datum "${row.date}"`);
+        errors.push(t("api.importRowInvalidDate", { rowNum, date: row.date }));
         continue;
       }
 
@@ -190,7 +195,9 @@ export async function POST(
 
       if (!categoryId) {
         errors.push(
-          `Zeile ${rowNum}: Keine Kategorie${catName ? ` "${catName}"` : ""}`,
+          catName
+            ? t("api.importRowNoCategoryNamed", { rowNum, catName })
+            : t("api.importRowNoCategory", { rowNum }),
         );
         continue;
       }
@@ -220,7 +227,11 @@ export async function POST(
       transactionCount++;
     } catch (err) {
       errors.push(
-        `Zeile ${rowNum}: ${err instanceof Error ? err.message : "Fehler"}`,
+        t("api.importRowError", {
+          rowNum,
+          message:
+            err instanceof Error ? err.message : t("api.importRowGenericError"),
+        }),
       );
     }
   }

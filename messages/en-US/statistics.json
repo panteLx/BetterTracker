@@ -1,0 +1,61 @@
+{
+  "page": {
+    "title": "Statistics",
+    "description": "How income and expenses develop over time."
+  },
+  "filters": {
+    "trackerLabel": "Select tracker",
+    "yearLabel": "Select year",
+    "directionLabel": "Select direction",
+    "expense": "Expenses",
+    "income": "Income"
+  },
+  "yoyDelta": {
+    "new": "New vs. previous year",
+    "noChange": "± 0% vs. previous year",
+    "change": "{value}% vs. previous year"
+  },
+  "emptyState": {
+    "noBookings": {
+      "title": "No transactions",
+      "description": "There's nothing to show for this selection in this year."
+    },
+    "noTracker": {
+      "title": "No tracker yet",
+      "description": "Create a tracker on the dashboard to see your statistics here."
+    },
+    "noBookingsInYear": {
+      "title": "No transactions in {year}",
+      "description": "Choose a different year or tracker."
+    }
+  },
+  "statTiles": {
+    "balance": "Balance",
+    "income": "Income",
+    "expenses": "Expenses",
+    "transactions": "Transactions",
+    "savingsRate": "Savings rate",
+    "savingsRateHelper": "Share of income left over",
+    "avgPerTransaction": "Avg. per transaction",
+    "avgPerTransactionHelper": "Across income and expenses",
+    "topExpense": "Largest expense",
+    "topExpenseHelper": "{payee} · {date}",
+    "noExpensesThisYear": "No expenses this year"
+  },
+  "charts": {
+    "monthly": "Month by month {year}",
+    "weekday": "Weekday pattern",
+    "yearComparison": "Year comparison",
+    "category": "By category",
+    "payee": "Top payees",
+    "balanceTrend": "Balance {year}"
+  },
+  "dataKeys": {
+    "income": "Income",
+    "expense": "Expenses",
+    "balance": "Balance",
+    "thisYear": "This year",
+    "previousYear": "Previous year"
+  },
+  "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+}

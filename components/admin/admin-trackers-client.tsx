@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, Copy, Globe } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { fetchJson } from "@/lib/client-fetch";
@@ -31,6 +32,7 @@ type Tracker = {
 type TrackerDraft = Omit<Tracker, "id" | "slug">;
 
 export function AdminTrackersClient() {
+  const t = useTranslations("Admin.trackers");
   const queryClient = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, Partial<TrackerDraft>>>({});
   const [expandedTrackers, setExpandedTrackers] = useState<Record<string, boolean>>({});
@@ -47,12 +49,12 @@ export function AdminTrackersClient() {
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Tracker gespeichert");
+      toast.success(t("toasts.saved"));
       queryClient.invalidateQueries({ queryKey: ["admin-trackers"] });
       queryClient.invalidateQueries({ queryKey: ["trackers"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Speichern fehlgeschlagen");
+      toast.error(error instanceof Error ? error.message : t("toasts.saveError"));
     },
   });
 
@@ -62,9 +64,9 @@ export function AdminTrackersClient() {
         method: "POST",
         body: JSON.stringify({ trackerId }),
       }),
-    onSuccess: () => toast.success("Testbenachrichtigung gesendet"),
+    onSuccess: () => toast.success(t("toasts.testSent")),
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Test fehlgeschlagen"),
+      toast.error(error instanceof Error ? error.message : t("toasts.testError")),
   });
 
   const selfShareMutation = useMutation({
@@ -73,11 +75,11 @@ export function AdminTrackersClient() {
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Tracker für dich freigegeben");
+      toast.success(t("toasts.selfShared"));
       queryClient.invalidateQueries({ queryKey: ["trackers"] });
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Freigabe fehlgeschlagen"),
+      toast.error(error instanceof Error ? error.message : t("toasts.selfShareError")),
   });
 
   function updateDraft(id: string, patch: Partial<TrackerDraft>) {
@@ -113,7 +115,7 @@ export function AdminTrackersClient() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tracker</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-3">
         {(trackersQuery.data?.items || []).map((item) => {
@@ -121,9 +123,9 @@ export function AdminTrackersClient() {
           const isExpanded = expandedTrackers[item.id] ?? false;
 
           const statusParts = [
-            draft.isActive ? "Aktiv" : "Archiviert",
-            draft.isHidden ? "Ausgeblendet" : "Sichtbar",
-            draft.isPublic ? "Öffentlich" : null,
+            draft.isActive ? t("status.active") : t("status.archived"),
+            draft.isHidden ? t("status.hidden") : t("status.visible"),
+            draft.isPublic ? t("status.public") : null,
           ].filter(Boolean).join(" · ");
 
           return (
@@ -156,7 +158,7 @@ export function AdminTrackersClient() {
                   {/* Basics */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label htmlFor={`name-${item.id}`}>Name</Label>
+                      <Label htmlFor={`name-${item.id}`}>{t("fields.name")}</Label>
                       <Input
                         id={`name-${item.id}`}
                         value={draft.name}
@@ -164,7 +166,7 @@ export function AdminTrackersClient() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`currency-${item.id}`}>Währung</Label>
+                      <Label htmlFor={`currency-${item.id}`}>{t("fields.currency")}</Label>
                       <Input
                         id={`currency-${item.id}`}
                         value={draft.currency}
@@ -176,7 +178,7 @@ export function AdminTrackersClient() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor={`description-${item.id}`}>Beschreibung</Label>
+                    <Label htmlFor={`description-${item.id}`}>{t("fields.description")}</Label>
                     <Textarea
                       id={`description-${item.id}`}
                       value={draft.description ?? ""}
@@ -184,12 +186,12 @@ export function AdminTrackersClient() {
                         updateDraft(item.id, { description: e.target.value || null })
                       }
                       rows={2}
-                      placeholder="Optional"
+                      placeholder={t("fields.descriptionPlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor={`color-${item.id}`}>Farbe</Label>
+                    <Label htmlFor={`color-${item.id}`}>{t("fields.color")}</Label>
                     <TrackerColorPicker
                       id={`color-${item.id}`}
                       value={draft.color}
@@ -201,7 +203,7 @@ export function AdminTrackersClient() {
                   <div className="space-y-3 rounded-xl border border-border p-3.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Discord</p>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`webhook-${item.id}`}>Webhook URL</Label>
+                      <Label htmlFor={`webhook-${item.id}`}>{t("discord.webhookUrl")}</Label>
                       <Input
                         id={`webhook-${item.id}`}
                         value={draft.discordWebhookUrl}
@@ -211,7 +213,7 @@ export function AdminTrackersClient() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`role-${item.id}`}>Ping Role ID</Label>
+                      <Label htmlFor={`role-${item.id}`}>{t("discord.pingRoleId")}</Label>
                       <Input
                         id={`role-${item.id}`}
                         value={draft.discordPingRoleId}
@@ -221,7 +223,7 @@ export function AdminTrackersClient() {
                       />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-                      <p className="text-sm">Discord Debug</p>
+                      <p className="text-sm">{t("discord.debug")}</p>
                       <Switch
                         checked={draft.discordDebugEnabled}
                         onCheckedChange={(v) => updateDraft(item.id, { discordDebugEnabled: v })}
@@ -233,8 +235,8 @@ export function AdminTrackersClient() {
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                       <div>
-                        <p className="text-sm font-medium">Archiviert</p>
-                        <p className="text-xs text-muted-foreground">Buchungen deaktiviert</p>
+                        <p className="text-sm font-medium">{t("toggles.archivedTitle")}</p>
+                        <p className="text-xs text-muted-foreground">{t("toggles.archivedDescription")}</p>
                       </div>
                       <Switch
                         checked={!draft.isActive}
@@ -243,8 +245,8 @@ export function AdminTrackersClient() {
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                       <div>
-                        <p className="text-sm font-medium">Ausgeblendet</p>
-                        <p className="text-xs text-muted-foreground">Für alle User unsichtbar</p>
+                        <p className="text-sm font-medium">{t("toggles.hiddenTitle")}</p>
+                        <p className="text-xs text-muted-foreground">{t("toggles.hiddenDescription")}</p>
                       </div>
                       <Switch
                         checked={draft.isHidden}
@@ -253,8 +255,8 @@ export function AdminTrackersClient() {
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                       <div>
-                        <p className="text-sm font-medium">Öffentlich</p>
-                        <p className="text-xs text-muted-foreground">Lesbar ohne Login</p>
+                        <p className="text-sm font-medium">{t("toggles.publicTitle")}</p>
+                        <p className="text-xs text-muted-foreground">{t("toggles.publicDescription")}</p>
                       </div>
                       <Switch
                         checked={draft.isPublic}
@@ -305,6 +307,7 @@ export function AdminTrackersClient() {
 }
 
 function PublicLinkDisplay({ slug }: { slug: string }) {
+  const t = useTranslations("Admin.trackers");
   const [copied, setCopied] = useState(false);
   const url = typeof window !== "undefined" ? `${window.location.origin}/t/${slug}` : `/t/${slug}`;
 
@@ -323,7 +326,7 @@ function PublicLinkDisplay({ slug }: { slug: string }) {
         type="button"
         onClick={copy}
         className="shrink-0 rounded-md p-1 hover:bg-muted"
-        aria-label="Link kopieren"
+        aria-label={t("publicLink.copyLabel")}
       >
         {copied ? (
           <Check className="h-3.5 w-3.5 text-income" />

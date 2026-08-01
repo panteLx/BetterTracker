@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { BarChart2, CreditCard, ReceiptText, TimerReset } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,15 +14,15 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 
 export const navItems = [
-  { href: "/", label: "Dashboard", icon: CreditCard, exact: true },
+  { href: "/", key: "dashboard" as const, icon: CreditCard, exact: true },
   {
     href: "/transactions",
-    label: "Buchungen",
+    key: "transactions" as const,
     icon: ReceiptText,
     exact: false,
   },
-  { href: "/schedules", label: "Termine", icon: TimerReset, exact: false },
-  { href: "/statistics", label: "Statistik", icon: BarChart2, exact: false },
+  { href: "/schedules", key: "schedules" as const, icon: TimerReset, exact: false },
+  { href: "/statistics", key: "statistics" as const, icon: BarChart2, exact: false },
 ];
 
 export function isNavItemActive(
@@ -48,6 +49,7 @@ type HeaderProps = {
  */
 export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
   const pathname = usePathname();
+  const t = useTranslations("Nav");
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
@@ -63,7 +65,7 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
 
         {user ? (
           <nav
-            aria-label="Hauptnavigation"
+            aria-label={t("ariaMainNav")}
             className={segmentedTrackClass(
               "track",
               "absolute left-1/2 hidden -translate-x-1/2 md:inline-flex",
@@ -85,7 +87,7 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
                   })}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {item.label}
+                  {t(`items.${item.key}`)}
                 </Link>
               );
             })}
@@ -103,11 +105,11 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
             <>
               <ThemeToggleButton />
               <Button variant="ghost" size="sm" shape="pill" asChild>
-                <Link href="/login">Anmelden</Link>
+                <Link href="/login">{t("login")}</Link>
               </Button>
               {registrationEnabled ? (
                 <Button size="sm" shape="pill" asChild>
-                  <Link href="/register">Registrieren</Link>
+                  <Link href="/register">{t("register")}</Link>
                 </Button>
               ) : null}
             </>

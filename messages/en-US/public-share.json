@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "notFoundTitle": "Tracker not found"
+  },
+  "header": {
+    "publicView": "Public view",
+    "dashboard": "Dashboard",
+    "login": "Sign in"
+  },
+  "stats": {
+    "balance": "Balance",
+    "income": "Income",
+    "expenses": "Expenses"
+  },
+  "monthly": {
+    "title": "Monthly overview"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "total": "{count} total",
+    "emptyTitle": "No transactions yet",
+    "emptyDescription": "No transactions have been recorded for this tracker yet.",
+    "anonymousPayee": "Anonymous",
+    "noCategory": "Uncategorized",
+    "showingRecent": "Showing the last {recentCount} of {totalCount} transactions"
+  },
+  "error": {
+    "title": "Tracker unavailable",
+    "defaultMessage": "This tracker could not be loaded.",
+    "loginButton": "Go to login"
+  }
+}

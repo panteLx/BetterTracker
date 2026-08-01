@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LogIn } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ export function OidcButton({
   mode,
   providerName = DEFAULT_OIDC_DISPLAY_NAME,
 }: OidcButtonProps) {
+  const t = useTranslations("Auth");
   const [isLoading, setIsLoading] = useState(false);
 
   async function onClick() {
@@ -43,9 +45,7 @@ export function OidcButton({
     } catch (error) {
       setIsLoading(false);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "OIDC-Anmeldung fehlgeschlagen"
+        error instanceof Error ? error.message : t("oidc.errorToast")
       );
     }
   }
@@ -60,10 +60,10 @@ export function OidcButton({
     >
       <LogIn className="h-4 w-4" />
       {isLoading
-        ? "Weiterleiten..."
+        ? t("oidc.redirecting")
         : mode === "login"
-          ? `Mit ${providerName} anmelden`
-          : `Mit ${providerName} registrieren`}
+          ? t("oidc.loginWith", { provider: providerName })
+          : t("oidc.registerWith", { provider: providerName })}
     </Button>
   );
 }

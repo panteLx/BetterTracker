@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { signUp } from "@/lib/auth/client";
 import { OidcButton } from "@/components/auth/oidc-button";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function RegisterForm({
   oidcEnabled = false,
   oidcProviderName,
 }: RegisterFormProps) {
+  const t = useTranslations("Auth");
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,12 +35,12 @@ export function RegisterForm({
       if (result.error) {
         throw new Error(result.error.message || "Registration failed");
       }
-      toast.success("Registrierung erfolgreich");
+      toast.success(t("register.form.successToast"));
       router.replace("/");
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Registrierung fehlgeschlagen"
+        error instanceof Error ? error.message : t("register.form.errorToast")
       );
     } finally {
       setIsLoading(false);
@@ -48,7 +50,7 @@ export function RegisterForm({
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardHeader>
-        <CardTitle>Konto erstellen</CardTitle>
+        <CardTitle>{t("register.form.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {oidcEnabled ? (
@@ -60,7 +62,7 @@ export function RegisterForm({
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  oder manuell registrieren
+                  {t("register.form.orDivider")}
                 </span>
               </div>
             </div>
@@ -68,11 +70,11 @@ export function RegisterForm({
         ) : null}
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t("register.form.nameLabel")}</Label>
             <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
+            <Label htmlFor="email">{t("register.form.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
@@ -82,7 +84,7 @@ export function RegisterForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
+            <Label htmlFor="password">{t("register.form.passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
@@ -93,7 +95,7 @@ export function RegisterForm({
             />
           </div>
           <Button className="w-full" disabled={isLoading}>
-            {isLoading ? "Bitte warten..." : "Registrieren"}
+            {isLoading ? t("register.form.submitLoading") : t("register.form.submit")}
           </Button>
         </form>
       </CardContent>

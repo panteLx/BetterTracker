@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Archive,
   ArrowDownLeft,
@@ -91,7 +92,6 @@ type TrackerMemberCandidate = {
 
 type TrackerSettingsClientProps = {
   initialTrackerId: string;
-  locale: string;
 };
 
 function sortTrackers(items: Tracker[], locale: string) {
@@ -100,16 +100,11 @@ function sortTrackers(items: Tracker[], locale: string) {
   );
 }
 
-const CATEGORY_TYPE_LABELS = {
-  expense: "Ausgabe",
-  income: "Einnahme",
-  transfer: "Umbuchung",
-} as const;
-
 export function TrackerSettingsClient({
   initialTrackerId,
-  locale,
 }: TrackerSettingsClientProps) {
+  const locale = useLocale();
+  const t = useTranslations("Trackers");
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedTracker, setSelectedTracker] = useState(initialTrackerId);
@@ -191,6 +186,12 @@ export function TrackerSettingsClient({
     isPublic: draft.isPublic ?? tracker?.isPublic ?? false,
   };
 
+  const categoryTypeLabels = {
+    expense: t("categoryType.expense"),
+    income: t("categoryType.income"),
+    transfer: t("categoryType.transfer"),
+  } as const;
+
   const categories = useMemo(
     () => sortByName(categoriesQuery.data?.items || [], locale),
     [categoriesQuery.data?.items, locale],
@@ -240,13 +241,11 @@ export function TrackerSettingsClient({
         }),
       );
       setDraft({});
-      toast.success("Tracker gespeichert");
+      toast.success(t("toast.trackerSaved"));
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Tracker konnte nicht gespeichert werden",
+        error instanceof Error ? error.message : t("toast.trackerSaveFailed"),
       );
     },
   });
@@ -266,14 +265,12 @@ export function TrackerSettingsClient({
           ),
         }),
       );
-      toast.success("Tracker ausgeblendet");
+      toast.success(t("toast.trackerHidden"));
       router.push("/");
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Tracker konnte nicht ausgeblendet werden",
+        error instanceof Error ? error.message : t("toast.trackerHideFailed"),
       );
     },
   });
@@ -293,13 +290,13 @@ export function TrackerSettingsClient({
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
-      toast.success("Kategorie gelöscht");
+      toast.success(t("toast.categoryDeleted"));
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Kategorie konnte nicht gelöscht werden",
+          : t("toast.categoryDeleteFailed"),
       );
     },
   });
@@ -319,13 +316,11 @@ export function TrackerSettingsClient({
       queryClient.invalidateQueries({
         queryKey: ["transactions", activeTrackerId],
       });
-      toast.success("Einzahler gelöscht");
+      toast.success(t("toast.payeeDeleted"));
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Einzahler konnte nicht gelöscht werden",
+        error instanceof Error ? error.message : t("toast.payeeDeleteFailed"),
       );
     },
   });
@@ -345,11 +340,15 @@ export function TrackerSettingsClient({
           ),
         }),
       );
-      toast.success(item.isActive ? "Kategorie reaktiviert" : "Kategorie archiviert");
+      toast.success(
+        item.isActive
+          ? t("toast.categoryReactivated")
+          : t("toast.categoryArchived"),
+      );
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.actionFailed"),
       );
     },
   });
@@ -369,11 +368,13 @@ export function TrackerSettingsClient({
           ),
         }),
       );
-      toast.success(item.isActive ? "Einzahler reaktiviert" : "Einzahler archiviert");
+      toast.success(
+        item.isActive ? t("toast.payeeReactivated") : t("toast.payeeArchived"),
+      );
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Aktion fehlgeschlagen",
+        error instanceof Error ? error.message : t("toast.actionFailed"),
       );
     },
   });
@@ -388,7 +389,7 @@ export function TrackerSettingsClient({
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Freigabe hinzugefügt");
+      toast.success(t("toast.memberAdded"));
       setMemberSearch("");
       queryClient.invalidateQueries({
         queryKey: ["tracker-members", activeTrackerId],
@@ -397,9 +398,7 @@ export function TrackerSettingsClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Freigabe konnte nicht erstellt werden",
+        error instanceof Error ? error.message : t("toast.memberAddFailed"),
       );
     },
   });
@@ -417,7 +416,7 @@ export function TrackerSettingsClient({
         body: JSON.stringify({ permission }),
       }),
     onSuccess: () => {
-      toast.success("Freigabe aktualisiert");
+      toast.success(t("toast.memberUpdated"));
       queryClient.invalidateQueries({
         queryKey: ["tracker-members", activeTrackerId],
       });
@@ -427,7 +426,7 @@ export function TrackerSettingsClient({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Freigabe konnte nicht aktualisiert werden",
+          : t("toast.memberUpdateFailed"),
       );
     },
   });
@@ -438,7 +437,7 @@ export function TrackerSettingsClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Freigabe entfernt");
+      toast.success(t("toast.memberRemoved"));
       queryClient.invalidateQueries({
         queryKey: ["tracker-members", activeTrackerId],
       });
@@ -448,7 +447,7 @@ export function TrackerSettingsClient({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Freigabe konnte nicht entfernt werden",
+          : t("toast.memberRemoveFailed"),
       );
     },
   });
@@ -463,12 +462,12 @@ export function TrackerSettingsClient({
     event.preventDefault();
 
     if (!tracker) {
-      toast.error("Kein Tracker aktiv");
+      toast.error(t("toast.noActiveTracker"));
       return;
     }
 
     if (!trackerDraft.name.trim()) {
-      toast.error("Bitte einen Tracker-Namen eingeben");
+      toast.error(t("toast.nameRequired"));
       return;
     }
 
@@ -487,7 +486,7 @@ export function TrackerSettingsClient({
   }
 
   function handleDeleteCategory(id: string, name: string) {
-    if (!window.confirm(`Kategorie "${name}" wirklich löschen?`)) {
+    if (!window.confirm(t("confirm.deleteCategory", { name }))) {
       return;
     }
 
@@ -495,7 +494,7 @@ export function TrackerSettingsClient({
   }
 
   function handleDeletePayee(id: string, name: string) {
-    if (!window.confirm(`Einzahler "${name}" wirklich löschen?`)) {
+    if (!window.confirm(t("confirm.deletePayee", { name }))) {
       return;
     }
 
@@ -510,7 +509,7 @@ export function TrackerSettingsClient({
   }
 
   function handleRemoveMember(memberId: string, label: string) {
-    if (!window.confirm(`Freigabe für "${label}" wirklich entfernen?`)) {
+    if (!window.confirm(t("confirm.removeMember", { label }))) {
       return;
     }
 
@@ -521,11 +520,11 @@ export function TrackerSettingsClient({
     return (
       <EmptyState
         icon={Settings2}
-        title="Kein Tracker verfügbar"
-        description="Lege zuerst einen Tracker an, bevor du die Settings verwaltest."
+        title={t("empty.noTrackerTitle")}
+        description={t("empty.noTrackerDescription")}
         action={
           <Button asChild variant="outline">
-            <Link href="/">Zurück zu den Buchungen</Link>
+            <Link href="/">{t("empty.backToTransactions")}</Link>
           </Button>
         }
       />
@@ -544,7 +543,7 @@ export function TrackerSettingsClient({
         <Button asChild variant="ghost" size="sm" shape="pill" className="ml-auto">
           <Link href="/">
             <ArrowLeft className="h-4 w-4" />
-            Zurück
+            {t("back")}
           </Link>
         </Button>
       </div>
@@ -553,10 +552,10 @@ export function TrackerSettingsClient({
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           {/* Left: tracker form */}
           <div className="space-y-4">
-          <SectionCard title="Tracker-Einstellungen">
+          <SectionCard title={t("form.sectionTitle")}>
             <form onSubmit={handleTrackerSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="tracker-name">Name</Label>
+                <Label htmlFor="tracker-name">{t("form.name")}</Label>
                 <Input
                   id="tracker-name"
                   value={trackerDraft.name}
@@ -570,7 +569,7 @@ export function TrackerSettingsClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tracker-description">Beschreibung</Label>
+                <Label htmlFor="tracker-description">{t("form.description")}</Label>
                 <Textarea
                   id="tracker-description"
                   value={trackerDraft.description}
@@ -581,12 +580,12 @@ export function TrackerSettingsClient({
                     }))
                   }
                   rows={3}
-                  placeholder="Optionaler Kontext für diesen Tracker"
+                  placeholder={t("form.descriptionPlaceholder")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tracker-color">Farbe</Label>
+                <Label htmlFor="tracker-color">{t("form.color")}</Label>
                 <TrackerColorPicker
                   id="tracker-color"
                   value={trackerDraft.color}
@@ -600,7 +599,7 @@ export function TrackerSettingsClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tracker-currency">Währung</Label>
+                <Label htmlFor="tracker-currency">{t("form.currency")}</Label>
                 <Input
                   id="tracker-currency"
                   value={trackerDraft.currency}
@@ -614,7 +613,7 @@ export function TrackerSettingsClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tracker-webhook">Discord Webhook URL</Label>
+                <Label htmlFor="tracker-webhook">{t("form.webhookUrl")}</Label>
                 <Input
                   id="tracker-webhook"
                   value={trackerDraft.discordWebhookUrl}
@@ -629,7 +628,7 @@ export function TrackerSettingsClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tracker-role">Discord Ping Role ID</Label>
+                <Label htmlFor="tracker-role">{t("form.pingRoleId")}</Label>
                 <Input
                   id="tracker-role"
                   value={trackerDraft.discordPingRoleId}
@@ -639,16 +638,16 @@ export function TrackerSettingsClient({
                       discordPingRoleId: event.target.value,
                     }))
                   }
-                  placeholder="Optional"
+                  placeholder={t("form.optional")}
                 />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                   <div>
-                    <p className="text-sm font-medium">Discord Debug</p>
+                    <p className="text-sm font-medium">{t("form.discordDebug")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Zusatzinfos mitsenden.
+                      {t("form.discordDebugDescription")}
                     </p>
                   </div>
                   <Switch
@@ -664,9 +663,9 @@ export function TrackerSettingsClient({
 
                 <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                   <div>
-                    <p className="text-sm font-medium">Tracker archivieren</p>
+                    <p className="text-sm font-medium">{t("form.archiveTracker")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Es können keine neuen Buchungen angelegt werden.
+                      {t("form.archiveTrackerDescription")}
                     </p>
                   </div>
                   <Switch
@@ -695,14 +694,14 @@ export function TrackerSettingsClient({
                 disabled={updateTrackerMutation.isPending}
               >
                 {updateTrackerMutation.isPending
-                  ? "Speichert..."
-                  : "Tracker speichern"}
+                  ? t("form.saving")
+                  : t("form.save")}
               </Button>
             </form>
           </SectionCard>
 
             {tracker.permission === "owner" ? (
-              <SectionCard title="Gefahrenzone">
+              <SectionCard title={t("dangerZone.title")}>
                 <Button
                   type="button"
                   variant="outline"
@@ -711,7 +710,7 @@ export function TrackerSettingsClient({
                   onClick={() => {
                     if (
                       window.confirm(
-                        `Tracker "${tracker.name}" wirklich für löschen? Er kann nur von einem Administrator wiederhergestellt werden.`,
+                        t("confirm.deleteTracker", { name: tracker.name }),
                       )
                     ) {
                       hideTrackerMutation.mutate(tracker.id);
@@ -720,11 +719,11 @@ export function TrackerSettingsClient({
                 >
                   <Trash2 className="h-4 w-4" />
                   {hideTrackerMutation.isPending
-                    ? "Wird gelöscht…"
-                    : "Tracker löschen"}
+                    ? t("dangerZone.deleting")
+                    : t("dangerZone.delete")}
                 </Button>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Diese Aktion kann durch User nicht rückgängig gemacht werden.
+                  {t("dangerZone.note")}
                 </p>
               </SectionCard>
             ) : null}
@@ -733,14 +732,14 @@ export function TrackerSettingsClient({
           {/* Right: members, categories, payees */}
           <div className="min-w-0 space-y-4">
             {/* Members */}
-            <SectionCard title="Freigaben">
+            <SectionCard title={t("members.title")}>
               <div className="space-y-4">
               <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-3">
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
                   <Input
                     value={memberSearch}
                     onChange={(event) => setMemberSearch(event.target.value)}
-                    placeholder="Name oder E-Mail suchen"
+                    placeholder={t("members.searchPlaceholder")}
                   />
                   <Select
                     value={newMemberPermission}
@@ -754,9 +753,9 @@ export function TrackerSettingsClient({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="read">Read</SelectItem>
-                      <SelectItem value="write">Write</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="read">{t("members.permissionRead")}</SelectItem>
+                      <SelectItem value="write">{t("members.permissionWrite")}</SelectItem>
+                      <SelectItem value="admin">{t("members.permissionAdmin")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -783,13 +782,13 @@ export function TrackerSettingsClient({
                     ))}
                     {(candidatesQuery.data?.items || []).length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        Keine passenden Benutzer gefunden.
+                        {t("members.noResults")}
                       </p>
                     ) : null}
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Mindestens 2 Zeichen eingeben.
+                    {t("members.searchHint")}
                   </p>
                 )}
               </div>
@@ -803,7 +802,7 @@ export function TrackerSettingsClient({
                     subtitle={member.userEmail}
                     trailing={
                       member.permission === "owner" ? (
-                        <Badge variant="outline">Owner</Badge>
+                        <Badge variant="outline">{t("members.owner")}</Badge>
                       ) : (
                         <Select
                           value={member.permission}
@@ -821,9 +820,9 @@ export function TrackerSettingsClient({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="read">Read</SelectItem>
-                            <SelectItem value="write">Write</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="read">{t("members.permissionRead")}</SelectItem>
+                            <SelectItem value="write">{t("members.permissionWrite")}</SelectItem>
+                            <SelectItem value="admin">{t("members.permissionAdmin")}</SelectItem>
                           </SelectContent>
                         </Select>
                       )
@@ -834,8 +833,8 @@ export function TrackerSettingsClient({
                           variant="ghost"
                           size="icon-sm"
                           shape="pill"
-                          title="Entfernen"
-                          aria-label={`Freigabe für ${member.userEmail} entfernen`}
+                          title={t("members.remove")}
+                          aria-label={t("members.removeAriaLabel", { email: member.userEmail })}
                           className="text-expense hover:bg-expense-muted hover:text-expense"
                           disabled={removeMemberMutation.isPending}
                           onClick={() =>
@@ -856,7 +855,7 @@ export function TrackerSettingsClient({
             {(tracker.permission === "owner" || tracker.permission === "admin") && (
               <>
                 <SectionCard
-                  title="CSV-Import"
+                  title={t("csvImportCard.title")}
                   titleRight={
                     <Button
                       type="button"
@@ -866,12 +865,12 @@ export function TrackerSettingsClient({
                       disabled={!tracker.isActive}
                     >
                       <Upload className="h-4 w-4" />
-                      Importieren
+                      {t("csvImportCard.importButton")}
                     </Button>
                   }
                 >
                   <p className="font-subtext text-sm text-muted-foreground">
-                    Transaktionen aus Actual Budget importieren.
+                    {t("csvImportCard.description")}
                   </p>
                 </SectionCard>
                 <CsvImportDialog
@@ -894,7 +893,7 @@ export function TrackerSettingsClient({
             )}
 
             {/* Categories */}
-            <SectionCard title="Kategorien">
+            <SectionCard title={t("categories.title")}>
               {categories.length > 0 ? (
                 <div className="space-y-1.5">
                   {categories.map((item) => {
@@ -933,10 +932,10 @@ export function TrackerSettingsClient({
                                     : "secondary"
                               }
                             >
-                              {CATEGORY_TYPE_LABELS[item.type]}
+                              {categoryTypeLabels[item.type]}
                             </Badge>
                             {!item.isActive ? (
-                              <Badge variant="outline">Archiviert</Badge>
+                              <Badge variant="outline">{t("categories.archived")}</Badge>
                             ) : null}
                           </>
                         }
@@ -978,8 +977,8 @@ export function TrackerSettingsClient({
                               variant="ghost"
                               size="icon-sm"
                               shape="pill"
-                              title="Löschen"
-                              aria-label={`Kategorie ${item.name} löschen`}
+                              title={t("categories.delete")}
+                              aria-label={t("categories.deleteAriaLabel", { name: item.name })}
                               className="text-expense hover:bg-expense-muted hover:text-expense"
                               disabled={
                                 deleteCategoryMutation.isPending ||
@@ -1005,7 +1004,7 @@ export function TrackerSettingsClient({
             </SectionCard>
 
             {/* Payees */}
-            <SectionCard title="Einzahler">
+            <SectionCard title={t("payees.title")}>
               {payees.length > 0 ? (
                 <div className="space-y-1.5">
                   {payees.map((item) => (
@@ -1015,7 +1014,7 @@ export function TrackerSettingsClient({
                       leading={<EntityIcon icon={UserRound} size="sm" />}
                       meta={
                         !item.isActive ? (
-                          <Badge variant="outline">Archiviert</Badge>
+                          <Badge variant="outline">{t("payees.archived")}</Badge>
                         ) : undefined
                       }
                       title={
@@ -1056,8 +1055,8 @@ export function TrackerSettingsClient({
                             variant="ghost"
                             size="icon-sm"
                             shape="pill"
-                            title="Löschen"
-                            aria-label={`Einzahler ${item.name} löschen`}
+                            title={t("payees.delete")}
+                            aria-label={t("payees.deleteAriaLabel", { name: item.name })}
                             className="text-expense hover:bg-expense-muted hover:text-expense"
                             disabled={
                               deletePayeeMutation.isPending || !tracker.isActive
@@ -1093,6 +1092,7 @@ function PublicShareToggle({
   slug: string;
   onChange: (value: boolean) => void;
 }) {
+  const t = useTranslations("Trackers");
   const [copied, setCopied] = useState(false);
 
   function copyLink() {
@@ -1109,9 +1109,9 @@ function PublicShareToggle({
         <div className="flex items-center gap-2.5">
           <Globe className="h-4 w-4 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium">Öffentlich freigeben</p>
+            <p className="text-sm font-medium">{t("publicShare.title")}</p>
             <p className="text-xs text-muted-foreground">
-              Lesezugriff für Gäste ohne Anmeldung.
+              {t("publicShare.description")}
             </p>
           </div>
         </div>
@@ -1129,7 +1129,7 @@ function PublicShareToggle({
             type="button"
             onClick={copyLink}
             className="shrink-0 rounded-md p-1 hover:bg-muted"
-            aria-label="Link kopieren"
+            aria-label={t("publicShare.copyLinkAriaLabel")}
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-income" />

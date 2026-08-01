@@ -6,7 +6,7 @@
 
 _BetterTracker is a self-hosted, multi-user expense and income tracker. Manage multiple trackers with custom categories, payees, and recurring schedules. Share trackers publicly, monitor your finances with statistics and charts, and administrate users via a built-in admin panel with role-based permissions and audit logging._
 
-![Version](<https://img.shields.io/github/v/release/pantelx/bettertracker?style=flat-square&label=version(soon)>)
+![Version](https://img.shields.io/github/v/release/pantelx/bettertracker?style=flat-square&label=version)
 ![Build](https://img.shields.io/github/check-runs/pantelx/bettertracker/main?style=flat-square&label=build)
 ![License](https://img.shields.io/github/license/pantelx/bettertracker?style=flat-square)
 
@@ -49,7 +49,7 @@ Open http://localhost:3000. The first registered user becomes superadmin.
 ```bash
 git clone https://github.com/panteLx/BetterTracker.git
 cd BetterTracker
-cp .env.compose.example .env
+cp .env.example .env
 # Edit .env and set BETTER_AUTH_SECRET
 docker compose up -d
 ```
@@ -88,6 +88,13 @@ OIDC_DISCOVERY_URL=https://sso.example.com/.well-known/openid-configuration
 OIDC_CLIENT_ID=
 OIDC_CLIENT_SECRET=
 OIDC_SCOPES=openid,profile,email
+```
+
+### Optional: Localization
+
+```bash
+DEFAULT_LOCALE=en-US   # en-US or de-DE, used until a user picks a language
+TZ=Europe/Berlin       # used for date/time formatting
 ```
 
 See [.env.example](.env.example) for all options.

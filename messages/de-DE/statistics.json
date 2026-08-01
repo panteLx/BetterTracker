@@ -1,0 +1,61 @@
+{
+  "page": {
+    "title": "Statistik",
+    "description": "Wie sich Einnahmen und Ausgaben über die Zeit entwickeln."
+  },
+  "filters": {
+    "trackerLabel": "Tracker wählen",
+    "yearLabel": "Jahr wählen",
+    "directionLabel": "Richtung wählen",
+    "expense": "Ausgaben",
+    "income": "Einnahmen"
+  },
+  "yoyDelta": {
+    "new": "Neu ggü. Vorjahr",
+    "noChange": "± 0 % ggü. Vorjahr",
+    "change": "{value} % ggü. Vorjahr"
+  },
+  "emptyState": {
+    "noBookings": {
+      "title": "Keine Buchungen",
+      "description": "Für diese Auswahl gibt es in diesem Jahr nichts zu zeigen."
+    },
+    "noTracker": {
+      "title": "Noch kein Tracker",
+      "description": "Leg auf dem Dashboard einen Tracker an, dann erscheint hier die Auswertung."
+    },
+    "noBookingsInYear": {
+      "title": "Keine Buchungen in {year}",
+      "description": "Wähle ein anderes Jahr oder einen anderen Tracker."
+    }
+  },
+  "statTiles": {
+    "balance": "Saldo",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben",
+    "transactions": "Buchungen",
+    "savingsRate": "Sparquote",
+    "savingsRateHelper": "Anteil der Einnahmen, der übrig bleibt",
+    "avgPerTransaction": "Ø pro Buchung",
+    "avgPerTransactionHelper": "Über Einnahmen und Ausgaben hinweg",
+    "topExpense": "Größte Ausgabe",
+    "topExpenseHelper": "{payee} · {date}",
+    "noExpensesThisYear": "Keine Ausgaben in diesem Jahr"
+  },
+  "charts": {
+    "monthly": "Monat für Monat {year}",
+    "weekday": "Wochentag-Muster",
+    "yearComparison": "Jahresvergleich",
+    "category": "Nach Kategorie",
+    "payee": "Größte Posten",
+    "balanceTrend": "Kontostand {year}"
+  },
+  "dataKeys": {
+    "income": "Einnahmen",
+    "expense": "Ausgaben",
+    "balance": "Kontostand",
+    "thisYear": "Dieses Jahr",
+    "previousYear": "Vorjahr"
+  },
+  "months": ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminSettingsClient } from "@/components/admin/admin-settings-client";
 import { PageContainer } from "@/components/layout/page-container";
@@ -9,12 +10,13 @@ export default async function AdminSettingsPage() {
   if (user.role !== "admin" && user.role !== "superadmin") {
     redirect("/");
   }
+  const t = await getTranslations("Admin.settings.page");
 
   return (
     <PageContainer
       user={user}
-      title="Einstellungen"
-      description="Systemweite Vorgaben und die Discord-Anbindung."
+      title={t("title")}
+      description={t("description")}
     >
       <AdminShell>
       <AdminSettingsClient

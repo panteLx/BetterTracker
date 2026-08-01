@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { getTranslations } from "next-intl/server";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
-import { env } from "@/lib/env";
 import { getServerSession } from "@/lib/auth/session";
 import { listTrackersForUser } from "@/lib/auth/tracker-access";
 import { makeQueryClient } from "@/lib/query-client";
@@ -24,14 +24,16 @@ export default async function Home() {
       listTrackersForUser(session.user.id).then((items) => ({ items })),
   });
 
+  const t = await getTranslations("Dashboard");
+
   return (
     <PageContainer
       user={session.user}
-      title="Dashboard"
-      description="Wo du gerade stehst und was als Nächstes ansteht."
+      title={t("title")}
+      description={t("description")}
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <DashboardClient locale={env.defaultLocale} />
+        <DashboardClient />
       </HydrationBoundary>
     </PageContainer>
   );

@@ -1,0 +1,122 @@
+{
+  "page": {
+    "title": "Transactions",
+    "description": "All income and expenses, filterable by date range, category, and payee."
+  },
+  "stats": {
+    "balanceInFilter": "Balance in filter",
+    "income": "Income",
+    "expenses": "Expenses"
+  },
+  "filters": {
+    "searchPlaceholder": "Search payee, category, or note",
+    "searchAriaLabel": "Search transactions",
+    "typeFilterLabel": "Filter by type",
+    "all": "All",
+    "expenses": "Expenses",
+    "income": "Income",
+    "viewToggleLabel": "Switch view",
+    "viewList": "List",
+    "viewTable": "Table",
+    "categoryFilterLabel": "Filter by category",
+    "allCategories": "All categories",
+    "payeeFilterLabel": "Filter by payee",
+    "allPayees": "All payees",
+    "fromPlaceholder": "From",
+    "fromAriaLabel": "Start date for date filter",
+    "toPlaceholder": "To",
+    "toAriaLabel": "End date for date filter",
+    "resetFilters": "Reset filters",
+    "resetFiltersCount": "Reset {count} filters"
+  },
+  "empty": {
+    "filteredTitle": "No matches for these filters",
+    "filteredDescription": "Loosen the filters to see more.",
+    "defaultTitle": "No transactions yet",
+    "defaultDescription": "Use the plus button to add your first income or expense."
+  },
+  "results": {
+    "count": "{count, plural, one {1 transaction} other {# transactions}}",
+    "archivedReadOnly": "Archived tracker — read only"
+  },
+  "row": {
+    "anonymous": "Anonymous",
+    "noCategory": "No category",
+    "byYou": "by you",
+    "byUser": "by {name}",
+    "unknownUser": "Unknown"
+  },
+  "table": {
+    "date": "Date",
+    "payee": "Payee",
+    "category": "Category",
+    "notes": "Notes",
+    "createdBy": "Recorded by",
+    "amount": "Amount",
+    "you": "you",
+    "emptyValue": "—"
+  },
+  "pagination": {
+    "page": "Page {page}",
+    "back": "Back",
+    "next": "Next"
+  },
+  "edit": {
+    "dateLabel": "Date",
+    "amountLabel": "Amount",
+    "amountPlaceholder": "12.50",
+    "typeLabel": "Type",
+    "categoryLabel": "Category",
+    "payeeLabel": "Payee",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "Optional",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "requiredFields": "Date, amount, and category are required",
+    "updated": "Transaction updated",
+    "updateFailed": "Update failed",
+    "deleted": "Transaction deleted",
+    "deleteFailed": "Delete failed"
+  },
+  "rowActions": {
+    "editTitle": "Edit",
+    "editAriaLabel": "Edit transaction from {date}",
+    "deleteTitle": "Delete",
+    "deleteAriaLabel": "Delete transaction from {date}"
+  },
+  "entityPicker": {
+    "category": {
+      "placeholder": "Choose category",
+      "searchPlaceholder": "Search category",
+      "emptyMessage": "No category found.",
+      "createLabel": "Add new category",
+      "namePlaceholderExpense": "e.g. Gas",
+      "namePlaceholderIncome": "e.g. Salary",
+      "toastCreated": "Category created",
+      "toastNameRequired": "Please enter a category name",
+      "toastCreateError": "Could not create category",
+      "noneOption": "No category"
+    },
+    "payee": {
+      "placeholder": "Choose payee",
+      "searchPlaceholder": "Search payee",
+      "emptyMessage": "No payee found.",
+      "createLabel": "Add new payee",
+      "namePlaceholder": "e.g. Bakery",
+      "toastCreated": "Payee created",
+      "toastNameRequired": "Please enter a payee name",
+      "toastCreateError": "Could not create payee",
+      "noneOption": "Anonymous"
+    },
+    "nameLabel": "Name",
+    "typeLine": "Type: {type}",
+    "typeExpense": "Expense",
+    "typeIncome": "Income",
+    "cancel": "Cancel",
+    "create": "Add",
+    "creating": "...",
+    "customTextLabel": "Or a one-off free text",
+    "customTextPlaceholder": "e.g. Farmers market"
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ type AdminUser = {
 };
 
 export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: string; currentUserId: string }) {
+  const t = useTranslations("Admin.users");
   const queryClient = useQueryClient();
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
@@ -30,11 +32,11 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
-      toast.success("Benutzer aktualisiert");
+      toast.success(t("toasts.updated"));
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen");
+      toast.error(error instanceof Error ? error.message : t("toasts.updateError"));
     },
   });
 
@@ -45,11 +47,11 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
         body: action === "ban" ? JSON.stringify({ reason: "Ban through admin panel" }) : undefined,
       }),
     onSuccess: () => {
-      toast.success("Status aktualisiert");
+      toast.success(t("toasts.statusUpdated"));
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Aktion fehlgeschlagen");
+      toast.error(error instanceof Error ? error.message : t("toasts.statusError"));
     },
   });
 
@@ -57,7 +59,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
     mutationFn: (id: string) =>
       fetchJson(`/api/admin/users/${id}`, { method: "DELETE" }),
     onSuccess: (_, id) => {
-      toast.success("Benutzer gelöscht");
+      toast.success(t("toasts.deleted"));
       queryClient.setQueryData<{ items: AdminUser[] } | undefined>(
         ["admin-users"],
         (current) =>
@@ -67,14 +69,14 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
       );
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen");
+      toast.error(error instanceof Error ? error.message : t("toasts.deleteError"));
     },
   });
 
   function handleDelete(item: AdminUser) {
     if (
       window.confirm(
-        `Benutzer "${item.name}" (${item.email}) wirklich löschen?\n\nAlle Buchungen, Schedules und Tracker-Mitgliedschaften dieses Benutzers werden unwiderruflich gelöscht.`,
+        t("deleteConfirm", { name: item.name, email: item.email }),
       )
     ) {
       deleteMutation.mutate(item.id);
@@ -84,17 +86,17 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Benutzerverwaltung</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>E-Mail</TableHead>
-              <TableHead>Rolle</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Aktionen</TableHead>
+              <TableHead>{t("table.name")}</TableHead>
+              <TableHead>{t("table.email")}</TableHead>
+              <TableHead>{t("table.role")}</TableHead>
+              <TableHead>{t("table.status")}</TableHead>
+              <TableHead className="text-right">{t("table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,7 +125,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                     item.role
                   )}
                 </TableCell>
-                <TableCell>{item.banned ? "Gesperrt" : "Aktiv"}</TableCell>
+                <TableCell>{item.banned ? t("status.banned") : t("status.active")}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     {currentRole === "superadmin" ? (
@@ -138,7 +140,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                         }
                         disabled={banMutation.isPending}
                       >
-                        {item.banned ? "Entsperren" : "Sperren"}
+                        {item.banned ? t("actions.unban") : t("actions.ban")}
                       </Button>
                     ) : null}
                     {currentRole === "superadmin" && item.id !== currentUserId ? (
@@ -149,7 +151,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                         onClick={() => handleDelete(item)}
                         disabled={deleteMutation.isPending}
                       >
-                        Löschen
+                        {t("actions.delete")}
                       </Button>
                     ) : null}
                   </div>

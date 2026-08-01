@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { signIn } from "@/lib/auth/client";
 import { OidcButton } from "@/components/auth/oidc-button";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function LoginForm({
   oidcEnabled = false,
   oidcProviderName,
 }: LoginFormProps) {
+  const t = useTranslations("Auth");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,11 +34,13 @@ export function LoginForm({
       if (result.error) {
         throw new Error(result.error.message || "Login failed");
       }
-      toast.success("Login erfolgreich");
+      toast.success(t("login.form.successToast"));
       router.replace("/");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login fehlgeschlagen");
+      toast.error(
+        error instanceof Error ? error.message : t("login.form.errorToast")
+      );
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +58,7 @@ export function LoginForm({
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  oder mit E-Mail und Passwort
+                  {t("login.form.orDivider")}
                 </span>
               </div>
             </div>
@@ -62,7 +66,7 @@ export function LoginForm({
         ) : null}
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
+            <Label htmlFor="email">{t("login.form.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
@@ -72,7 +76,7 @@ export function LoginForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
+            <Label htmlFor="password">{t("login.form.passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
@@ -82,7 +86,7 @@ export function LoginForm({
             />
           </div>
           <Button className="w-full" disabled={isLoading}>
-            {isLoading ? "Bitte warten..." : "Login"}
+            {isLoading ? t("login.form.submitLoading") : t("login.form.submit")}
           </Button>
         </form>
       </CardContent>

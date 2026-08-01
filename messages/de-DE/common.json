@@ -1,0 +1,82 @@
+{
+  "loading": "Lädt…",
+  "close": "Schließen",
+  "appDescription": "Erfasse deine Ausgaben und behalte den Überblick über deine Finanzen mit BetterTracker.",
+  "direction": {
+    "expense": "Ausgabe",
+    "expenseHint": "Abos, Miete, Fixkosten",
+    "income": "Einnahme",
+    "incomeHint": "Gehalt, Gutschriften"
+  },
+  "datePicker": {
+    "placeholder": "Datum wählen"
+  },
+  "frequency": {
+    "monthly": "Monatlich",
+    "monthlyInterval": "Alle {count} Monate",
+    "yearly": "Jährlich",
+    "yearlyInterval": "Alle {count} Jahre",
+    "daily": "Täglich",
+    "dailyInterval": "Alle {count} Tage"
+  },
+  "dayLabel": {
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "tomorrow": "Morgen"
+  },
+  "quickAdd": {
+    "fabLabel": "Neuer Eintrag",
+    "sheetTitle": "Hinzufügen",
+    "sheetDescription": "Neue Buchung oder Termin anlegen",
+    "backAria": "Zurück",
+    "picker": {
+      "prompt": "Was möchtest du hinzufügen?",
+      "transactionTitle": "Buchung",
+      "transactionDescription": "Einnahme oder Ausgabe erfassen",
+      "scheduleTitle": "Termin",
+      "scheduleDescription": "Wiederkehrende Zahlung anlegen"
+    },
+    "transactionForm": {
+      "header": "Neue Buchung",
+      "trackerLabel": "Tracker",
+      "dateLabel": "Datum",
+      "amountLabel": "Betrag",
+      "categoryLabel": "Kategorie",
+      "payeeLabel": "Einzahler",
+      "notesLabel": "Notizen (optional)",
+      "notesPlaceholder": "Kurzer Kontext für die Buchung",
+      "submit": "Eintrag speichern",
+      "submitting": "Speichere...",
+      "errorAmount": "Bitte einen gültigen Betrag eingeben.",
+      "errorCategory": "Bitte eine Kategorie wählen.",
+      "errorGeneric": "Fehler beim Speichern",
+      "success": "Buchung gespeichert!"
+    },
+    "scheduleForm": {
+      "header": "Neuer Termin",
+      "nameLabel": "Bezeichnung",
+      "namePlaceholder": "z. B. Miete, Netflix",
+      "amountLabel": "Betrag",
+      "rhythmLabel": "Rhythmus",
+      "frequencyLabel": "Frequenz",
+      "frequencyMonthly": "Monatlich",
+      "frequencyYearly": "Jährlich",
+      "frequencyCustomDays": "Alle X Tage",
+      "intervalLabel": "Intervall",
+      "startDateLabel": "Startdatum",
+      "notesTemplateLabel": "Notizvorlage (optional)",
+      "notesTemplatePlaceholder": "Wird beim Buchen übernommen",
+      "submit": "Termin anlegen",
+      "submitting": "Speichere...",
+      "errorAmount": "Bitte einen gültigen Betrag eingeben.",
+      "errorName": "Bitte einen Namen eingeben.",
+      "errorCategory": "Bitte eine Kategorie wählen.",
+      "errorPayee": "Bitte einen Empfänger/Absender angeben.",
+      "success": "Termin gespeichert!"
+    },
+    "successView": {
+      "addAnother": "Mehr hinzufügen",
+      "close": "Schließen"
+    }
+  }
+}

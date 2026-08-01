@@ -1,0 +1,66 @@
+{
+  "title": "Dashboard",
+  "description": "Where you stand and what's coming up next.",
+  "trackerForm": {
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Vacation",
+    "colorLabel": "Color",
+    "currencyLabel": "Currency",
+    "webhookLabel": "Discord Webhook URL",
+    "roleLabel": "Discord Ping Role ID",
+    "rolePlaceholder": "Optional",
+    "debugLabel": "Discord Debug",
+    "debugDescription": "Send extra debug info to Discord.",
+    "submitting": "Saving…",
+    "createTitle": "Create your first tracker",
+    "createDescription": "Once you've got a tracker set up, you can start logging transactions, categories, and schedules.",
+    "createSubmit": "Create tracker"
+  },
+  "newTrackerButton": "New tracker",
+  "trackerSettingsAria": "Settings for {name}",
+  "stats": {
+    "balance": "Balance",
+    "income": "Income",
+    "expenses": "Expenses",
+    "transactions": "Transactions",
+    "forecast": "In {days} days, about {amount}",
+    "scheduledCount": "{count} scheduled in the next {days} days"
+  },
+  "recent": {
+    "title": "Recent transactions",
+    "viewAll": "View all",
+    "anonymousPayee": "Anonymous",
+    "noCategory": "No category",
+    "emptyTitle": "No transactions yet",
+    "emptyDescription": "Use the plus button in the bottom right to log your first income or expense."
+  },
+  "upcoming": {
+    "title": "Next {days} days",
+    "viewAll": "Schedules",
+    "status": {
+      "overdue": "Overdue",
+      "due": "Due today",
+      "upcoming": "Upcoming"
+    },
+    "bookTitle": "Record as transaction",
+    "bookAria": "Record {name} as transaction",
+    "skipTitle": "Skip this schedule",
+    "skipAria": "Skip {name}",
+    "emptyTitle": "Nothing scheduled",
+    "emptyDescription": "Nothing coming up in the next {days} days."
+  },
+  "newTrackerSheet": {
+    "title": "New tracker",
+    "description": "Set up another area and optionally connect it to Discord right away."
+  },
+  "toast": {
+    "scheduleBooked": "Schedule booked",
+    "bookingFailed": "Booking failed",
+    "scheduleSkipped": "Schedule skipped",
+    "skipFailed": "Skip failed",
+    "trackerCreated": "Tracker created",
+    "trackerCreateFailed": "Couldn't create tracker",
+    "reorderFailed": "Couldn't save tracker order",
+    "nameRequired": "Please enter a tracker name"
+  }
+}
