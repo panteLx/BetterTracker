@@ -7,6 +7,10 @@ export const DEFAULT_SETTINGS = {
   discordDebugEnabled: false,
   discordPingRoleId: "",
   registrationEnabled: true,
+  loginMessageEnabled: false,
+  loginMessage: "",
+  dashboardMessageEnabled: false,
+  dashboardMessage: "",
 };
 
 export type SettingsMap = typeof DEFAULT_SETTINGS;
@@ -68,4 +72,18 @@ export async function setSetting(
 
 export async function getRegistrationEnabled() {
   return getSetting<boolean>("registrationEnabled");
+}
+
+export async function getLoginMessage(): Promise<string | null> {
+  const settings = await getSettings();
+  return settings.loginMessageEnabled && settings.loginMessage
+    ? settings.loginMessage
+    : null;
+}
+
+export async function getDashboardMessage(): Promise<string | null> {
+  const settings = await getSettings();
+  return settings.dashboardMessageEnabled && settings.dashboardMessage
+    ? settings.dashboardMessage
+    : null;
 }

@@ -116,6 +116,19 @@
         "description": "Neue Benutzer dürfen sich über die öffentliche Registrierung anmelden."
       }
     },
+    "siteMessages": {
+      "title": "Systemweite Nachrichten",
+      "login": {
+        "title": "Login- & Registrierungsnachricht",
+        "description": "Wird oberhalb des Login- und Registrierungsformulars angezeigt.",
+        "placeholder": "z. B. Wartungsarbeiten am Sonntag, 20 Uhr UTC."
+      },
+      "dashboard": {
+        "title": "Dashboard-Nachricht",
+        "description": "Wird angemeldeten Benutzern oben im Dashboard angezeigt.",
+        "placeholder": "z. B. Willkommen zum neuen BetterTracker-Release!"
+      }
+    },
     "discord": {
       "title": "Discord",
       "webhookUrl": "Discord-Default Webhook URL",
