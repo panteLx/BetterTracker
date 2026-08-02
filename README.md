@@ -113,6 +113,26 @@ npm run db:studio     # Open Drizzle Studio GUI
 
 <div align="center">
 
+## Releasing
+
+</div>
+
+Maintainers with push access can cut a release from a clean `main` with:
+
+```bash
+npm run release patch   # 0.1.0 -> 0.1.1
+npm run release minor   # 0.1.0 -> 0.2.0
+npm run release major   # 0.1.0 -> 1.0.0
+```
+
+This bumps `package.json`/`package-lock.json`, commits, tags, and pushes, then
+creates a GitHub release with auto-generated notes. The pushed tag triggers
+[`container.yml`](.github/workflows/container.yml), which builds and
+publishes the versioned Docker image. Requires the [GitHub CLI](https://cli.github.com)
+to be installed and authenticated (`gh auth login`).
+
+<div align="center">
+
 ## Docker Images
 
 Images are available at `ghcr.io/pantelx/bettertracker`:
