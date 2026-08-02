@@ -3,6 +3,14 @@ import { getSettings, setSetting, DEFAULT_SETTINGS } from "@/lib/services/admin-
 import { forbidden, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
+const SUPERADMIN_ONLY_KEYS = new Set([
+  "registrationEnabled",
+  "loginMessageEnabled",
+  "loginMessage",
+  "dashboardMessageEnabled",
+  "dashboardMessage",
+]);
+
 export async function GET(request: Request) {
   const access = await requireAdmin(request.headers);
   if (access.response) return access.response;
@@ -23,8 +31,8 @@ export async function PATCH(request: Request) {
     const body = await parseRequestJson<Partial<typeof DEFAULT_SETTINGS>>(request);
     for (const [key, value] of Object.entries(body)) {
       if (key in DEFAULT_SETTINGS) {
-        if (key === "registrationEnabled" && access.user!.role !== "superadmin") {
-          return forbidden("Only superadmins can change registration settings");
+        if (SUPERADMIN_ONLY_KEYS.has(key) && access.user!.role !== "superadmin") {
+          return forbidden("Only superadmins can change this setting");
         }
         await setSetting(key as keyof typeof DEFAULT_SETTINGS, value, access.user!.id);
       }

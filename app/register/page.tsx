@@ -4,8 +4,12 @@ import { getTranslations } from "next-intl/server";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { AuthRedirectAlert } from "@/components/auth/auth-redirect-alert";
 import { RegisterForm } from "@/components/auth/register-form";
+import { SiteMessageBanner } from "@/components/site-message-banner";
 import { oidcDisplayName, oidcEnabled } from "@/lib/auth/oidc";
-import { getRegistrationEnabled } from "@/lib/services/admin-settings-service";
+import {
+  getLoginMessage,
+  getRegistrationEnabled,
+} from "@/lib/services/admin-settings-service";
 
 type RegisterPageProps = {
   searchParams: Promise<{
@@ -21,6 +25,7 @@ function getFirstValue(value?: string | string[]) {
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const t = await getTranslations("Auth");
   const registrationEnabled = await getRegistrationEnabled();
+  const loginMessage = await getLoginMessage();
   const query = await searchParams;
   const error = getFirstValue(query.error);
   const errorDescription = getFirstValue(query.error_description);
@@ -80,6 +85,8 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
               {t("register.page.welcomeSubtext")}
             </p>
           </div>
+
+          <SiteMessageBanner message={loginMessage} />
 
           <AuthRedirectAlert
             error={error}

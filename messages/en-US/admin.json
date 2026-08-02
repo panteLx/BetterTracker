@@ -116,6 +116,19 @@
         "description": "New users may sign up through public registration."
       }
     },
+    "siteMessages": {
+      "title": "Site messages",
+      "login": {
+        "title": "Login & registration message",
+        "description": "Shown above the login and registration forms.",
+        "placeholder": "e.g. Scheduled maintenance on Sunday, 8pm UTC."
+      },
+      "dashboard": {
+        "title": "Dashboard message",
+        "description": "Shown to signed-in users at the top of the dashboard.",
+        "placeholder": "e.g. Welcome to the new BetterTracker release!"
+      }
+    },
     "discord": {
       "title": "Discord",
       "webhookUrl": "Default Discord webhook URL",

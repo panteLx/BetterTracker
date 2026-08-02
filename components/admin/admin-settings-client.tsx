@@ -10,12 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 type Settings = {
   discordWebhookUrl: string;
   discordDebugEnabled: boolean;
   discordPingRoleId: string;
   registrationEnabled: boolean;
+  loginMessageEnabled: boolean;
+  loginMessage: string;
+  dashboardMessageEnabled: boolean;
+  dashboardMessage: string;
 };
 
 export function AdminSettingsClient({
@@ -112,6 +117,65 @@ export function AdminSettingsClient({
                 onCheckedChange={(value) =>
                   setDraft({ ...form, registrationEnabled: value })
                 }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {currentRole === "superadmin" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("siteMessages.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            <div className="space-y-3 rounded-2xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{t("siteMessages.login.title")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("siteMessages.login.description")}
+                  </p>
+                </div>
+                <Switch
+                  checked={form.loginMessageEnabled}
+                  onCheckedChange={(value) =>
+                    setDraft({ ...form, loginMessageEnabled: value })
+                  }
+                />
+              </div>
+              <Textarea
+                value={form.loginMessage}
+                onChange={(e) =>
+                  setDraft({ ...form, loginMessage: e.target.value })
+                }
+                placeholder={t("siteMessages.login.placeholder")}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-3 rounded-2xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{t("siteMessages.dashboard.title")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("siteMessages.dashboard.description")}
+                  </p>
+                </div>
+                <Switch
+                  checked={form.dashboardMessageEnabled}
+                  onCheckedChange={(value) =>
+                    setDraft({ ...form, dashboardMessageEnabled: value })
+                  }
+                />
+              </div>
+              <Textarea
+                value={form.dashboardMessage}
+                onChange={(e) =>
+                  setDraft({ ...form, dashboardMessage: e.target.value })
+                }
+                placeholder={t("siteMessages.dashboard.placeholder")}
+                rows={3}
               />
             </div>
           </CardContent>
