@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "seed": "npm run db:migrate && tsx scripts/seed.ts"
+    "seed": "npm run db:migrate && tsx scripts/seed.ts",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.16",
