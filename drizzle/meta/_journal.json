@@ -36,6 +36,27 @@
       "when": 1782129802417,
       "tag": "0004_gray_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786031264457,
+      "tag": "0005_broken_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786034269100,
+      "tag": "0006_woozy_mastermind",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786038780544,
+      "tag": "0007_flippant_greymalkin",
+      "breakpoints": true
     }
   ]
 }

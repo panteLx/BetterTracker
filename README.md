@@ -4,7 +4,7 @@
 
 **Your favorite self-hosted finance tracker!**
 
-_BetterTracker is a self-hosted, multi-user expense and income tracker. Manage multiple trackers with custom categories, payees, and recurring schedules. Share trackers publicly, monitor your finances with statistics and charts, and administrate users via a built-in admin panel with role-based permissions and audit logging._
+_BetterTracker is a self-hosted, multi-user expense and income tracker. Manage multiple trackers with custom categories, payees, and recurring schedules. Share trackers publicly, monitor your finances with statistics and charts, and administrate users via a built-in admin panel with role-based permissions and audit logging. A separate Cases area adds patient case file management for medical billing (PVS), with a status workflow, submission batches, and per-case-type PDF exports._
 
 ![Version](https://img.shields.io/github/v/release/pantelx/bettertracker?style=flat-square&label=version)
 ![Build](https://img.shields.io/github/check-runs/pantelx/bettertracker/main?style=flat-square&label=build)
@@ -33,6 +33,7 @@ _BetterTracker is a self-hosted, multi-user expense and income tracker. Manage m
 | **Admin Panel**    | User management, registration control, and audit logging        |
 | **Roles**          | Superadmin, admin, and user roles with per-tracker permissions  |
 | **Discord**        | Optional webhook notifications per tracker                      |
+| **Cases**          | Patient case file management for PVS medical billing, with a status workflow, submission batches, and PDF exports |
 
 ## Quick Start
 
@@ -106,6 +107,18 @@ TZ=Europe/Berlin       # used for date/time formatting
 ```
 
 See [.env.example](.env.example) for all options.
+
+<div align="center">
+
+## Cases Module
+
+</div>
+
+Patient case files live in their own **workspaces** (the same owner/admin/write/read permission model as trackers) inside the **Cases** area, reachable via the area switcher next to the theme toggle.
+
+**Status workflow:** Needs processing → Medical controlling → Queued for PVS _(optional)_ → Sent to PVS → Done, with a Returned action that resets a case back to Needs processing and tracks a return count.
+
+**PVS submissions:** Sending case files to PVS groups them into a dated submission batch with per-case-type PDF exports. Admins can hide/unhide a batch from the submissions list without changing its case files' status or history.
 
 <div align="center">
 

@@ -31,6 +31,12 @@
     "supportAria": "Support on Buy Me a Coffee",
     "githubAria": "GitHub Repository"
   },
+  "moduleSwitcher": {
+    "ariaLabel": "Switch area",
+    "label": "Area",
+    "finance": "Finance",
+    "cases": "Cases"
+  },
   "commandPalette": {
     "openAria": "Open command palette",
     "search": "Search",

@@ -1,0 +1,209 @@
+{
+  "nav": {
+    "board": "Übersicht",
+    "batches": "PVS-Übermittlungen",
+    "settings": "Einstellungen"
+  },
+  "workspaceList": {
+    "title": "Akten",
+    "description": "Patientenakten für die PVS-Abrechnung verwalten.",
+    "createCta": "Neuer Bereich",
+    "empty": {
+      "title": "Noch kein Bereich vorhanden",
+      "description": "Lege einen Bereich an, um Patientenakten zu verwalten."
+    },
+    "toast": {
+      "created": "Bereich angelegt.",
+      "createFailed": "Bereich konnte nicht angelegt werden.",
+      "nameRequired": "Bitte einen Namen angeben."
+    },
+    "sheet": {
+      "title": "Neuer Bereich",
+      "description": "Lege einen neuen Bereich für Patientenakten an, z. B. pro Abteilung.",
+      "name": "Name",
+      "description2": "Beschreibung",
+      "color": "Farbe",
+      "creating": "Wird angelegt…",
+      "create": "Anlegen"
+    }
+  },
+  "status": {
+    "all": "Alle",
+    "needs_processing": "In Bearbeitung",
+    "medizin_controlling": "Medizin-Controlling",
+    "queued_for_pvs": "Bereit für PVS",
+    "sent_to_pvs": "Zur PVS geschickt",
+    "done": "Fertig"
+  },
+  "caseType": {
+    "all": "Alle",
+    "ambulant": "Ambulant",
+    "stationaer": "Stationär",
+    "konsil": "Konsil"
+  },
+  "board": {
+    "newCaseFile": "Neue Akte",
+    "searchPlaceholder": "Patient oder Aktennummer suchen…",
+    "statusFilterLabel": "Nach Status filtern",
+    "caseTypeFilterLabel": "Nach Fallart filtern",
+    "monthFilterLabel": "Nach Monat filtern",
+    "clearMonthFilter": "Monatsfilter entfernen",
+    "selectAllAria": "Alle auswählbaren Akten auswählen",
+    "selectRowAria": "Akte von {name} auswählen",
+    "empty": {
+      "title": "Noch keine Akten",
+      "description": "Lege die erste Patientenakte an, um loszulegen."
+    },
+    "table": {
+      "patientName": "Patient",
+      "fileNumber": "Fall-/Aktennummer",
+      "dateOfBirth": "Geburtsdatum",
+      "caseType": "Fallart",
+      "status": "Status",
+      "batch": "Übermittelt am",
+      "addedOn": "Hinzugefügt am",
+      "comments": "Kommentare",
+      "returnedBadge": "{count}× zurück",
+      "submissionBadge": "{count}. Einreichung"
+    },
+    "bulkBar": {
+      "selectedCount": "{count} ausgewählt",
+      "clear": "Auswahl aufheben",
+      "advanceToMedizinControlling": "Zum Medizin-Controlling schicken",
+      "advancing": "Wird verschoben…",
+      "queueForPvs": "Als bereit für PVS markieren",
+      "queuing": "Wird markiert…",
+      "sendToPvs": "An PVS schicken",
+      "sending": "Wird gesendet…",
+      "markReturned": "Als zurückgekommen markieren",
+      "markingReturned": "Wird markiert…",
+      "markDone": "Als erledigt markieren",
+      "markingDone": "Wird markiert…",
+      "mixedHint": "Bitte nur Akten mit demselben Status auswählen"
+    },
+    "toast": {
+      "statusUpdateFailed": "Status konnte nicht geändert werden.",
+      "advanced": "Zum Medizin-Controlling verschoben.",
+      "advanceFailed": "Konnte nicht zum Medizin-Controlling verschoben werden.",
+      "queuedForPvs": "Als bereit für PVS markiert.",
+      "queuedForPvsFailed": "Konnte nicht als bereit für PVS markiert werden.",
+      "sentToPvs": "An PVS geschickt.",
+      "sentToPvsFailed": "Konnte nicht an PVS geschickt werden.",
+      "markedReturned": "Als zurückgekommen markiert.",
+      "markReturnedFailed": "Konnte nicht als zurückgekommen markiert werden.",
+      "markedDone": "Als erledigt markiert.",
+      "markDoneFailed": "Konnte nicht als erledigt markiert werden."
+    }
+  },
+  "caseFileForm": {
+    "createTitle": "Neue Akte",
+    "editTitle": "Akte bearbeiten",
+    "description": "Angaben zur Patientenakte erfassen.",
+    "patientName": "Patientenname",
+    "fileNumber": "Fall-/Aktennummer",
+    "dateOfBirth": "Geburtsdatum",
+    "caseType": "Fallart",
+    "caseTypeOptions": {
+      "ambulant": "Ambulant",
+      "stationaer": "Stationär",
+      "konsil": "Konsil"
+    },
+    "saving": "Wird gespeichert…",
+    "save": "Speichern",
+    "create": "Anlegen",
+    "confirmDelete": "Diese Akte wirklich löschen?",
+    "delete": "Akte löschen",
+    "commentsTitle": "Kommentare",
+    "returnedNotice": "Diese Akte kam {count}× von der PVS zurück (zuletzt am {date}).",
+    "toast": {
+      "created": "Akte angelegt.",
+      "saved": "Akte gespeichert.",
+      "saveFailed": "Akte konnte nicht gespeichert werden.",
+      "duplicateFileNumber": "Diese Fall-/Aktennummer wird in diesem Bereich bereits verwendet.",
+      "requiredFields": "Bitte Patientenname und Aktennummer angeben.",
+      "deleted": "Akte gelöscht.",
+      "deleteFailed": "Akte konnte nicht gelöscht werden."
+    }
+  },
+  "comments": {
+    "empty": "Noch keine Kommentare.",
+    "unknownAuthor": "Unbekannt",
+    "placeholder": "Kommentar hinzufügen…",
+    "send": "Senden",
+    "addFailed": "Kommentar konnte nicht gespeichert werden."
+  },
+  "batches": {
+    "title": "PVS-Übermittlungen",
+    "empty": {
+      "title": "Noch keine Übermittlungen",
+      "description": "Sobald du Akten an die PVS schickst, erscheinen sie hier gruppiert nach Datum."
+    },
+    "patientCount": "{count} Patient(en)",
+    "downloadPdf": "PDF herunterladen",
+    "selectAll": "Alle auswählen",
+    "selectAllAria": "Alle als erledigt oder zurückgekommen markierbaren Akten auswählen",
+    "selectRowAria": "Akte von {name} auswählen",
+    "markDone": "Als erledigt markieren ({count})",
+    "markingDone": "Wird markiert…",
+    "markReturned": "Als zurückgekommen markieren ({count})",
+    "markingReturned": "Wird markiert…",
+    "hideBatch": "Übermittlung ausblenden",
+    "unhideBatch": "Übermittlung wieder einblenden",
+    "showHiddenToggle": "Ausgeblendete Übermittlungen anzeigen",
+    "hideHiddenToggle": "Ausgeblendete Übermittlungen verbergen",
+    "hiddenSectionTitle": "Ausgeblendete Übermittlungen",
+    "noHidden": "Keine ausgeblendeten Übermittlungen.",
+    "confirm": {
+      "hideBatch": "Diese Übermittlung ausblenden? Die Akten bleiben erhalten und behalten ihren aktuellen Status, die Übermittlung wird hier aber nicht mehr angezeigt."
+    },
+    "toast": {
+      "markedDone": "Als erledigt markiert.",
+      "markDoneFailed": "Konnte nicht als erledigt markiert werden.",
+      "markedReturned": "Als zurückgekommen markiert.",
+      "markReturnedFailed": "Konnte nicht als zurückgekommen markiert werden.",
+      "hidden": "Übermittlung ausgeblendet.",
+      "hideFailed": "Übermittlung konnte nicht ausgeblendet werden.",
+      "unhidden": "Übermittlung wieder eingeblendet.",
+      "unhideFailed": "Übermittlung konnte nicht wieder eingeblendet werden."
+    }
+  },
+  "settingsPage": {
+    "title": "Einstellungen",
+    "form": {
+      "sectionTitle": "Bereich",
+      "name": "Name",
+      "description": "Beschreibung",
+      "color": "Farbe",
+      "archive": "Bereich archivieren",
+      "archiveDescription": "Archivierte Bereiche können nicht mehr bearbeitet werden.",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…"
+    },
+    "members": {
+      "title": "Mitglieder",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen…",
+      "searchHint": "Mindestens 2 Zeichen eingeben, um zu suchen.",
+      "noResults": "Keine Treffer.",
+      "add": "Hinzufügen",
+      "owner": "Inhaber",
+      "permissionRead": "Lesen",
+      "permissionWrite": "Bearbeiten",
+      "permissionAdmin": "Admin",
+      "remove": "Entfernen"
+    },
+    "confirm": {
+      "removeMember": "{email} wirklich aus dem Bereich entfernen?"
+    },
+    "toast": {
+      "saved": "Gespeichert.",
+      "saveFailed": "Konnte nicht gespeichert werden.",
+      "nameRequired": "Bitte einen Namen angeben.",
+      "memberAdded": "Mitglied hinzugefügt.",
+      "memberAddFailed": "Mitglied konnte nicht hinzugefügt werden.",
+      "memberUpdated": "Berechtigung aktualisiert.",
+      "memberUpdateFailed": "Berechtigung konnte nicht aktualisiert werden.",
+      "memberRemoved": "Mitglied entfernt.",
+      "memberRemoveFailed": "Mitglied konnte nicht entfernt werden."
+    }
+  }
+}

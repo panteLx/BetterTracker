@@ -12,6 +12,7 @@ import {
 import { UserMenu } from "@/components/layout/user-menu";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
 
 export const navItems = [
   { href: "/", key: "dashboard" as const, icon: CreditCard, exact: true },
@@ -98,6 +99,7 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
           {user ? (
             <>
               <CommandPalette role={user.role} />
+              <ModuleSwitcher />
               <ThemeToggleButton />
               <UserMenu name={user.name} email={user.email} role={user.role} />
             </>

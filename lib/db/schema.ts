@@ -252,6 +252,171 @@ export const transactions = sqliteTable(
   ]
 );
 
+// ---------------------------------------------------------------------------
+// Cases module (PVS-Aktenverwaltung) — standalone from the finance trackers
+// above. Mirrors trackers/trackerMembers shape but its own domain.
+// ---------------------------------------------------------------------------
+
+export const caseWorkspaces = sqliteTable(
+  "case_workspaces",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    description: text("description"),
+    color: text("color").notNull().default("#0f766e"),
+    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    ...timestamps,
+  },
+  (table) => [uniqueIndex("case_workspaces_slug_idx").on(table.slug)]
+);
+
+export const caseWorkspaceMembers = sqliteTable(
+  "case_workspace_members",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    permission: text("permission", {
+      enum: ["owner", "admin", "write", "read"],
+    })
+      .notNull()
+      .default("read"),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [
+    index("case_workspace_members_workspace_idx").on(table.workspaceId),
+    index("case_workspace_members_user_idx").on(table.userId),
+    uniqueIndex("case_workspace_members_unique_idx").on(
+      table.workspaceId,
+      table.userId
+    ),
+  ]
+);
+
+export const pvsSubmissionBatches = sqliteTable(
+  "pvs_submission_batches",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    submittedOn: text("submitted_on").notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [
+    index("pvs_submission_batches_workspace_idx").on(table.workspaceId),
+    index("pvs_submission_batches_submitted_on_idx").on(table.submittedOn),
+  ]
+);
+
+export const caseFiles = sqliteTable(
+  "case_files",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    patientName: text("patient_name").notNull(),
+    fileNumber: text("file_number").notNull(),
+    dateOfBirth: text("date_of_birth"),
+    caseType: text("case_type", {
+      enum: ["ambulant", "stationaer", "konsil"],
+    }).notNull(),
+    status: text("status", {
+      enum: [
+        "needs_processing",
+        "medizin_controlling",
+        "queued_for_pvs",
+        "sent_to_pvs",
+        "done",
+      ],
+    })
+      .notNull()
+      .default("needs_processing"),
+    submissionBatchId: text("submission_batch_id").references(
+      () => pvsSubmissionBatches.id,
+      { onDelete: "set null" }
+    ),
+    returnCount: integer("return_count").default(0).notNull(),
+    lastReturnedAt: integer("last_returned_at", { mode: "timestamp_ms" }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    index("case_files_workspace_idx").on(table.workspaceId),
+    index("case_files_status_idx").on(table.status),
+    index("case_files_batch_idx").on(table.submissionBatchId),
+    index("case_files_file_number_idx").on(table.fileNumber),
+    uniqueIndex("case_files_workspace_file_number_idx").on(
+      table.workspaceId,
+      table.fileNumber
+    ),
+  ]
+);
+
+// Permanent history of every batch a case file was ever part of — separate
+// from caseFiles.submissionBatchId (which only tracks the current/latest
+// batch), so a batch's PDF/detail view stays accurate even after a case file
+// is returned by PVS and resubmitted into a new batch.
+export const caseFileSubmissions = sqliteTable(
+  "case_file_submissions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    caseFileId: text("case_file_id")
+      .notNull()
+      .references(() => caseFiles.id, { onDelete: "cascade" }),
+    batchId: text("batch_id")
+      .notNull()
+      .references(() => pvsSubmissionBatches.id, { onDelete: "cascade" }),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [
+    index("case_file_submissions_case_file_idx").on(table.caseFileId),
+    index("case_file_submissions_batch_idx").on(table.batchId),
+  ]
+);
+
+export const caseFileComments = sqliteTable(
+  "case_file_comments",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    caseFileId: text("case_file_id")
+      .notNull()
+      .references(() => caseFiles.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    body: text("body").notNull(),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [index("case_file_comments_case_file_idx").on(table.caseFileId)]
+);
+
 export const appSettings = sqliteTable("app_settings", {
   id: text("id")
     .primaryKey()
@@ -317,6 +482,7 @@ export const notificationEvents = sqliteTable("notification_events", {
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   trackerMemberships: many(trackerMembers),
+  caseWorkspaceMemberships: many(caseWorkspaceMembers),
 }));
 
 export const trackerRelations = relations(trackers, ({ many }) => ({
@@ -338,6 +504,69 @@ export const trackerMemberRelations = relations(trackerMembers, ({ one }) => ({
   }),
 }));
 
+export const caseWorkspaceRelations = relations(caseWorkspaces, ({ many }) => ({
+  members: many(caseWorkspaceMembers),
+  caseFiles: many(caseFiles),
+  batches: many(pvsSubmissionBatches),
+}));
+
+export const caseWorkspaceMemberRelations = relations(
+  caseWorkspaceMembers,
+  ({ one }) => ({
+    workspace: one(caseWorkspaces, {
+      fields: [caseWorkspaceMembers.workspaceId],
+      references: [caseWorkspaces.id],
+    }),
+    user: one(user, {
+      fields: [caseWorkspaceMembers.userId],
+      references: [user.id],
+    }),
+  })
+);
+
+export const pvsSubmissionBatchRelations = relations(
+  pvsSubmissionBatches,
+  ({ one, many }) => ({
+    workspace: one(caseWorkspaces, {
+      fields: [pvsSubmissionBatches.workspaceId],
+      references: [caseWorkspaces.id],
+    }),
+    caseFiles: many(caseFiles),
+    submissions: many(caseFileSubmissions),
+  })
+);
+
+export const caseFileRelations = relations(caseFiles, ({ one, many }) => ({
+  workspace: one(caseWorkspaces, {
+    fields: [caseFiles.workspaceId],
+    references: [caseWorkspaces.id],
+  }),
+  batch: one(pvsSubmissionBatches, {
+    fields: [caseFiles.submissionBatchId],
+    references: [pvsSubmissionBatches.id],
+  }),
+  comments: many(caseFileComments),
+  submissions: many(caseFileSubmissions),
+}));
+
+export const caseFileCommentRelations = relations(caseFileComments, ({ one }) => ({
+  caseFile: one(caseFiles, {
+    fields: [caseFileComments.caseFileId],
+    references: [caseFiles.id],
+  }),
+}));
+
+export const caseFileSubmissionRelations = relations(caseFileSubmissions, ({ one }) => ({
+  caseFile: one(caseFiles, {
+    fields: [caseFileSubmissions.caseFileId],
+    references: [caseFiles.id],
+  }),
+  batch: one(pvsSubmissionBatches, {
+    fields: [caseFileSubmissions.batchId],
+    references: [pvsSubmissionBatches.id],
+  }),
+}));
+
 export type AppUser = typeof user.$inferSelect;
 export type NewAppUser = typeof user.$inferInsert;
 export type Tracker = typeof trackers.$inferSelect;
@@ -351,3 +580,11 @@ export type Schedule = typeof schedules.$inferSelect;
 export type NewSchedule = typeof schedules.$inferInsert;
 export type AppSetting = typeof appSettings.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type CaseWorkspace = typeof caseWorkspaces.$inferSelect;
+export type NewCaseWorkspace = typeof caseWorkspaces.$inferInsert;
+export type CaseWorkspaceMember = typeof caseWorkspaceMembers.$inferSelect;
+export type CaseFile = typeof caseFiles.$inferSelect;
+export type NewCaseFile = typeof caseFiles.$inferInsert;
+export type CaseFileComment = typeof caseFileComments.$inferSelect;
+export type PvsSubmissionBatch = typeof pvsSubmissionBatches.$inferSelect;
+export type CaseFileSubmission = typeof caseFileSubmissions.$inferSelect;
