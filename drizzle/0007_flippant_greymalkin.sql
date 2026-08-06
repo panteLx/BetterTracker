@@ -1,0 +1,1 @@
+ALTER TABLE `pvs_submission_batches` ADD `is_hidden` integer DEFAULT false NOT NULL;

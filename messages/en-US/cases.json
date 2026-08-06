@@ -1,0 +1,209 @@
+{
+  "nav": {
+    "board": "Overview",
+    "batches": "PVS submissions",
+    "settings": "Settings"
+  },
+  "workspaceList": {
+    "title": "Cases",
+    "description": "Manage patient case files for PVS billing.",
+    "createCta": "New workspace",
+    "empty": {
+      "title": "No workspace yet",
+      "description": "Create a workspace to start managing patient case files."
+    },
+    "toast": {
+      "created": "Workspace created.",
+      "createFailed": "Could not create workspace.",
+      "nameRequired": "Please enter a name."
+    },
+    "sheet": {
+      "title": "New workspace",
+      "description": "Create a new workspace for patient case files, e.g. per department.",
+      "name": "Name",
+      "description2": "Description",
+      "color": "Color",
+      "creating": "Creating…",
+      "create": "Create"
+    }
+  },
+  "status": {
+    "all": "All",
+    "needs_processing": "Needs processing",
+    "medizin_controlling": "Medical controlling",
+    "queued_for_pvs": "Queued for PVS",
+    "sent_to_pvs": "Sent to PVS",
+    "done": "Done"
+  },
+  "caseType": {
+    "all": "All",
+    "ambulant": "Outpatient",
+    "stationaer": "Inpatient",
+    "konsil": "Consult"
+  },
+  "board": {
+    "newCaseFile": "New case file",
+    "searchPlaceholder": "Search patient or file number…",
+    "statusFilterLabel": "Filter by status",
+    "caseTypeFilterLabel": "Filter by case type",
+    "monthFilterLabel": "Filter by month",
+    "clearMonthFilter": "Clear month filter",
+    "selectAllAria": "Select all eligible case files",
+    "selectRowAria": "Select case file for {name}",
+    "empty": {
+      "title": "No case files yet",
+      "description": "Create the first patient case file to get started."
+    },
+    "table": {
+      "patientName": "Patient",
+      "fileNumber": "Case/file number",
+      "dateOfBirth": "Date of birth",
+      "caseType": "Case type",
+      "status": "Status",
+      "batch": "Submitted on",
+      "addedOn": "Added on",
+      "comments": "Comments",
+      "returnedBadge": "{count}× returned",
+      "submissionBadge": "submission #{count}"
+    },
+    "bulkBar": {
+      "selectedCount": "{count} selected",
+      "clear": "Clear selection",
+      "advanceToMedizinControlling": "Send to medical controlling",
+      "advancing": "Moving…",
+      "queueForPvs": "Mark as queued for PVS",
+      "queuing": "Marking…",
+      "sendToPvs": "Send to PVS",
+      "sending": "Sending…",
+      "markReturned": "Mark as returned",
+      "markingReturned": "Marking…",
+      "markDone": "Mark as done",
+      "markingDone": "Marking…",
+      "mixedHint": "Please select case files with the same status"
+    },
+    "toast": {
+      "statusUpdateFailed": "Could not update status.",
+      "advanced": "Sent to medical controlling.",
+      "advanceFailed": "Could not send to medical controlling.",
+      "queuedForPvs": "Marked as queued for PVS.",
+      "queuedForPvsFailed": "Could not mark as queued for PVS.",
+      "sentToPvs": "Sent to PVS.",
+      "sentToPvsFailed": "Could not send to PVS.",
+      "markedReturned": "Marked as returned.",
+      "markReturnedFailed": "Could not mark as returned.",
+      "markedDone": "Marked as done.",
+      "markDoneFailed": "Could not mark as done."
+    }
+  },
+  "caseFileForm": {
+    "createTitle": "New case file",
+    "editTitle": "Edit case file",
+    "description": "Enter the patient case file details.",
+    "patientName": "Patient name",
+    "fileNumber": "Case/file number",
+    "dateOfBirth": "Date of birth",
+    "caseType": "Case type",
+    "caseTypeOptions": {
+      "ambulant": "Outpatient",
+      "stationaer": "Inpatient",
+      "konsil": "Consult"
+    },
+    "saving": "Saving…",
+    "save": "Save",
+    "create": "Create",
+    "confirmDelete": "Really delete this case file?",
+    "delete": "Delete case file",
+    "commentsTitle": "Comments",
+    "returnedNotice": "This case file was returned by PVS {count}× (last on {date}).",
+    "toast": {
+      "created": "Case file created.",
+      "saved": "Case file saved.",
+      "saveFailed": "Could not save case file.",
+      "duplicateFileNumber": "This case/file number is already used in this workspace.",
+      "requiredFields": "Please enter patient name and file number.",
+      "deleted": "Case file deleted.",
+      "deleteFailed": "Could not delete case file."
+    }
+  },
+  "comments": {
+    "empty": "No comments yet.",
+    "unknownAuthor": "Unknown",
+    "placeholder": "Add a comment…",
+    "send": "Send",
+    "addFailed": "Could not save comment."
+  },
+  "batches": {
+    "title": "PVS submissions",
+    "empty": {
+      "title": "No submissions yet",
+      "description": "Once you send case files to PVS, they'll appear here grouped by date."
+    },
+    "patientCount": "{count} patient(s)",
+    "downloadPdf": "Download PDF",
+    "selectAll": "Select all",
+    "selectAllAria": "Select all case files eligible to be marked as done or returned",
+    "selectRowAria": "Select case file for {name}",
+    "markDone": "Mark as done ({count})",
+    "markingDone": "Marking…",
+    "markReturned": "Mark as returned ({count})",
+    "markingReturned": "Marking…",
+    "hideBatch": "Hide submission",
+    "unhideBatch": "Unhide submission",
+    "showHiddenToggle": "Show hidden submissions",
+    "hideHiddenToggle": "Hide hidden submissions",
+    "hiddenSectionTitle": "Hidden submissions",
+    "noHidden": "No hidden submissions.",
+    "confirm": {
+      "hideBatch": "Hide this submission? The case files stay and keep their current status, but the submission will no longer be listed here."
+    },
+    "toast": {
+      "markedDone": "Marked as done.",
+      "markDoneFailed": "Could not mark as done.",
+      "markedReturned": "Marked as returned.",
+      "markReturnedFailed": "Could not mark as returned.",
+      "hidden": "Submission hidden.",
+      "hideFailed": "Could not hide submission.",
+      "unhidden": "Submission unhidden.",
+      "unhideFailed": "Could not unhide submission."
+    }
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "form": {
+      "sectionTitle": "Workspace",
+      "name": "Name",
+      "description": "Description",
+      "color": "Color",
+      "archive": "Archive workspace",
+      "archiveDescription": "Archived workspaces can no longer be edited.",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "members": {
+      "title": "Members",
+      "searchPlaceholder": "Search by name or email…",
+      "searchHint": "Enter at least 2 characters to search.",
+      "noResults": "No matches.",
+      "add": "Add",
+      "owner": "Owner",
+      "permissionRead": "Read",
+      "permissionWrite": "Write",
+      "permissionAdmin": "Admin",
+      "remove": "Remove"
+    },
+    "confirm": {
+      "removeMember": "Really remove {email} from this workspace?"
+    },
+    "toast": {
+      "saved": "Saved.",
+      "saveFailed": "Could not save.",
+      "nameRequired": "Please enter a name.",
+      "memberAdded": "Member added.",
+      "memberAddFailed": "Could not add member.",
+      "memberUpdated": "Permission updated.",
+      "memberUpdateFailed": "Could not update permission.",
+      "memberRemoved": "Member removed.",
+      "memberRemoveFailed": "Could not remove member."
+    }
+  }
+}
