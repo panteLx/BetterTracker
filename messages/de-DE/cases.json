@@ -46,8 +46,11 @@
     "searchPlaceholder": "Patient oder Aktennummer suchen…",
     "statusFilterLabel": "Nach Status filtern",
     "caseTypeFilterLabel": "Nach Fallart filtern",
-    "monthFilterLabel": "Nach Monat filtern",
-    "clearMonthFilter": "Monatsfilter entfernen",
+    "submittedFromPlaceholder": "Übermittelt von",
+    "submittedToPlaceholder": "Übermittelt bis",
+    "submittedFromAriaLabel": "Übermittelt ab Datum",
+    "submittedToAriaLabel": "Übermittelt bis Datum",
+    "clearSubmittedRange": "Übermittlungszeitraum entfernen",
     "selectAllAria": "Alle auswählbaren Akten auswählen",
     "selectRowAria": "Akte von {name} auswählen",
     "empty": {
@@ -79,10 +82,11 @@
       "markingReturned": "Wird markiert…",
       "markDone": "Als erledigt markieren",
       "markingDone": "Wird markiert…",
-      "mixedHint": "Bitte nur Akten mit demselben Status auswählen"
+      "mixedHint": "Bitte nur Akten mit demselben Status auswählen",
+      "exportPdf": "PDF erstellen ({count})",
+      "exportingPdf": "Wird erstellt…"
     },
     "toast": {
-      "statusUpdateFailed": "Status konnte nicht geändert werden.",
       "advanced": "Zum Medizin-Controlling verschoben.",
       "advanceFailed": "Konnte nicht zum Medizin-Controlling verschoben werden.",
       "queuedForPvs": "Als bereit für PVS markiert.",
@@ -92,7 +96,23 @@
       "markedReturned": "Als zurückgekommen markiert.",
       "markReturnedFailed": "Konnte nicht als zurückgekommen markiert werden.",
       "markedDone": "Als erledigt markiert.",
-      "markDoneFailed": "Konnte nicht als erledigt markiert werden."
+      "markDoneFailed": "Konnte nicht als erledigt markiert werden.",
+      "exportFailed": "PDF konnte nicht erstellt werden.",
+      "selectAllFailed": "Auswahl konnte nicht geladen werden."
+    },
+    "pagination": {
+      "summary": "{count} Akten",
+      "pageOf": "Seite {page} von {totalPages}",
+      "back": "Zurück",
+      "next": "Weiter"
+    },
+    "stats": {
+      "total": "Gesamt"
+    },
+    "selectAllBanner": {
+      "pageSelected": "{count} auf dieser Seite ausgewählt.",
+      "selectAll": "Alle {count} passenden Akten auswählen",
+      "loading": "Wird geladen…"
     }
   },
   "caseFileForm": {
@@ -139,14 +159,10 @@
       "description": "Sobald du Akten an die PVS schickst, erscheinen sie hier gruppiert nach Datum."
     },
     "patientCount": "{count} Patient(en)",
+    "dayGroup": {
+      "batchCount": "{count} Übermittlung(en)"
+    },
     "downloadPdf": "PDF herunterladen",
-    "selectAll": "Alle auswählen",
-    "selectAllAria": "Alle als erledigt oder zurückgekommen markierbaren Akten auswählen",
-    "selectRowAria": "Akte von {name} auswählen",
-    "markDone": "Als erledigt markieren ({count})",
-    "markingDone": "Wird markiert…",
-    "markReturned": "Als zurückgekommen markieren ({count})",
-    "markingReturned": "Wird markiert…",
     "hideBatch": "Übermittlung ausblenden",
     "unhideBatch": "Übermittlung wieder einblenden",
     "showHiddenToggle": "Ausgeblendete Übermittlungen anzeigen",
@@ -157,10 +173,6 @@
       "hideBatch": "Diese Übermittlung ausblenden? Die Akten bleiben erhalten und behalten ihren aktuellen Status, die Übermittlung wird hier aber nicht mehr angezeigt."
     },
     "toast": {
-      "markedDone": "Als erledigt markiert.",
-      "markDoneFailed": "Konnte nicht als erledigt markiert werden.",
-      "markedReturned": "Als zurückgekommen markiert.",
-      "markReturnedFailed": "Konnte nicht als zurückgekommen markiert werden.",
       "hidden": "Übermittlung ausgeblendet.",
       "hideFailed": "Übermittlung konnte nicht ausgeblendet werden.",
       "unhidden": "Übermittlung wieder eingeblendet.",
@@ -204,6 +216,24 @@
       "memberUpdateFailed": "Berechtigung konnte nicht aktualisiert werden.",
       "memberRemoved": "Mitglied entfernt.",
       "memberRemoveFailed": "Mitglied konnte nicht entfernt werden."
+    }
+  },
+  "commandPalette": {
+    "openAria": "Befehlspalette öffnen",
+    "search": "Suche",
+    "title": "Befehlspalette",
+    "description": "Nach einem Befehl suchen, den du ausführen möchtest …",
+    "placeholder": "Seite oder Aktion suchen…",
+    "noResults": "Keine Ergebnisse gefunden.",
+    "groupNavigation": "Navigation",
+    "groupActions": "Aktionen",
+    "newCaseFile": "Neue Akte",
+    "newWorkspace": "Neuer Bereich",
+    "routes": {
+      "allWorkspaces": "Alle Akten-Bereiche",
+      "board": "Übersicht",
+      "batches": "PVS-Übermittlungen",
+      "settings": "Einstellungen"
     }
   }
 }

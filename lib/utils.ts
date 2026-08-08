@@ -67,6 +67,17 @@ export function formatDayLabel(
   }).format(date);
 }
 
+export function formatTimeShort(
+  value: string | number | Date,
+  locale = "de-DE",
+  timezone = "Europe/Berlin"
+) {
+  return new Intl.DateTimeFormat(locale, {
+    timeStyle: "short",
+    timeZone: timezone,
+  }).format(new Date(value));
+}
+
 export function formatDateShort(dateString: string, locale = "de-DE") {
   const date = new Date(`${dateString}T00:00:00`);
   if (Number.isNaN(date.getTime())) {

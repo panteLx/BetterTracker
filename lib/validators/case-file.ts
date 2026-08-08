@@ -19,8 +19,5 @@ export const caseFileUpdateSchema = z
     fileNumber: caseFileBaseSchema.fileNumber.optional(),
     dateOfBirth: caseFileBaseSchema.dateOfBirth,
     caseType: caseFileBaseSchema.caseType.optional(),
-    status: z
-      .enum(["needs_processing", "medizin_controlling", "queued_for_pvs", "sent_to_pvs", "done"])
-      .optional(),
   })
   .strict();

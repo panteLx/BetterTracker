@@ -20,16 +20,21 @@ export async function GET(
 
   try {
     const { searchParams } = new URL(request.url);
+    const pageParam = Number(searchParams.get("page"));
     const filters: CaseFileFilters = {
       status: (searchParams.get("status") as CaseFileFilters["status"]) || undefined,
       caseType: (searchParams.get("caseType") as CaseFileFilters["caseType"]) || undefined,
       batchId: searchParams.get("batchId") || undefined,
       q: searchParams.get("q") || undefined,
-      month: searchParams.get("month") || undefined,
+      submittedFrom: searchParams.get("submittedFrom") || undefined,
+      submittedTo: searchParams.get("submittedTo") || undefined,
+      page: Number.isFinite(pageParam) && pageParam > 0 ? pageParam : undefined,
+      sortKey: (searchParams.get("sortKey") as CaseFileFilters["sortKey"]) || undefined,
+      sortDir: (searchParams.get("sortDir") as CaseFileFilters["sortDir"]) || undefined,
     };
 
-    const items = await listCaseFiles(id, filters, access.workspaceAccess!.permission);
-    return ok({ items });
+    const data = await listCaseFiles(id, filters, access.workspaceAccess!.permission);
+    return ok(data);
   } catch (error) {
     return mapServiceError(error);
   }

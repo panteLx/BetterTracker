@@ -1,30 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Download,
-  Eye,
-  EyeOff,
-  FolderClock,
-  RotateCcw,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Download, Eye, EyeOff, FolderClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { fetchJson } from "@/lib/client-fetch";
-import { formatDateShort } from "@/lib/utils";
-import {
-  canManageTracker as canManageWorkspace,
-  canWriteTracker as canWriteWorkspace,
-} from "@/lib/auth/permissions";
+import { formatDayLabel, formatTimeShort, groupByDate } from "@/lib/utils";
+import { canManageTracker as canManageWorkspace } from "@/lib/auth/permissions";
 import type { CaseFileStatus, CaseType } from "@/components/cases/case-board-client";
 
 type PvsSubmissionBatch = {
@@ -62,12 +49,10 @@ const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
 function BatchRow({
   workspaceId,
   batch,
-  canManage,
   canHide,
 }: {
   workspaceId: string;
   batch: PvsSubmissionBatch;
-  canManage: boolean;
   canHide: boolean;
 }) {
   const t = useTranslations("Cases.batches");
@@ -76,56 +61,11 @@ function BatchRow({
   const locale = useLocale();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const detailQuery = useQuery({
     queryKey: ["batch-detail", workspaceId, batch.id],
     queryFn: () => fetchJson<BatchDetail>(`/api/case-workspaces/${workspaceId}/batches/${batch.id}`),
     enabled: expanded,
-  });
-
-  const eligibleIds = useMemo(() => {
-    if (!detailQuery.data) return [];
-    return Object.values(detailQuery.data.groupedByCaseType)
-      .flat()
-      .filter((caseFile) => caseFile.status === "sent_to_pvs")
-      .map((caseFile) => caseFile.id);
-  }, [detailQuery.data]);
-
-  function invalidateAndClear() {
-    queryClient.invalidateQueries({ queryKey: ["batch-detail", workspaceId, batch.id] });
-    queryClient.invalidateQueries({ queryKey: ["case-files", workspaceId] });
-    setSelectedIds(new Set());
-  }
-
-  const markDoneMutation = useMutation({
-    mutationFn: (caseFileIds: string[]) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-done`, {
-        method: "POST",
-        body: JSON.stringify({ caseFileIds }),
-      }),
-    onSuccess: () => {
-      invalidateAndClear();
-      toast.success(t("toast.markedDone"));
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.markDoneFailed"));
-    },
-  });
-
-  const markReturnedMutation = useMutation({
-    mutationFn: (caseFileIds: string[]) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-returned`, {
-        method: "POST",
-        body: JSON.stringify({ caseFileIds }),
-      }),
-    onSuccess: () => {
-      invalidateAndClear();
-      toast.success(t("toast.markedReturned"));
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.markReturnedFailed"));
-    },
   });
 
   const setHiddenMutation = useMutation({
@@ -145,22 +85,7 @@ function BatchRow({
     },
   });
 
-  const bulkActionPending = markDoneMutation.isPending || markReturnedMutation.isPending;
-
   const totalCount = Object.values(batch.caseTypeCounts).reduce((sum, count) => sum + count, 0);
-  const allEligibleSelected = eligibleIds.length > 0 && eligibleIds.every((id) => selectedIds.has(id));
-
-  function toggleRow(id: string) {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }
 
   return (
     <div className="rounded-xl border border-border bg-card">
@@ -176,7 +101,7 @@ function BatchRow({
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">{formatDateShort(batch.submittedOn, locale)}</p>
+            <p className="text-sm font-medium">{formatTimeShort(batch.createdAt, locale)}</p>
             <p className="text-xs text-muted-foreground">
               {t("patientCount", { count: totalCount })}
             </p>
@@ -225,43 +150,6 @@ function BatchRow({
 
       {expanded ? (
         <div className="space-y-3 border-t border-border px-3 py-3">
-          {canManage && eligibleIds.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-muted px-2.5 py-1.5">
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Checkbox
-                  checked={allEligibleSelected}
-                  onCheckedChange={() =>
-                    setSelectedIds(allEligibleSelected ? new Set() : new Set(eligibleIds))
-                  }
-                  aria-label={t("selectAllAria")}
-                />
-                {t("selectAll")}
-              </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={selectedIds.size === 0 || bulkActionPending}
-                  onClick={() => markReturnedMutation.mutate([...selectedIds])}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {markReturnedMutation.isPending
-                    ? t("markingReturned")
-                    : t("markReturned", { count: selectedIds.size })}
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={selectedIds.size === 0 || bulkActionPending}
-                  onClick={() => markDoneMutation.mutate([...selectedIds])}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {markDoneMutation.isPending
-                    ? t("markingDone")
-                    : t("markDone", { count: selectedIds.size })}
-                </Button>
-              </div>
-            </div>
-          ) : null}
           {CASE_TYPE_VALUES.filter((type) => batch.caseTypeCounts[type] > 0).map((type) => (
             <div key={type} className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
@@ -280,20 +168,9 @@ function BatchRow({
                     key={caseFile.id}
                     className="flex items-center justify-between gap-2 rounded-lg bg-surface-muted px-2.5 py-1.5 text-xs"
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      {canManage && caseFile.status === "sent_to_pvs" ? (
-                        <Checkbox
-                          checked={selectedIds.has(caseFile.id)}
-                          onCheckedChange={() => toggleRow(caseFile.id)}
-                          aria-label={t("selectRowAria", { name: caseFile.patientName })}
-                        />
-                      ) : null}
-                      <span className="truncate">{caseFile.patientName}</span>
-                    </span>
+                    <span className="truncate">{caseFile.patientName}</span>
                     <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
-                      {caseFile.status !== "sent_to_pvs" ? (
-                        <Badge variant="outline">{tStatus(caseFile.status)}</Badge>
-                      ) : null}
+                      <Badge variant="outline">{tStatus(caseFile.status)}</Badge>
                       {caseFile.fileNumber}
                     </span>
                   </li>
@@ -307,6 +184,62 @@ function BatchRow({
   );
 }
 
+function DayBatchGroup({
+  date,
+  batches,
+  workspaceId,
+  canHide,
+}: {
+  date: string;
+  batches: PvsSubmissionBatch[];
+  workspaceId: string;
+  canHide: boolean;
+}) {
+  const t = useTranslations("Cases.batches");
+  const commonT = useTranslations("Common");
+  const locale = useLocale();
+  const [expanded, setExpanded] = useState(true);
+
+  const totalCount = batches.reduce(
+    (sum, batch) => sum + Object.values(batch.caseTypeCounts).reduce((s, c) => s + c, 0),
+    0
+  );
+
+  return (
+    <section className="space-y-1.5">
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-baseline justify-between gap-3 px-1 py-1 text-left"
+      >
+        <span className="type-label flex items-center gap-1.5">
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          {formatDayLabel(date, locale, {
+            today: commonT("dayLabel.today"),
+            yesterday: commonT("dayLabel.yesterday"),
+            tomorrow: commonT("dayLabel.tomorrow"),
+          })}
+        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {batches.length > 1 ? `${t("dayGroup.batchCount", { count: batches.length })} · ` : ""}
+          {t("patientCount", { count: totalCount })}
+        </span>
+      </button>
+      {expanded ? (
+        <div className="space-y-1.5">
+          {batches.map((batch) => (
+            <BatchRow key={batch.id} workspaceId={workspaceId} batch={batch} canHide={canHide} />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function BatchesClient({ workspaceId }: { workspaceId: string }) {
   const t = useTranslations("Cases.batches");
   const [showHidden, setShowHidden] = useState(false);
@@ -316,7 +249,6 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
     queryFn: () => fetchJson<{ items: CaseWorkspace[] }>("/api/case-workspaces"),
   });
   const workspace = workspacesQuery.data?.items.find((item) => item.id === workspaceId);
-  const canManage = workspace ? canWriteWorkspace(workspace.permission) : false;
   const canHide = workspace ? canManageWorkspace(workspace.permission) : false;
 
   const batchesQuery = useQuery({
@@ -333,6 +265,8 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
 
   const batches = batchesQuery.data?.items || [];
   const hiddenBatches = hiddenBatchesQuery.data?.items || [];
+  const dayGroups = groupByDate(batches.map((batch) => ({ date: batch.submittedOn, batch })));
+  const hiddenDayGroups = groupByDate(hiddenBatches.map((batch) => ({ date: batch.submittedOn, batch })));
 
   return (
     <div className="space-y-4">
@@ -355,13 +289,13 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
         <EmptyState icon={FolderClock} title={t("empty.title")} description={t("empty.description")} />
       ) : (
         <SectionCard noPadding>
-          <div className="space-y-1.5 p-3">
-            {batches.map((batch) => (
-              <BatchRow
-                key={batch.id}
+          <div className="space-y-3 p-3">
+            {dayGroups.map((group) => (
+              <DayBatchGroup
+                key={group.date}
+                date={group.date}
+                batches={group.items.map((item) => item.batch)}
                 workspaceId={workspaceId}
-                batch={batch}
-                canManage={canManage}
                 canHide={canHide}
               />
             ))}
@@ -376,13 +310,13 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
             <p className="text-sm text-muted-foreground">{t("noHidden")}</p>
           ) : (
             <SectionCard noPadding>
-              <div className="space-y-1.5 p-3">
-                {hiddenBatches.map((batch) => (
-                  <BatchRow
-                    key={batch.id}
+              <div className="space-y-3 p-3">
+                {hiddenDayGroups.map((group) => (
+                  <DayBatchGroup
+                    key={group.date}
+                    date={group.date}
+                    batches={group.items.map((item) => item.batch)}
                     workspaceId={workspaceId}
-                    batch={batch}
-                    canManage={canManage}
                     canHide={canHide}
                   />
                 ))}

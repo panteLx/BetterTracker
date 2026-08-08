@@ -11,6 +11,7 @@ import {
 import { UserMenu } from "@/components/layout/user-menu";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
+import { CasesCommandPalette } from "@/components/cases/cases-command-palette";
 
 type CasesHeaderProps = {
   user?: {
@@ -50,6 +51,7 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
         <div className="flex shrink-0 items-center gap-1.5">
           {user ? (
             <>
+              <CasesCommandPalette workspaceId={workspaceId} />
               <ModuleSwitcher />
               <ThemeToggleButton />
               <UserMenu name={user.name} email={user.email} role={user.role} />

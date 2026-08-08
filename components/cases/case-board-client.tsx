@@ -1,23 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileStack, MessageSquare, Plus, RotateCcw, Search, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileStack,
+  ListChecks,
+  MessageSquare,
+  Plus,
+  RotateCcw,
+  Search,
+  Send,
+  Stethoscope,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Segmented, type SegmentedItem } from "@/components/ui/segmented";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { StatTile } from "@/components/ui/stat-tile";
 import {
   Table,
   TableBody,
@@ -29,6 +42,7 @@ import {
 import { CaseFileSheet } from "@/components/cases/case-file-sheet";
 import { BulkActionBar, type BulkActionMode } from "@/components/cases/bulk-action-bar";
 import { fetchJson } from "@/lib/client-fetch";
+import { downloadPdfExport } from "@/lib/download-pdf";
 import { formatDateShort, formatDateTime } from "@/lib/utils";
 import { canWriteTracker as canWriteWorkspace } from "@/lib/auth/permissions";
 
@@ -76,12 +90,22 @@ const STATUS_VALUES: CaseFileStatus[] = [
   "done",
 ];
 const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
+const PDF_EXPORTABLE_STATUSES: CaseFileStatus[] = ["queued_for_pvs", "sent_to_pvs", "done"];
+
+type SortKey = "createdAt" | "patientName" | "fileNumber" | "dateOfBirth" | "status" | "batchSubmittedOn";
+type SortDir = "asc" | "desc";
+const DEFAULT_SORT_KEY: SortKey = "createdAt";
+const DEFAULT_SORT_DIR: SortDir = "desc";
 
 type Filters = {
   status?: CaseFileStatus;
   caseType?: CaseType;
   q?: string;
-  month?: string;
+  submittedFrom?: string;
+  submittedTo?: string;
+  page?: number;
+  sortKey?: SortKey;
+  sortDir?: SortDir;
 };
 
 function buildQueryString(filters: Filters) {
@@ -89,19 +113,25 @@ function buildQueryString(filters: Filters) {
   if (filters.status) params.set("status", filters.status);
   if (filters.caseType) params.set("caseType", filters.caseType);
   if (filters.q) params.set("q", filters.q);
-  if (filters.month) params.set("month", filters.month);
+  if (filters.submittedFrom) params.set("submittedFrom", filters.submittedFrom);
+  if (filters.submittedTo) params.set("submittedTo", filters.submittedTo);
+  params.set("page", String(filters.page ?? 1));
+  params.set("sortKey", filters.sortKey ?? DEFAULT_SORT_KEY);
+  params.set("sortDir", filters.sortDir ?? DEFAULT_SORT_DIR);
   return params.toString();
 }
 
-type SortKey = "createdAt" | "patientName" | "fileNumber" | "dateOfBirth" | "status" | "batchSubmittedOn";
-type SortDir = "asc" | "desc";
+type FacetCounts<T extends string> = Record<T, number> & { all: number };
 
-function compareNullableStrings(a: string | null, b: string | null) {
-  if (a === b) return 0;
-  if (a === null) return -1;
-  if (b === null) return 1;
-  return a.localeCompare(b);
-}
+type CaseFilesResponse = {
+  items: CaseFile[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  hasMore: boolean;
+  statusCounts: FacetCounts<CaseFileStatus>;
+  caseTypeCounts: FacetCounts<CaseType>;
+};
 
 function SortableHead({
   active,
@@ -147,14 +177,20 @@ export function CaseBoardClient({
   const tCaseType = useTranslations("Cases.caseType");
   const locale = useLocale();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [statusFilter, setStatusFilter] = useState<CaseFileStatus | "all">("all");
   const [caseTypeFilter, setCaseTypeFilter] = useState<CaseType | "all">("all");
   const [search, setSearch] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [submittedFrom, setSubmittedFrom] = useState("");
+  const [submittedTo, setSubmittedTo] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
+  const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
+  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionSpansAllPages, setSelectionSpansAllPages] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCaseFile, setEditingCaseFile] = useState<CaseFile | null>(null);
 
@@ -165,53 +201,87 @@ export function CaseBoardClient({
   const workspace = workspacesQuery.data?.items.find((item) => item.id === workspaceId);
   const canCreate = workspace ? canWriteWorkspace(workspace.permission) : false;
 
-  const filters: Filters = useMemo(
-    () => ({
-      status: statusFilter === "all" ? undefined : statusFilter,
-      caseType: caseTypeFilter === "all" ? undefined : caseTypeFilter,
-      q: search.trim() || undefined,
-      month: monthFilter || undefined,
-    }),
-    [statusFilter, caseTypeFilter, search, monthFilter]
-  );
+  function openCreateSheet() {
+    setEditingCaseFile(null);
+    setSheetOpen(true);
+  }
 
-  const caseFilesQuery = useQuery({
-    queryKey: ["case-files", workspaceId, filters],
-    queryFn: () =>
-      fetchJson<{ items: CaseFile[] }>(
-        `/api/case-workspaces/${workspaceId}/case-files?${buildQueryString(filters)}`
-      ),
-  });
-  const caseFiles = useMemo(() => caseFilesQuery.data?.items || [], [caseFilesQuery.data]);
+  // Lets the Ctrl+K command palette (which lives in the shared cases header,
+  // outside this component) trigger case-file creation by navigating here
+  // with ?new=case — same idea as the main app's command palette deep-linking
+  // into /transactions. Adjusting state during render (rather than in an
+  // effect) per https://react.dev/learn/you-might-not-need-an-effect; the
+  // actual write is still gated server-side by the create-access guard, so
+  // it's fine to open the sheet here before `canCreate` has loaded.
+  const newParam = searchParams.get("new");
+  const [seenNewParam, setSeenNewParam] = useState(newParam);
+  if (newParam !== seenNewParam) {
+    setSeenNewParam(newParam);
+    if (newParam === "case") {
+      openCreateSheet();
+    }
+  }
 
-  const sortedCaseFiles = useMemo(() => {
-    const list = [...caseFiles];
-    list.sort((a, b) => {
-      let cmp = 0;
-      switch (sortKey) {
-        case "patientName":
-          cmp = a.patientName.localeCompare(b.patientName, locale);
-          break;
-        case "fileNumber":
-          cmp = a.fileNumber.localeCompare(b.fileNumber, locale);
-          break;
-        case "dateOfBirth":
-          cmp = compareNullableStrings(a.dateOfBirth, b.dateOfBirth);
-          break;
-        case "status":
-          cmp = tStatus(a.status).localeCompare(tStatus(b.status), locale);
-          break;
-        case "batchSubmittedOn":
-          cmp = compareNullableStrings(a.batchSubmittedOn, b.batchSubmittedOn);
-          break;
-        case "createdAt":
-        default:
-          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return list;
-  }, [caseFiles, sortKey, sortDir, locale, tStatus]);
+  useEffect(() => {
+    if (newParam === "case") {
+      router.replace(pathname, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newParam]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "n" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      if (!canCreate) return;
+      event.preventDefault();
+      openCreateSheet();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [canCreate]);
+
+  function resetPageAnd<T>(setter: (value: T) => void) {
+    return (value: T) => {
+      setter(value);
+      setPage(1);
+    };
+  }
+
+  function handleStatusFilterChange(value: CaseFileStatus | "all") {
+    setStatusFilter(value);
+    setPage(1);
+    // A wide "select all matching" selection is scoped to one status; once
+    // the filter moves off that status the selection's meaning no longer
+    // holds, so drop it rather than carry it forward silently.
+    setSelectedIds(new Set());
+    setSelectionSpansAllPages(false);
+  }
+
+  const handleCaseTypeFilterChange = resetPageAnd(setCaseTypeFilter);
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function handleSubmittedFromChange(value: string) {
+    setSubmittedFrom(value);
+    setPage(1);
+  }
+
+  function handleSubmittedToChange(value: string) {
+    setSubmittedTo(value);
+    setPage(1);
+  }
+
+  function clearSubmittedRange() {
+    setSubmittedFrom("");
+    setSubmittedTo("");
+    setPage(1);
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -220,8 +290,50 @@ export function CaseBoardClient({
       setSortKey(key);
       setSortDir("asc");
     }
+    setPage(1);
   }
 
+  const filters: Filters = useMemo(
+    () => ({
+      status: statusFilter === "all" ? undefined : statusFilter,
+      caseType: caseTypeFilter === "all" ? undefined : caseTypeFilter,
+      q: search.trim() || undefined,
+      submittedFrom: submittedFrom || undefined,
+      submittedTo: submittedTo || undefined,
+      page: page > 1 ? page : undefined,
+      sortKey: sortKey !== DEFAULT_SORT_KEY ? sortKey : undefined,
+      sortDir: sortKey !== DEFAULT_SORT_KEY || sortDir !== DEFAULT_SORT_DIR ? sortDir : undefined,
+    }),
+    [statusFilter, caseTypeFilter, search, submittedFrom, submittedTo, page, sortKey, sortDir]
+  );
+
+  const caseFilesQuery = useQuery({
+    queryKey: ["case-files", workspaceId, filters],
+    queryFn: () =>
+      fetchJson<CaseFilesResponse>(
+        `/api/case-workspaces/${workspaceId}/case-files?${buildQueryString(filters)}`
+      ),
+  });
+  const caseFiles = useMemo(() => caseFilesQuery.data?.items || [], [caseFilesQuery.data]);
+  const totalCount = caseFilesQuery.data?.totalCount ?? 0;
+  const pageSize = caseFilesQuery.data?.pageSize ?? 1;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const emptyStatusCounts = useMemo(
+    () =>
+      ({ all: 0, ...Object.fromEntries(STATUS_VALUES.map((value) => [value, 0])) }) as FacetCounts<CaseFileStatus>,
+    []
+  );
+  const emptyCaseTypeCounts = useMemo(
+    () =>
+      ({ all: 0, ...Object.fromEntries(CASE_TYPE_VALUES.map((value) => [value, 0])) }) as FacetCounts<CaseType>,
+    []
+  );
+  const statusCounts = caseFilesQuery.data?.statusCounts ?? emptyStatusCounts;
+  const caseTypeCounts = caseFilesQuery.data?.caseTypeCounts ?? emptyCaseTypeCounts;
+
+  // "Select all" still targets the workflow-actionable rows (advance/queue/
+  // send/etc.) — "done" rows are still selectable individually (for PDF
+  // export below), just not swept in by the header checkbox.
   const eligibleIds = useMemo(
     () => caseFiles.filter((item) => canCreate && item.status !== "done").map((item) => item.id),
     [caseFiles, canCreate]
@@ -232,34 +344,80 @@ export function CaseBoardClient({
     [caseFiles, selectedIds]
   );
 
+  const selectedExportableCaseFiles = useMemo(
+    () => selectedCaseFiles.filter((item) => PDF_EXPORTABLE_STATUSES.includes(item.status)),
+    [selectedCaseFiles]
+  );
+
+  // A wide selection ("all N matching") only ever holds ids for the single
+  // active status filter, so bulk mode/exportability can be read straight
+  // off that filter instead of per-row lookups — which only exist for
+  // whichever page happens to be loaded.
+  const exportableCount = selectionSpansAllPages
+    ? statusFilter !== "all" && PDF_EXPORTABLE_STATUSES.includes(statusFilter)
+      ? selectedIds.size
+      : 0
+    : selectedExportableCaseFiles.length;
+
   const bulkMode: BulkActionMode | null = useMemo(() => {
-    if (selectedCaseFiles.length === 0) return null;
+    if (selectedIds.size === 0) return null;
+    if (selectionSpansAllPages) {
+      if (statusFilter === "needs_processing") return "advance";
+      if (statusFilter === "medizin_controlling") return "medizinControlling";
+      if (statusFilter === "queued_for_pvs") return "queuedForPvs";
+      if (statusFilter === "sent_to_pvs") return "sentToPvs";
+      return "mixed";
+    }
     const statuses = new Set(selectedCaseFiles.map((item) => item.status));
     if (statuses.size > 1) return "mixed";
-    const status = selectedCaseFiles[0].status;
+    const status = selectedCaseFiles[0]?.status;
     if (status === "needs_processing") return "advance";
     if (status === "medizin_controlling") return "medizinControlling";
     if (status === "queued_for_pvs") return "queuedForPvs";
     if (status === "sent_to_pvs") return "sentToPvs";
     return "mixed";
-  }, [selectedCaseFiles]);
+  }, [selectedIds, selectionSpansAllPages, statusFilter, selectedCaseFiles]);
 
   function invalidateAndClear() {
     queryClient.invalidateQueries({ queryKey: ["case-files", workspaceId] });
     setSelectedIds(new Set());
+    setSelectionSpansAllPages(false);
   }
 
-  const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: CaseFileStatus }) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["case-files", workspaceId] });
+  const selectAllMatchingMutation = useMutation({
+    mutationFn: () => {
+      const params = new URLSearchParams();
+      if (filters.status) params.set("status", filters.status);
+      if (filters.caseType) params.set("caseType", filters.caseType);
+      if (filters.q) params.set("q", filters.q);
+      if (filters.submittedFrom) params.set("submittedFrom", filters.submittedFrom);
+      if (filters.submittedTo) params.set("submittedTo", filters.submittedTo);
+      return fetchJson<{ ids: string[] }>(
+        `/api/case-workspaces/${workspaceId}/case-files/ids?${params.toString()}`
+      );
+    },
+    onSuccess: (data) => {
+      setSelectedIds(new Set(data.ids));
+      setSelectionSpansAllPages(true);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.statusUpdateFailed"));
+      toast.error(error instanceof Error ? error.message : t("toast.selectAllFailed"));
+    },
+  });
+
+  const exportPdfMutation = useMutation({
+    mutationFn: (caseFileIds: string[]) =>
+      downloadPdfExport(
+        `/api/case-workspaces/${workspaceId}/case-files/pdf`,
+        { caseFileIds },
+        "Ausgewaehlte_Akten.pdf"
+      ),
+    onSuccess: () => {
+      setSelectedIds(new Set());
+      setSelectionSpansAllPages(false);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.exportFailed"));
     },
   });
 
@@ -345,20 +503,45 @@ export function CaseBoardClient({
     markReturnedMutation.isPending ||
     markDoneMutation.isPending;
 
+  function withCount(label: string, count: number) {
+    return (
+      <>
+        {label}
+        <span className="text-[10px] tabular-nums text-muted-foreground/70">{count}</span>
+      </>
+    );
+  }
+
   const statusFilterItems: SegmentedItem<CaseFileStatus | "all">[] = [
-    { value: "all", label: tStatus("all") },
-    ...STATUS_VALUES.map((value) => ({ value, label: tStatus(value) })),
+    { value: "all", label: withCount(tStatus("all"), statusCounts.all) },
+    ...STATUS_VALUES.map((value) => ({
+      value,
+      label: withCount(tStatus(value), statusCounts[value]),
+    })),
   ];
 
   const caseTypeFilterItems: SegmentedItem<CaseType | "all">[] = [
-    { value: "all", label: tCaseType("all") },
-    ...CASE_TYPE_VALUES.map((value) => ({ value, label: tCaseType(value) })),
+    { value: "all", label: withCount(tCaseType("all"), caseTypeCounts.all) },
+    ...CASE_TYPE_VALUES.map((value) => ({
+      value,
+      label: withCount(tCaseType(value), caseTypeCounts[value]),
+    })),
   ];
 
   const allEligibleSelected = eligibleIds.length > 0 && eligibleIds.every((id) => selectedIds.has(id));
+  // Bulk actions need every row to share one status, so the cross-page
+  // shortcut only makes sense once the board is already filtered down to a
+  // single status — offering it under "all" would silently mix statuses.
+  const canOfferSelectAllMatching =
+    canCreate &&
+    statusFilter !== "all" &&
+    allEligibleSelected &&
+    !selectionSpansAllPages &&
+    totalCount > eligibleIds.length;
 
   function toggleSelectAll() {
     setSelectedIds(allEligibleSelected ? new Set() : new Set(eligibleIds));
+    setSelectionSpansAllPages(false);
   }
 
   function toggleRow(id: string) {
@@ -385,18 +568,30 @@ export function CaseBoardClient({
           ) : null}
         </div>
         {canCreate ? (
-          <Button
-            size="sm"
-            shape="pill"
-            onClick={() => {
-              setEditingCaseFile(null);
-              setSheetOpen(true);
-            }}
-          >
+          <Button size="sm" shape="pill" onClick={openCreateSheet}>
             <Plus className="h-4 w-4" />
             {t("newCaseFile")}
           </Button>
         ) : null}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <StatTile
+          label={t("stats.total")}
+          tone="inverse"
+          icon={FileStack}
+          value={statusCounts.all}
+          className="col-span-2 sm:col-span-1"
+        />
+        <StatTile label={tStatus("needs_processing")} icon={Clock} value={statusCounts.needs_processing} />
+        <StatTile
+          label={tStatus("medizin_controlling")}
+          icon={Stethoscope}
+          value={statusCounts.medizin_controlling}
+        />
+        <StatTile label={tStatus("queued_for_pvs")} icon={ListChecks} value={statusCounts.queued_for_pvs} />
+        <StatTile label={tStatus("sent_to_pvs")} icon={Send} value={statusCounts.sent_to_pvs} />
+        <StatTile label={tStatus("done")} icon={CheckCircle2} value={statusCounts.done} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -405,26 +600,34 @@ export function CaseBoardClient({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder={t("searchPlaceholder")}
               className="pl-9"
             />
           </div>
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="month"
-              value={monthFilter}
-              onChange={(event) => setMonthFilter(event.target.value)}
-              aria-label={t("monthFilterLabel")}
-              className="sm:w-44"
+          <div className="flex min-w-56 items-center gap-1.5 sm:flex-none">
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={submittedFrom}
+              onChange={handleSubmittedFromChange}
+              placeholder={t("submittedFromPlaceholder")}
+              aria-label={t("submittedFromAriaLabel")}
             />
-            {monthFilter ? (
+            <span className="text-muted-foreground">–</span>
+            <DatePicker
+              className="min-w-0 flex-1 sm:w-36 sm:flex-none"
+              value={submittedTo}
+              onChange={handleSubmittedToChange}
+              placeholder={t("submittedToPlaceholder")}
+              aria-label={t("submittedToAriaLabel")}
+            />
+            {submittedFrom || submittedTo ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label={t("clearMonthFilter")}
-                onClick={() => setMonthFilter("")}
+                aria-label={t("clearSubmittedRange")}
+                onClick={clearSubmittedRange}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -435,17 +638,37 @@ export function CaseBoardClient({
           label={t("statusFilterLabel")}
           items={statusFilterItems}
           value={statusFilter}
-          onValueChange={setStatusFilter}
+          onValueChange={handleStatusFilterChange}
           size="sm"
         />
         <Segmented
           label={t("caseTypeFilterLabel")}
           items={caseTypeFilterItems}
           value={caseTypeFilter}
-          onValueChange={setCaseTypeFilter}
+          onValueChange={handleCaseTypeFilterChange}
           size="sm"
         />
       </div>
+
+      {canOfferSelectAllMatching ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-muted px-3 py-2 text-xs">
+          <span className="text-muted-foreground">
+            {t("selectAllBanner.pageSelected", { count: eligibleIds.length })}
+          </span>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0"
+            disabled={selectAllMatchingMutation.isPending}
+            onClick={() => selectAllMatchingMutation.mutate()}
+          >
+            {selectAllMatchingMutation.isPending
+              ? t("selectAllBanner.loading")
+              : t("selectAllBanner.selectAll", { count: totalCount })}
+          </Button>
+        </div>
+      ) : null}
 
       {!caseFilesQuery.isLoading && caseFiles.length === 0 ? (
         <EmptyState
@@ -454,7 +677,7 @@ export function CaseBoardClient({
           description={t("empty.description")}
           action={
             canCreate ? (
-              <Button onClick={() => setSheetOpen(true)}>
+              <Button onClick={openCreateSheet}>
                 <Plus className="h-4 w-4" />
                 {t("newCaseFile")}
               </Button>
@@ -516,7 +739,7 @@ export function CaseBoardClient({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedCaseFiles.map((caseFile) => (
+            {caseFiles.map((caseFile) => (
               <TableRow
                 key={caseFile.id}
                 className="cursor-pointer"
@@ -530,7 +753,6 @@ export function CaseBoardClient({
                     <Checkbox
                       checked={selectedIds.has(caseFile.id)}
                       onCheckedChange={() => toggleRow(caseFile.id)}
-                      disabled={caseFile.status === "done"}
                       aria-label={t("selectRowAria", { name: caseFile.patientName })}
                     />
                   ) : null}
@@ -543,39 +765,9 @@ export function CaseBoardClient({
                 <TableCell>
                   <Badge variant="outline">{tCaseType(caseFile.caseType)}</Badge>
                 </TableCell>
-                <TableCell onClick={(event) => event.stopPropagation()}>
+                <TableCell>
                   <div className="flex items-center gap-1.5">
-                    <Select
-                      value={caseFile.status}
-                      onValueChange={(value) => {
-                        if (value === "sent_to_pvs" && caseFile.status !== "sent_to_pvs") {
-                          sendToPvsMutation.mutate([caseFile.id]);
-                          return;
-                        }
-                        statusMutation.mutate({ id: caseFile.id, status: value as CaseFileStatus });
-                      }}
-                      disabled={!caseFile.canEdit}
-                    >
-                      <SelectTrigger className="h-8 w-44 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_VALUES.map((value) => (
-                          <SelectItem
-                            key={value}
-                            value={value}
-                            disabled={
-                              value === "sent_to_pvs" &&
-                              caseFile.status !== "medizin_controlling" &&
-                              caseFile.status !== "queued_for_pvs" &&
-                              caseFile.status !== "sent_to_pvs"
-                            }
-                          >
-                            {tStatus(value)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Badge variant="outline">{tStatus(caseFile.status)}</Badge>
                     {caseFile.returnCount > 0 ? (
                       <Badge
                         variant="warning"
@@ -617,16 +809,59 @@ export function CaseBoardClient({
         </Table>
       )}
 
+      {caseFiles.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-1">
+          <span className="font-subtext text-xs text-muted-foreground">
+            {t("pagination.summary", { count: totalCount })}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {t("pagination.pageOf", { page, totalPages })}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              shape="pill"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page === 1 || caseFilesQuery.isFetching}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {t("pagination.back")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              shape="pill"
+              onClick={() => setPage((current) => (page < totalPages ? current + 1 : current))}
+              disabled={page >= totalPages || caseFilesQuery.isFetching}
+            >
+              {t("pagination.next")}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <BulkActionBar
         selectedCount={selectedIds.size}
         mode={bulkMode}
         isPending={bulkActionPending}
-        onClear={() => setSelectedIds(new Set())}
+        onClear={() => {
+          setSelectedIds(new Set());
+          setSelectionSpansAllPages(false);
+        }}
         onAdvance={() => advanceMutation.mutate([...selectedIds])}
         onQueueForPvs={() => queueForPvsMutation.mutate([...selectedIds])}
         onSendToPvs={() => sendToPvsMutation.mutate([...selectedIds])}
         onMarkReturned={() => markReturnedMutation.mutate([...selectedIds])}
         onMarkDone={() => markDoneMutation.mutate([...selectedIds])}
+        exportableCount={exportableCount}
+        isExporting={exportPdfMutation.isPending}
+        onExportPdf={() =>
+          exportPdfMutation.mutate(
+            selectionSpansAllPages ? [...selectedIds] : selectedExportableCaseFiles.map((item) => item.id)
+          )
+        }
       />
 
       <CaseFileSheet

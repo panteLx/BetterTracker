@@ -2,6 +2,7 @@ import { requireCaseWorkspaceReadAccess } from "@/lib/auth/case-workspace-guards
 import { getCaseWorkspaceById } from "@/lib/case-workspaces";
 import { getPvsSubmissionBatchDetail } from "@/lib/services/pvs-submission-service";
 import { renderPvsSubmissionPdf } from "@/lib/services/pdf/render-pvs-submission-pdf";
+import { CASE_TYPE_LABELS } from "@/lib/services/pdf/pvs-submission-document";
 import { badRequest, notFound, mapServiceError } from "@/lib/http";
 import type { CaseType } from "@/lib/services/case-file-service";
 
@@ -33,12 +34,17 @@ export async function GET(
     const buffer = await renderPvsSubmissionPdf({
       workspaceName: workspace.name,
       submittedOn: detail.batch.submittedOn,
-      caseType: caseType as CaseType,
-      caseFiles: caseFiles.map((caseFile) => ({
-        patientName: caseFile.patientName,
-        fileNumber: caseFile.fileNumber,
-        dateOfBirth: caseFile.dateOfBirth,
-      })),
+      title: `PVS-Übermittlung — ${CASE_TYPE_LABELS[caseType as CaseType]}`,
+      sections: [
+        {
+          caseType: caseType as CaseType,
+          caseFiles: caseFiles.map((caseFile) => ({
+            patientName: caseFile.patientName,
+            fileNumber: caseFile.fileNumber,
+            dateOfBirth: caseFile.dateOfBirth,
+          })),
+        },
+      ],
     });
 
     return new Response(new Uint8Array(buffer), {

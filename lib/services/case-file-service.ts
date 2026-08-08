@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, like, lt, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   caseFileComments,
@@ -20,14 +20,38 @@ export type CaseFileStatus =
   | "done";
 export type CaseType = "ambulant" | "stationaer" | "konsil";
 
+export type CaseFileSortKey =
+  | "createdAt"
+  | "patientName"
+  | "fileNumber"
+  | "dateOfBirth"
+  | "status"
+  | "batchSubmittedOn";
+export type CaseFileSortDir = "asc" | "desc";
+
 export type CaseFileFilters = {
   status?: CaseFileStatus;
   caseType?: CaseType;
   batchId?: string;
   q?: string;
-  /** "YYYY-MM" — filters by the month the case file was created. */
-  month?: string;
+  /** "YYYY-MM-DD" — inclusive range filter on the PVS batch's submission date.
+   * Case files that were never submitted (no batch) never match either bound. */
+  submittedFrom?: string;
+  submittedTo?: string;
+  page?: number;
+  sortKey?: CaseFileSortKey;
+  sortDir?: CaseFileSortDir;
 };
+
+const STATUS_VALUES: CaseFileStatus[] = [
+  "needs_processing",
+  "medizin_controlling",
+  "queued_for_pvs",
+  "sent_to_pvs",
+  "done",
+];
+const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
+const PAGE_SIZE = 25;
 
 type CaseFileRow = typeof caseFiles.$inferSelect & {
   commentCount: number;
@@ -49,17 +73,17 @@ function hydrate(row: CaseFileRow, permission: TrackerPermission | null): Hydrat
   };
 }
 
-export async function listCaseFiles(
+function buildConditions(
   workspaceId: string,
   filters: CaseFileFilters,
-  permission: TrackerPermission | null
+  options: { skipStatus?: boolean; skipCaseType?: boolean } = {}
 ) {
   const conditions = [eq(caseFiles.workspaceId, workspaceId)];
 
-  if (filters.status) {
+  if (filters.status && !options.skipStatus) {
     conditions.push(eq(caseFiles.status, filters.status));
   }
-  if (filters.caseType) {
+  if (filters.caseType && !options.skipCaseType) {
     conditions.push(eq(caseFiles.caseType, filters.caseType));
   }
   if (filters.batchId) {
@@ -71,16 +95,72 @@ export async function listCaseFiles(
       or(like(caseFiles.patientName, matcher), like(caseFiles.fileNumber, matcher))!
     );
   }
-  if (filters.month) {
-    const match = /^(\d{4})-(\d{2})$/.exec(filters.month);
-    if (match) {
-      const year = Number(match[1]);
-      const month = Number(match[2]);
-      const monthStart = new Date(year, month - 1, 1);
-      const monthEnd = new Date(year, month, 1);
-      conditions.push(gte(caseFiles.createdAt, monthStart), lt(caseFiles.createdAt, monthEnd));
-    }
+  if (filters.submittedFrom) {
+    conditions.push(gte(pvsSubmissionBatches.submittedOn, filters.submittedFrom));
   }
+  if (filters.submittedTo) {
+    conditions.push(lte(pvsSubmissionBatches.submittedOn, filters.submittedTo));
+  }
+
+  return conditions;
+}
+
+function resolveOrderBy(sortKey: CaseFileSortKey = "createdAt", sortDir: CaseFileSortDir = "desc") {
+  const dir = sortDir === "asc" ? asc : desc;
+  switch (sortKey) {
+    case "patientName":
+      return dir(caseFiles.patientName);
+    case "fileNumber":
+      return dir(caseFiles.fileNumber);
+    case "dateOfBirth":
+      return dir(caseFiles.dateOfBirth);
+    case "status":
+      // Business-process order (intake → done) reads better than an alphabetical one.
+      return dir(sql`case ${caseFiles.status}
+        when 'needs_processing' then 0
+        when 'medizin_controlling' then 1
+        when 'queued_for_pvs' then 2
+        when 'sent_to_pvs' then 3
+        when 'done' then 4
+        else 5 end`);
+    case "batchSubmittedOn":
+      return dir(pvsSubmissionBatches.submittedOn);
+    case "createdAt":
+    default:
+      return dir(caseFiles.createdAt);
+  }
+}
+
+async function countByGroup<T extends string>(
+  workspaceId: string,
+  filters: CaseFileFilters,
+  column: typeof caseFiles.status | typeof caseFiles.caseType,
+  values: T[],
+  options: { skipStatus?: boolean; skipCaseType?: boolean }
+) {
+  const rows = await db
+    .select({ group: column, value: count() })
+    .from(caseFiles)
+    .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
+    .where(and(...buildConditions(workspaceId, filters, options)))
+    .groupBy(column);
+
+  const counts = Object.fromEntries(values.map((value) => [value, 0])) as Record<T, number>;
+  for (const row of rows) {
+    counts[row.group as T] = row.value;
+  }
+  const all = values.reduce((sum, value) => sum + counts[value], 0);
+  return { ...counts, all };
+}
+
+export async function listCaseFiles(
+  workspaceId: string,
+  filters: CaseFileFilters,
+  permission: TrackerPermission | null
+) {
+  const page = filters.page && filters.page > 0 ? Math.floor(filters.page) : 1;
+  const offset = (page - 1) * PAGE_SIZE;
+  const conditions = buildConditions(workspaceId, filters);
 
   const rows = await db
     .select({
@@ -104,9 +184,81 @@ export async function listCaseFiles(
     .from(caseFiles)
     .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
     .where(and(...conditions))
-    .orderBy(desc(caseFiles.createdAt));
+    .orderBy(resolveOrderBy(filters.sortKey, filters.sortDir))
+    .limit(PAGE_SIZE)
+    .offset(offset);
 
-  return rows.map((row) => hydrate(row, permission));
+  const items = rows.map((row) => hydrate(row, permission));
+
+  const [countRow] = await db
+    .select({ value: count() })
+    .from(caseFiles)
+    .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
+    .where(and(...conditions));
+  const totalCount = countRow?.value ?? 0;
+
+  const [statusCounts, caseTypeCounts] = await Promise.all([
+    countByGroup(workspaceId, filters, caseFiles.status, STATUS_VALUES, { skipStatus: true }),
+    countByGroup(workspaceId, filters, caseFiles.caseType, CASE_TYPE_VALUES, { skipCaseType: true }),
+  ]);
+
+  return {
+    items,
+    page,
+    pageSize: PAGE_SIZE,
+    totalCount,
+    hasMore: totalCount > offset + items.length,
+    statusCounts,
+    caseTypeCounts,
+  };
+}
+
+/** Cap for listCaseFileIds — comfortably above any realistic single-batch
+ * or single-return-cycle case load, just a safety bound against runaway
+ * "select all matching" bulk actions. */
+const SELECT_ALL_IDS_CAP = 2000;
+
+/**
+ * Fetches every case file id matching the given filters, unpaginated (up to
+ * a safety cap), for the board's "select all N matching" bulk-selection
+ * action — the normal listCaseFiles page is capped at PAGE_SIZE rows, which
+ * isn't enough once a batch/return-cycle spans more than one page.
+ */
+export async function listCaseFileIds(workspaceId: string, filters: CaseFileFilters) {
+  const conditions = buildConditions(workspaceId, filters);
+
+  const rows = await db
+    .select({ id: caseFiles.id })
+    .from(caseFiles)
+    .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
+    .where(and(...conditions))
+    .orderBy(resolveOrderBy(filters.sortKey, filters.sortDir))
+    .limit(SELECT_ALL_IDS_CAP);
+
+  return rows.map((row) => row.id);
+}
+
+/**
+ * Fetches an arbitrary, manually picked set of case files by id (scoped to
+ * the workspace) for the "export exactly what I selected" PDF flow.
+ */
+export async function listCaseFilesByIds(workspaceId: string, caseFileIds: string[]) {
+  const uniqueIds = [...new Set(caseFileIds)];
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  return db
+    .select({
+      id: caseFiles.id,
+      patientName: caseFiles.patientName,
+      fileNumber: caseFiles.fileNumber,
+      dateOfBirth: caseFiles.dateOfBirth,
+      caseType: caseFiles.caseType,
+    })
+    .from(caseFiles)
+    .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)))
+    .orderBy(asc(caseFiles.patientName));
 }
 
 async function assertFileNumberAvailable(
@@ -181,11 +333,6 @@ export async function updateCaseFile(
   if (data.fileNumber && data.fileNumber !== existing.fileNumber) {
     await assertFileNumberAvailable(workspaceId, data.fileNumber, caseFileId);
   }
-  if (data.status === "sent_to_pvs" && existing.status !== "sent_to_pvs") {
-    throw new ValidationError(
-      "Case files can only be sent to PVS via the PVS submission action"
-    );
-  }
 
   const [updated] = await db
     .update(caseFiles)
@@ -194,7 +341,6 @@ export async function updateCaseFile(
       fileNumber: data.fileNumber,
       dateOfBirth: data.dateOfBirth === undefined ? undefined : data.dateOfBirth,
       caseType: data.caseType,
-      status: data.status,
       updatedAt: new Date(),
     })
     .where(eq(caseFiles.id, caseFileId))

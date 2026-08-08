@@ -46,8 +46,11 @@
     "searchPlaceholder": "Search patient or file number…",
     "statusFilterLabel": "Filter by status",
     "caseTypeFilterLabel": "Filter by case type",
-    "monthFilterLabel": "Filter by month",
-    "clearMonthFilter": "Clear month filter",
+    "submittedFromPlaceholder": "Submitted from",
+    "submittedToPlaceholder": "Submitted until",
+    "submittedFromAriaLabel": "Submitted from date",
+    "submittedToAriaLabel": "Submitted until date",
+    "clearSubmittedRange": "Clear submitted date range",
     "selectAllAria": "Select all eligible case files",
     "selectRowAria": "Select case file for {name}",
     "empty": {
@@ -79,10 +82,11 @@
       "markingReturned": "Marking…",
       "markDone": "Mark as done",
       "markingDone": "Marking…",
-      "mixedHint": "Please select case files with the same status"
+      "mixedHint": "Please select case files with the same status",
+      "exportPdf": "Create PDF ({count})",
+      "exportingPdf": "Creating…"
     },
     "toast": {
-      "statusUpdateFailed": "Could not update status.",
       "advanced": "Sent to medical controlling.",
       "advanceFailed": "Could not send to medical controlling.",
       "queuedForPvs": "Marked as queued for PVS.",
@@ -92,7 +96,23 @@
       "markedReturned": "Marked as returned.",
       "markReturnedFailed": "Could not mark as returned.",
       "markedDone": "Marked as done.",
-      "markDoneFailed": "Could not mark as done."
+      "markDoneFailed": "Could not mark as done.",
+      "exportFailed": "Could not create PDF.",
+      "selectAllFailed": "Could not load selection."
+    },
+    "pagination": {
+      "summary": "{count} case files",
+      "pageOf": "Page {page} of {totalPages}",
+      "back": "Back",
+      "next": "Next"
+    },
+    "stats": {
+      "total": "Total"
+    },
+    "selectAllBanner": {
+      "pageSelected": "{count} selected on this page.",
+      "selectAll": "Select all {count} matching case files",
+      "loading": "Loading…"
     }
   },
   "caseFileForm": {
@@ -139,14 +159,10 @@
       "description": "Once you send case files to PVS, they'll appear here grouped by date."
     },
     "patientCount": "{count} patient(s)",
+    "dayGroup": {
+      "batchCount": "{count} submission(s)"
+    },
     "downloadPdf": "Download PDF",
-    "selectAll": "Select all",
-    "selectAllAria": "Select all case files eligible to be marked as done or returned",
-    "selectRowAria": "Select case file for {name}",
-    "markDone": "Mark as done ({count})",
-    "markingDone": "Marking…",
-    "markReturned": "Mark as returned ({count})",
-    "markingReturned": "Marking…",
     "hideBatch": "Hide submission",
     "unhideBatch": "Unhide submission",
     "showHiddenToggle": "Show hidden submissions",
@@ -157,10 +173,6 @@
       "hideBatch": "Hide this submission? The case files stay and keep their current status, but the submission will no longer be listed here."
     },
     "toast": {
-      "markedDone": "Marked as done.",
-      "markDoneFailed": "Could not mark as done.",
-      "markedReturned": "Marked as returned.",
-      "markReturnedFailed": "Could not mark as returned.",
       "hidden": "Submission hidden.",
       "hideFailed": "Could not hide submission.",
       "unhidden": "Submission unhidden.",
@@ -204,6 +216,24 @@
       "memberUpdateFailed": "Could not update permission.",
       "memberRemoved": "Member removed.",
       "memberRemoveFailed": "Could not remove member."
+    }
+  },
+  "commandPalette": {
+    "openAria": "Open command palette",
+    "search": "Search",
+    "title": "Command Palette",
+    "description": "Search for a command to run...",
+    "placeholder": "Search pages or actions…",
+    "noResults": "No results found.",
+    "groupNavigation": "Navigation",
+    "groupActions": "Actions",
+    "newCaseFile": "New case file",
+    "newWorkspace": "New workspace",
+    "routes": {
+      "allWorkspaces": "All case workspaces",
+      "board": "Overview",
+      "batches": "PVS submissions",
+      "settings": "Settings"
     }
   }
 }
