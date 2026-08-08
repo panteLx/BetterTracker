@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowRightCircle, CheckCircle2, Clock, RotateCcw, Send, X } from "lucide-react";
+import { ArrowRightCircle, CheckCircle2, Clock, FileDown, RotateCcw, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type BulkActionMode =
@@ -21,6 +21,10 @@ type BulkActionBarProps = {
   onSendToPvs: () => void;
   onMarkReturned: () => void;
   onMarkDone: () => void;
+  /** Count of the selection eligible for the manual PDF export (0 hides the button). */
+  exportableCount?: number;
+  isExporting?: boolean;
+  onExportPdf?: () => void;
 };
 
 export function BulkActionBar({
@@ -33,6 +37,9 @@ export function BulkActionBar({
   onSendToPvs,
   onMarkReturned,
   onMarkDone,
+  exportableCount = 0,
+  isExporting = false,
+  onExportPdf,
 }: BulkActionBarProps) {
   const t = useTranslations("Cases.board.bulkBar");
 
@@ -53,6 +60,12 @@ export function BulkActionBar({
           <X className="h-4 w-4" />
           {t("clear")}
         </Button>
+        {exportableCount > 0 && onExportPdf ? (
+          <Button variant="outline" size="sm" onClick={onExportPdf} disabled={isExporting}>
+            <FileDown className="h-4 w-4" />
+            {isExporting ? t("exportingPdf") : t("exportPdf", { count: exportableCount })}
+          </Button>
+        ) : null}
         {mode === "advance" ? (
           <Button size="sm" onClick={onAdvance} disabled={isPending}>
             <ArrowRightCircle className="h-4 w-4" />

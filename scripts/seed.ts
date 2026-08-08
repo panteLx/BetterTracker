@@ -1,13 +1,19 @@
 import "dotenv/config";
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, inArray, like } from "drizzle-orm";
 import { auth } from "../lib/auth";
 import { ensureBootstrapForUser } from "../lib/bootstrap";
 import { addInterval } from "../lib/date";
 import { db, sqlite } from "../lib/db";
 import {
   appSettings,
+  caseFileComments,
+  caseFiles,
+  caseFileSubmissions,
+  caseWorkspaceMembers,
+  caseWorkspaces,
   categories,
   payees,
+  pvsSubmissionBatches,
   schedules,
   trackerMembers,
   trackers,
@@ -19,6 +25,16 @@ import { slugify, toDateInputValue } from "../lib/utils";
 const SEED_TAG = "[seed-demo-v2]";
 const DEFAULT_PASSWORD = "demo12345";
 const TRANSACTION_BATCH_SIZE = 200;
+
+/** File-number prefix that marks a case file as seed-generated, and doubles
+ * as the idempotency check (skip generating more if any are already there). */
+const CASE_FILE_SEED_TAG = "SEED-DEMO";
+const MAX_CASE_FILE_SEED_COUNT = 500;
+/** Override with `SEED_CASE_FILE_COUNT=350 npm run seed`, capped at 500. */
+const CASE_FILE_SEED_COUNT = Math.min(
+  MAX_CASE_FILE_SEED_COUNT,
+  Math.max(0, Number(process.env.SEED_CASE_FILE_COUNT) || 200)
+);
 
 type TrackerPermission = "owner" | "admin" | "write" | "read";
 type CategoryType = "expense" | "income" | "transfer";
@@ -112,6 +128,21 @@ type SeedTrackerConfig = {
   fixedTransactions?: FixedTransactionConfig[];
 };
 
+type CaseFileCaseType = "ambulant" | "stationaer" | "konsil";
+type CaseFileStatus =
+  | "needs_processing"
+  | "medizin_controlling"
+  | "queued_for_pvs"
+  | "sent_to_pvs"
+  | "done";
+
+type SeedCaseWorkspaceConfig = {
+  name: string;
+  description: string;
+  color: string;
+  memberships: Array<{ userEmail: string; permission: TrackerPermission }>;
+};
+
 function hashSeed(value: string) {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -137,6 +168,16 @@ function randomInt(rng: () => number, min: number, max: number) {
 
 function pick<T>(rng: () => number, items: T[]) {
   return items[randomInt(rng, 0, items.length - 1)];
+}
+
+function weightedPick<T extends string>(rng: () => number, items: Array<{ value: T; weight: number }>): T {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
+  let roll = rng() * total;
+  for (const item of items) {
+    if (roll < item.weight) return item.value;
+    roll -= item.weight;
+  }
+  return items[items.length - 1].value;
 }
 
 function startOfMonth(date: Date) {
@@ -915,6 +956,54 @@ const seedTrackers: SeedTrackerConfig[] = [
   },
 ];
 
+const seedCaseWorkspaces: SeedCaseWorkspaceConfig[] = [
+  {
+    name: "Hausarztpraxis Musterstadt",
+    description: "Patientenakten für die PVS-Abrechnung.",
+    color: "#0f766e",
+    memberships: [
+      { userEmail: "james@bettertracker.demo", permission: "owner" },
+      { userEmail: "olivia@bettertracker.demo", permission: "admin" },
+      { userEmail: "noah@bettertracker.demo", permission: "write" },
+      { userEmail: "emma@bettertracker.demo", permission: "read" },
+    ],
+  },
+];
+
+const CASE_FILE_FIRST_NAMES = [
+  "Anna", "Max", "Lena", "Paul", "Mia", "Leon", "Emma", "Finn", "Sophie", "Lukas",
+  "Laura", "Jonas", "Julia", "Felix", "Sarah", "Tim", "Hannah", "Niklas", "Marie", "Jan",
+  "Lea", "Tom", "Nina", "Erik", "Katharina", "Stefan", "Petra", "Klaus", "Ursula", "Werner",
+  "Ingrid", "Helmut", "Sabine", "Michael", "Andrea", "Thomas",
+];
+const CASE_FILE_LAST_NAMES = [
+  "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker",
+  "Schulz", "Hoffmann", "Koch", "Richter", "Klein", "Wolf", "Neumann", "Schwarz",
+  "Zimmermann", "Braun", "Krüger", "Hofmann", "Werner", "Lange", "Schmitt", "Krause",
+];
+
+const CASE_TYPE_WEIGHTS: Array<{ value: CaseFileCaseType; weight: number }> = [
+  { value: "ambulant", weight: 60 },
+  { value: "stationaer", weight: 25 },
+  { value: "konsil", weight: 15 },
+];
+
+const CASE_STATUS_WEIGHTS: Array<{ value: CaseFileStatus; weight: number }> = [
+  { value: "needs_processing", weight: 25 },
+  { value: "medizin_controlling", weight: 15 },
+  { value: "queued_for_pvs", weight: 15 },
+  { value: "sent_to_pvs", weight: 20 },
+  { value: "done", weight: 25 },
+];
+
+const CASE_FILE_COMMENT_POOL = [
+  "Bitte Diagnoseschlüssel prüfen.",
+  "Rückfrage an PVS gestellt.",
+  "Unterlagen vollständig, bereit zur Weiterleitung.",
+  "Patientendaten aktualisiert.",
+  "Auf Rückmeldung der Versicherung wartend.",
+];
+
 async function ensureRegistrationEnabled() {
   const existing = await db
     .select({ id: appSettings.id })
@@ -1265,6 +1354,187 @@ async function processTracker(
   );
 }
 
+async function ensureCaseWorkspace(config: SeedCaseWorkspaceConfig) {
+  const slug = slugify(config.name);
+  const [existing] = await db.select().from(caseWorkspaces).where(eq(caseWorkspaces.slug, slug)).limit(1);
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(caseWorkspaces)
+    .values({
+      name: config.name,
+      slug,
+      description: config.description,
+      color: config.color,
+    })
+    .returning();
+
+  return created;
+}
+
+async function ensureCaseWorkspaceMembership(
+  workspaceId: string,
+  userId: string,
+  permission: TrackerPermission
+) {
+  const [existing] = await db
+    .select()
+    .from(caseWorkspaceMembers)
+    .where(and(eq(caseWorkspaceMembers.workspaceId, workspaceId), eq(caseWorkspaceMembers.userId, userId)))
+    .limit(1);
+
+  if (existing) {
+    if (existing.permission !== permission) {
+      await db
+        .update(caseWorkspaceMembers)
+        .set({ permission })
+        .where(eq(caseWorkspaceMembers.id, existing.id));
+    }
+    return;
+  }
+
+  await db.insert(caseWorkspaceMembers).values({ workspaceId, userId, permission });
+}
+
+/**
+ * Generates up to CASE_FILE_SEED_COUNT realistic patient case files for a
+ * workspace: spread over the last ~9 months, weighted across statuses and
+ * case types. Already-submitted ones (sent_to_pvs/done) are grouped into
+ * synthetic biweekly PVS batches so the batches page has real data too;
+ * queued_for_pvs ones deliberately get no batch, since that only happens
+ * once a submission actually goes out.
+ */
+async function seedCaseFilesForWorkspace(
+  workspace: typeof caseWorkspaces.$inferSelect,
+  memberEmails: string[],
+  createdUsers: Map<string, string>,
+  today: Date
+) {
+  if (CASE_FILE_SEED_COUNT === 0) {
+    return 0;
+  }
+
+  const [existingSeedRow] = await db
+    .select({ id: caseFiles.id })
+    .from(caseFiles)
+    .where(and(eq(caseFiles.workspaceId, workspace.id), like(caseFiles.fileNumber, `${CASE_FILE_SEED_TAG}%`)))
+    .limit(1);
+  if (existingSeedRow) {
+    return 0;
+  }
+
+  const memberUserIds = memberEmails
+    .map((email) => createdUsers.get(email))
+    .filter((id): id is string => Boolean(id));
+  if (memberUserIds.length === 0) {
+    throw new Error(`No seeded members resolved for case workspace ${workspace.name}`);
+  }
+
+  const rng = mulberry32(hashSeed(`${workspace.slug}-case-files`));
+  const historyDays = 270;
+
+  const drafts = Array.from({ length: CASE_FILE_SEED_COUNT }, (_, index) => {
+    const dayOffset = randomInt(rng, 0, historyDays);
+    const createdAt = addDaysToDate(today, -dayOffset);
+    const birthYear = randomInt(rng, 1935, 2019);
+    const birthMonth = randomInt(rng, 1, 12);
+    const birthDay = randomInt(rng, 1, daysInMonth(birthYear, birthMonth - 1));
+    const status = weightedPick(rng, CASE_STATUS_WEIGHTS);
+    const wasReturned = (status === "sent_to_pvs" || status === "done") && rng() < 0.12;
+
+    return {
+      patientName: `${pick(rng, CASE_FILE_FIRST_NAMES)} ${pick(rng, CASE_FILE_LAST_NAMES)}`,
+      fileNumber: `${CASE_FILE_SEED_TAG}-${String(index + 1).padStart(4, "0")}`,
+      dateOfBirth: toDateInputValue(dateAt(birthYear, birthMonth - 1, birthDay)),
+      caseType: weightedPick(rng, CASE_TYPE_WEIGHTS),
+      status,
+      createdByUserId: pick(rng, memberUserIds),
+      createdAt,
+      returnCount: wasReturned ? 1 : 0,
+      lastReturnedAt: wasReturned ? addDaysToDate(createdAt, randomInt(rng, 3, 20)) : null,
+    };
+  }).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  const insertedCaseFiles: (typeof caseFiles.$inferSelect)[] = [];
+  for (let i = 0; i < drafts.length; i += TRANSACTION_BATCH_SIZE) {
+    const chunk = drafts.slice(i, i + TRANSACTION_BATCH_SIZE);
+    const inserted = await db
+      .insert(caseFiles)
+      .values(
+        chunk.map((draft) => ({
+          workspaceId: workspace.id,
+          patientName: draft.patientName,
+          fileNumber: draft.fileNumber,
+          dateOfBirth: draft.dateOfBirth,
+          caseType: draft.caseType,
+          status: draft.status,
+          returnCount: draft.returnCount,
+          lastReturnedAt: draft.lastReturnedAt,
+          createdByUserId: draft.createdByUserId,
+          createdAt: draft.createdAt,
+          updatedAt: draft.createdAt,
+        }))
+      )
+      .returning();
+    insertedCaseFiles.push(...inserted);
+  }
+
+  // Bucket already-submitted case files into ~biweekly batches so the PVS
+  // submissions page shows real, mixed-case-type batches instead of one
+  // batch per case file.
+  const submitted = insertedCaseFiles.filter(
+    (row) => row.status === "sent_to_pvs" || row.status === "done"
+  );
+  const batchGroups = new Map<string, typeof insertedCaseFiles>();
+  for (const row of submitted) {
+    const bucketKey = String(Math.floor(row.createdAt.getTime() / (14 * 24 * 60 * 60 * 1000)));
+    if (!batchGroups.has(bucketKey)) {
+      batchGroups.set(bucketKey, []);
+    }
+    batchGroups.get(bucketKey)!.push(row);
+  }
+
+  for (const rows of batchGroups.values()) {
+    const submittedOn = toDateInputValue(addDaysToDate(rows[0].createdAt, randomInt(rng, 1, 10)));
+    const [batch] = await db
+      .insert(pvsSubmissionBatches)
+      .values({
+        workspaceId: workspace.id,
+        submittedOn,
+        createdByUserId: pick(rng, memberUserIds),
+      })
+      .returning();
+
+    await db
+      .update(caseFiles)
+      .set({ submissionBatchId: batch.id })
+      .where(
+        inArray(
+          caseFiles.id,
+          rows.map((row) => row.id)
+        )
+      );
+
+    await db.insert(caseFileSubmissions).values(
+      rows.map((row) => ({ caseFileId: row.id, batchId: batch.id }))
+    );
+  }
+
+  // A handful of comments so the comment-count badge has something to show.
+  const commentTargets = insertedCaseFiles.filter(() => rng() < 0.2);
+  for (const row of commentTargets) {
+    await db.insert(caseFileComments).values({
+      caseFileId: row.id,
+      authorUserId: pick(rng, memberUserIds),
+      body: pick(rng, CASE_FILE_COMMENT_POOL),
+    });
+  }
+
+  return insertedCaseFiles.length;
+}
+
 async function main() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1289,11 +1559,31 @@ async function main() {
     insertedTransactions += await processTracker(trackerConfig, createdUsers, today);
   }
 
+  let insertedCaseFiles = 0;
+  for (const workspaceConfig of seedCaseWorkspaces) {
+    const workspace = await ensureCaseWorkspace(workspaceConfig);
+    for (const membership of workspaceConfig.memberships) {
+      const userId = createdUsers.get(membership.userEmail);
+      if (!userId) {
+        throw new Error(`Missing seeded membership user ${membership.userEmail}`);
+      }
+      await ensureCaseWorkspaceMembership(workspace.id, userId, membership.permission);
+    }
+    insertedCaseFiles += await seedCaseFilesForWorkspace(
+      workspace,
+      workspaceConfig.memberships.map((membership) => membership.userEmail),
+      createdUsers,
+      today
+    );
+  }
+
   console.log("Seed complete.");
   console.log(`Users available: ${seedUsers.map((entry) => entry.email).join(", ")}`);
   console.log(`Login for primary user: sarah@bettertracker.demo / ${DEFAULT_PASSWORD}`);
   console.log(`Trackers ensured: ${seedTrackers.map((entry) => entry.name).join(", ")}`);
   console.log(`Transactions inserted this run: ${insertedTransactions}`);
+  console.log(`Case workspaces ensured: ${seedCaseWorkspaces.map((entry) => entry.name).join(", ")}`);
+  console.log(`Case files inserted this run: ${insertedCaseFiles}`);
 }
 
 main()

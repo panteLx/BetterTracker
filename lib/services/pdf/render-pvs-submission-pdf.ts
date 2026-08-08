@@ -1,16 +1,16 @@
 import { renderToBuffer } from "@react-pdf/renderer";
-import { PvsSubmissionDocument } from "@/lib/services/pdf/pvs-submission-document";
-import type { CaseType } from "@/lib/services/case-file-service";
+import {
+  PvsSubmissionDocument,
+  type PvsSubmissionDocumentSection,
+} from "@/lib/services/pdf/pvs-submission-document";
 
 export type RenderPvsSubmissionPdfInput = {
   workspaceName: string;
   submittedOn: string;
-  caseType: CaseType;
-  caseFiles: Array<{
-    patientName: string;
-    fileNumber: string;
-    dateOfBirth: string | null;
-  }>;
+  title: string;
+  /** Defaults to "Übermittlungsdatum". */
+  dateLabel?: string;
+  sections: PvsSubmissionDocumentSection[];
 };
 
 export async function renderPvsSubmissionPdf(input: RenderPvsSubmissionPdfInput) {

@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { CaseType } from "@/lib/services/case-file-service";
 
-const CASE_TYPE_LABELS: Record<CaseType, string> = {
+export const CASE_TYPE_LABELS: Record<CaseType, string> = {
   ambulant: "Ambulant",
   stationaer: "Stationär",
   konsil: "Konsil",
@@ -22,6 +22,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#475569",
     marginBottom: 16,
+  },
+  sectionHeading: {
+    fontSize: 12,
+    fontWeight: 700,
+    marginTop: 12,
+    marginBottom: 6,
   },
   table: {
     display: "flex",
@@ -66,50 +72,68 @@ function formatGermanDate(dateString: string) {
   return `${day}.${month}.${year}`;
 }
 
-export type PvsSubmissionDocumentProps = {
-  workspaceName: string;
-  submittedOn: string;
+export type PvsSubmissionDocumentSection = {
   caseType: CaseType;
   caseFiles: Array<{
     patientName: string;
     fileNumber: string;
     dateOfBirth: string | null;
   }>;
+};
+
+export type PvsSubmissionDocumentProps = {
+  workspaceName: string;
+  submittedOn: string;
+  title: string;
+  /** Defaults to "Übermittlungsdatum". */
+  dateLabel?: string;
+  /** One table per section. A per-section heading only renders when there's more than one. */
+  sections: PvsSubmissionDocumentSection[];
   generatedAt: Date;
 };
 
 export function PvsSubmissionDocument({
   workspaceName,
   submittedOn,
-  caseType,
-  caseFiles,
+  title,
+  dateLabel = "Übermittlungsdatum",
+  sections,
   generatedAt,
 }: PvsSubmissionDocumentProps) {
+  const totalCount = sections.reduce((sum, section) => sum + section.caseFiles.length, 0);
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>PVS-Übermittlung — {CASE_TYPE_LABELS[caseType]}</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>
-          {workspaceName} · Übermittlungsdatum: {formatGermanDate(submittedOn)} · {caseFiles.length}{" "}
-          {caseFiles.length === 1 ? "Patient" : "Patienten"}
+          {workspaceName} · {dateLabel}: {formatGermanDate(submittedOn)} · {totalCount}{" "}
+          {totalCount === 1 ? "Patient" : "Patienten"}
         </Text>
 
-        <View style={styles.table}>
-          <View style={styles.row}>
-            <Text style={[styles.headerCell, styles.colName]}>Patientenname</Text>
-            <Text style={[styles.headerCell, styles.colFileNumber]}>Fall-/Aktennummer</Text>
-            <Text style={[styles.headerCell, styles.colDob]}>Geburtsdatum</Text>
-          </View>
-          {caseFiles.map((caseFile, index) => (
-            <View style={styles.row} key={index}>
-              <Text style={[styles.cell, styles.colName]}>{caseFile.patientName}</Text>
-              <Text style={[styles.cell, styles.colFileNumber]}>{caseFile.fileNumber}</Text>
-              <Text style={[styles.cell, styles.colDob]}>
-                {caseFile.dateOfBirth ? formatGermanDate(caseFile.dateOfBirth) : "-"}
-              </Text>
+        {sections.map((section) => (
+          <View key={section.caseType}>
+            {sections.length > 1 ? (
+              <Text style={styles.sectionHeading}>{CASE_TYPE_LABELS[section.caseType]}</Text>
+            ) : null}
+            <View style={styles.table}>
+              <View style={styles.row}>
+                <Text style={[styles.headerCell, styles.colName]}>Patientenname</Text>
+                <Text style={[styles.headerCell, styles.colFileNumber]}>Fall-/Aktennummer</Text>
+                <Text style={[styles.headerCell, styles.colDob]}>Geburtsdatum</Text>
+              </View>
+              {section.caseFiles.map((caseFile, index) => (
+                <View style={styles.row} key={index}>
+                  <Text style={[styles.cell, styles.colName]}>{caseFile.patientName}</Text>
+                  <Text style={[styles.cell, styles.colFileNumber]}>{caseFile.fileNumber}</Text>
+                  <Text style={[styles.cell, styles.colDob]}>
+                    {caseFile.dateOfBirth ? formatGermanDate(caseFile.dateOfBirth) : "-"}
+                  </Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </View>
+        ))}
 
         <View style={styles.footer} fixed>
           <Text>Erstellt am {generatedAt.toLocaleString("de-DE")}</Text>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -37,10 +38,46 @@ type CaseWorkspace = {
 export function CaseWorkspaceListClient() {
   const t = useTranslations("Cases.workspaceList");
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(DEFAULT_TRACKER_COLOR);
+
+  // Lets the Ctrl+K command palette deep-link here with ?new=workspace, the
+  // same way it deep-links into a workspace board with ?new=case. Adjusting
+  // state during render (rather than in an effect) per
+  // https://react.dev/learn/you-might-not-need-an-effect.
+  const newParam = searchParams.get("new");
+  const [seenNewParam, setSeenNewParam] = useState(newParam);
+  if (newParam !== seenNewParam) {
+    setSeenNewParam(newParam);
+    if (newParam === "workspace") {
+      setSheetOpen(true);
+    }
+  }
+
+  useEffect(() => {
+    if (newParam === "workspace") {
+      router.replace(pathname, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newParam]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "n" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      event.preventDefault();
+      setSheetOpen(true);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const workspacesQuery = useQuery({
     queryKey: ["case-workspaces"],

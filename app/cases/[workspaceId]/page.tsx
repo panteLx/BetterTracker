@@ -27,8 +27,7 @@ export default async function CaseWorkspaceBoardPage({
   });
   await queryClient.prefetchQuery({
     queryKey: ["case-files", workspaceId, {}],
-    queryFn: () =>
-      listCaseFiles(workspaceId, {}, access.permission).then((items) => ({ items })),
+    queryFn: () => listCaseFiles(workspaceId, {}, access.permission),
   });
 
   return (
