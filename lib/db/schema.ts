@@ -417,6 +417,32 @@ export const caseFileComments = sqliteTable(
   (table) => [index("case_file_comments_case_file_idx").on(table.caseFileId)]
 );
 
+export const caseFileStatusHistory = sqliteTable(
+  "case_file_status_history",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    caseFileId: text("case_file_id")
+      .notNull()
+      .references(() => caseFiles.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: [
+        "needs_processing",
+        "medizin_controlling",
+        "queued_for_pvs",
+        "sent_to_pvs",
+        "done",
+      ],
+    }).notNull(),
+    changedByUserId: text("changed_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [index("case_file_status_history_case_file_idx").on(table.caseFileId)]
+);
+
 export const appSettings = sqliteTable("app_settings", {
   id: text("id")
     .primaryKey()
@@ -547,11 +573,19 @@ export const caseFileRelations = relations(caseFiles, ({ one, many }) => ({
   }),
   comments: many(caseFileComments),
   submissions: many(caseFileSubmissions),
+  statusHistory: many(caseFileStatusHistory),
 }));
 
 export const caseFileCommentRelations = relations(caseFileComments, ({ one }) => ({
   caseFile: one(caseFiles, {
     fields: [caseFileComments.caseFileId],
+    references: [caseFiles.id],
+  }),
+}));
+
+export const caseFileStatusHistoryRelations = relations(caseFileStatusHistory, ({ one }) => ({
+  caseFile: one(caseFiles, {
+    fields: [caseFileStatusHistory.caseFileId],
     references: [caseFiles.id],
   }),
 }));
@@ -588,3 +622,4 @@ export type NewCaseFile = typeof caseFiles.$inferInsert;
 export type CaseFileComment = typeof caseFileComments.$inferSelect;
 export type PvsSubmissionBatch = typeof pvsSubmissionBatches.$inferSelect;
 export type CaseFileSubmission = typeof caseFileSubmissions.$inferSelect;
+export type CaseFileStatusHistory = typeof caseFileStatusHistory.$inferSelect;

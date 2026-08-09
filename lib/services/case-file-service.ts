@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import {
   caseFileComments,
   caseFiles,
-  caseFileSubmissions,
+  caseFileStatusHistory,
   pvsSubmissionBatches,
   user,
 } from "@/lib/db/schema";
@@ -26,7 +26,7 @@ export type CaseFileSortKey =
   | "fileNumber"
   | "dateOfBirth"
   | "status"
-  | "batchSubmittedOn";
+  | "lastStatusChangeAt";
 export type CaseFileSortDir = "asc" | "desc";
 
 export type CaseFileFilters = {
@@ -55,8 +55,7 @@ const PAGE_SIZE = 25;
 
 type CaseFileRow = typeof caseFiles.$inferSelect & {
   commentCount: number;
-  submissionCount: number;
-  batchSubmittedOn: string | null;
+  lastStatusChangeAt: string;
 };
 
 export type HydratedCaseFile = CaseFileRow & {
@@ -105,7 +104,10 @@ function buildConditions(
   return conditions;
 }
 
-function resolveOrderBy(sortKey: CaseFileSortKey = "createdAt", sortDir: CaseFileSortDir = "desc") {
+function resolveOrderBy(
+  sortKey: CaseFileSortKey = "lastStatusChangeAt",
+  sortDir: CaseFileSortDir = "desc"
+) {
   const dir = sortDir === "asc" ? asc : desc;
   switch (sortKey) {
     case "patientName":
@@ -123,8 +125,10 @@ function resolveOrderBy(sortKey: CaseFileSortKey = "createdAt", sortDir: CaseFil
         when 'sent_to_pvs' then 3
         when 'done' then 4
         else 5 end`);
-    case "batchSubmittedOn":
-      return dir(pvsSubmissionBatches.submittedOn);
+    case "lastStatusChangeAt":
+      return dir(
+        sql`(select max(${caseFileStatusHistory.createdAt}) from ${caseFileStatusHistory} where ${caseFileStatusHistory.caseFileId} = ${caseFiles.id})`
+      );
     case "createdAt":
     default:
       return dir(caseFiles.createdAt);
@@ -177,9 +181,8 @@ export async function listCaseFiles(
       createdByUserId: caseFiles.createdByUserId,
       createdAt: caseFiles.createdAt,
       updatedAt: caseFiles.updatedAt,
-      batchSubmittedOn: pvsSubmissionBatches.submittedOn,
       commentCount: sql<number>`(select count(*) from ${caseFileComments} where ${caseFileComments.caseFileId} = ${caseFiles.id})`,
-      submissionCount: sql<number>`(select count(*) from ${caseFileSubmissions} where ${caseFileSubmissions.caseFileId} = ${caseFiles.id})`,
+      lastStatusChangeAt: sql<string>`(select max(${caseFileStatusHistory.createdAt}) from ${caseFileStatusHistory} where ${caseFileStatusHistory.caseFileId} = ${caseFiles.id})`,
     })
     .from(caseFiles)
     .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
@@ -282,6 +285,14 @@ async function assertFileNumberAvailable(
   }
 }
 
+async function recordStatusHistory(
+  caseFileId: string,
+  status: CaseFileStatus,
+  changedByUserId: string | null
+) {
+  await db.insert(caseFileStatusHistory).values({ caseFileId, status, changedByUserId });
+}
+
 export async function getCaseFileById(workspaceId: string, caseFileId: string) {
   const rows = await db
     .select()
@@ -310,6 +321,8 @@ export async function createCaseFile(
       createdByUserId: actorUserId,
     })
     .returning();
+
+  await recordStatusHistory(caseFile.id, "needs_processing", actorUserId);
 
   return caseFile;
 }
@@ -365,7 +378,8 @@ async function loadCandidates(workspaceId: string, caseFileIds: string[]) {
 
 export async function bulkAdvanceToMedizinControlling(
   workspaceId: string,
-  caseFileIds: string[]
+  caseFileIds: string[],
+  actorUserId: string
 ) {
   const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
 
@@ -381,10 +395,18 @@ export async function bulkAdvanceToMedizinControlling(
     .set({ status: "medizin_controlling", updatedAt: new Date() })
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
 
+  await Promise.all(
+    uniqueIds.map((id) => recordStatusHistory(id, "medizin_controlling", actorUserId))
+  );
+
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
 
-export async function bulkMarkQueuedForPvs(workspaceId: string, caseFileIds: string[]) {
+export async function bulkMarkQueuedForPvs(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
   const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
 
   const notReady = candidates.filter((row) => row.status !== "medizin_controlling");
@@ -399,10 +421,16 @@ export async function bulkMarkQueuedForPvs(workspaceId: string, caseFileIds: str
     .set({ status: "queued_for_pvs", updatedAt: new Date() })
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
 
+  await Promise.all(uniqueIds.map((id) => recordStatusHistory(id, "queued_for_pvs", actorUserId)));
+
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
 
-export async function bulkMarkDone(workspaceId: string, caseFileIds: string[]) {
+export async function bulkMarkDone(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
   const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
 
   const notReady = candidates.filter((row) => row.status !== "sent_to_pvs");
@@ -417,10 +445,16 @@ export async function bulkMarkDone(workspaceId: string, caseFileIds: string[]) {
     .set({ status: "done", updatedAt: new Date() })
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
 
+  await Promise.all(uniqueIds.map((id) => recordStatusHistory(id, "done", actorUserId)));
+
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
 
-export async function bulkMarkReturned(workspaceId: string, caseFileIds: string[]) {
+export async function bulkMarkReturned(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
   const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
 
   const notReady = candidates.filter((row) => row.status !== "sent_to_pvs");
@@ -440,6 +474,10 @@ export async function bulkMarkReturned(workspaceId: string, caseFileIds: string[
       updatedAt: now,
     })
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
+
+  await Promise.all(
+    uniqueIds.map((id) => recordStatusHistory(id, "needs_processing", actorUserId))
+  );
 
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
@@ -475,6 +513,22 @@ export async function listCaseFileComments(caseFileId: string) {
     .leftJoin(user, eq(user.id, caseFileComments.authorUserId))
     .where(eq(caseFileComments.caseFileId, caseFileId))
     .orderBy(asc(caseFileComments.createdAt));
+}
+
+export async function listCaseFileStatusHistory(caseFileId: string) {
+  return db
+    .select({
+      id: caseFileStatusHistory.id,
+      caseFileId: caseFileStatusHistory.caseFileId,
+      status: caseFileStatusHistory.status,
+      changedByUserId: caseFileStatusHistory.changedByUserId,
+      createdAt: caseFileStatusHistory.createdAt,
+      changedByName: user.name,
+    })
+    .from(caseFileStatusHistory)
+    .leftJoin(user, eq(user.id, caseFileStatusHistory.changedByUserId))
+    .where(eq(caseFileStatusHistory.caseFileId, caseFileId))
+    .orderBy(asc(caseFileStatusHistory.createdAt));
 }
 
 export async function addCaseFileComment(

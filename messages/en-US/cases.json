@@ -63,11 +63,10 @@
       "dateOfBirth": "Date of birth",
       "caseType": "Case type",
       "status": "Status",
-      "batch": "Submitted on",
+      "lastStatusChangeAt": "Last status change",
       "addedOn": "Added on",
       "comments": "Comments",
-      "returnedBadge": "{count}× returned",
-      "submissionBadge": "submission #{count}"
+      "returnedBadge": "{count}× returned"
     },
     "bulkBar": {
       "selectedCount": "{count} selected",
@@ -133,6 +132,7 @@
     "create": "Create",
     "confirmDelete": "Really delete this case file?",
     "delete": "Delete case file",
+    "statusHistoryTitle": "Status history",
     "commentsTitle": "Comments",
     "returnedNotice": "This case file was returned by PVS {count}× (last on {date}).",
     "toast": {
@@ -151,6 +151,10 @@
     "placeholder": "Add a comment…",
     "send": "Send",
     "addFailed": "Could not save comment."
+  },
+  "statusHistory": {
+    "empty": "No status changes yet.",
+    "unknownActor": "Unknown"
   },
   "batches": {
     "title": "PVS submissions",

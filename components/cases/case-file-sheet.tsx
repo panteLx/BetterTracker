@@ -24,6 +24,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { CaseComments } from "@/components/cases/case-comments";
+import { CaseStatusHistory } from "@/components/cases/case-status-history";
 import { fetchJson, FetchError } from "@/lib/client-fetch";
 import { formatDateTime } from "@/lib/utils";
 import type { CaseFile } from "@/components/cases/case-board-client";
@@ -246,6 +247,11 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
                   {t("delete")}
                 </Button>
               ) : null}
+
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-2 text-sm font-medium">{t("statusHistoryTitle")}</h3>
+                <CaseStatusHistory workspaceId={workspaceId} caseFileId={caseFile.id} />
+              </div>
 
               <div className="border-t border-border pt-4">
                 <h3 className="mb-2 text-sm font-medium">{t("commentsTitle")}</h3>

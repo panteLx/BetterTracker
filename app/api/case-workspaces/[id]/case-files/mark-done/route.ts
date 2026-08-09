@@ -16,7 +16,7 @@ export async function POST(
     const body = await parseRequestJson<unknown>(request);
     const { caseFileIds } = caseFileIdsInputSchema.parse(body);
 
-    const items = await bulkMarkDone(id, caseFileIds);
+    const items = await bulkMarkDone(id, caseFileIds, access.user!.id);
 
     await logAuditEvent({
       actorUserId: access.user!.id,
