@@ -57,6 +57,13 @@
       "when": 1786038780544,
       "tag": "0007_flippant_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1786303639061,
+      "tag": "0008_brown_rachel_grey",
+      "breakpoints": true
     }
   ]
 }

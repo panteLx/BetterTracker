@@ -63,9 +63,8 @@ export type CaseFile = {
   caseType: CaseType;
   status: CaseFileStatus;
   submissionBatchId: string | null;
-  batchSubmittedOn: string | null;
   commentCount: number;
-  submissionCount: number;
+  lastStatusChangeAt: string;
   returnCount: number;
   lastReturnedAt: string | null;
   createdByUserId: string | null;
@@ -92,9 +91,15 @@ const STATUS_VALUES: CaseFileStatus[] = [
 const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
 const PDF_EXPORTABLE_STATUSES: CaseFileStatus[] = ["queued_for_pvs", "sent_to_pvs", "done"];
 
-type SortKey = "createdAt" | "patientName" | "fileNumber" | "dateOfBirth" | "status" | "batchSubmittedOn";
+type SortKey =
+  | "createdAt"
+  | "patientName"
+  | "fileNumber"
+  | "dateOfBirth"
+  | "status"
+  | "lastStatusChangeAt";
 type SortDir = "asc" | "desc";
-const DEFAULT_SORT_KEY: SortKey = "createdAt";
+const DEFAULT_SORT_KEY: SortKey = "lastStatusChangeAt";
 const DEFAULT_SORT_DIR: SortDir = "desc";
 
 type Filters = {
@@ -380,6 +385,7 @@ export function CaseBoardClient({
 
   function invalidateAndClear() {
     queryClient.invalidateQueries({ queryKey: ["case-files", workspaceId] });
+    queryClient.invalidateQueries({ queryKey: ["case-file-status-history"] });
     setSelectedIds(new Set());
     setSelectionSpansAllPages(false);
   }
@@ -724,10 +730,10 @@ export function CaseBoardClient({
                 onClick={() => toggleSort("status")}
               />
               <SortableHead
-                active={sortKey === "batchSubmittedOn"}
+                active={sortKey === "lastStatusChangeAt"}
                 dir={sortDir}
-                label={t("table.batch")}
-                onClick={() => toggleSort("batchSubmittedOn")}
+                label={t("table.lastStatusChangeAt")}
+                onClick={() => toggleSort("lastStatusChangeAt")}
               />
               <SortableHead
                 active={sortKey === "createdAt"}
@@ -785,12 +791,7 @@ export function CaseBoardClient({
                   </div>
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  {caseFile.batchSubmittedOn ? formatDateShort(caseFile.batchSubmittedOn, locale) : "–"}
-                  {caseFile.submissionCount > 1 ? (
-                    <span className="ml-1.5 text-muted-foreground/70">
-                      ({t("table.submissionBadge", { count: caseFile.submissionCount })})
-                    </span>
-                  ) : null}
+                  {formatDateTime(caseFile.lastStatusChangeAt, locale)}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDateTime(caseFile.createdAt, locale)}

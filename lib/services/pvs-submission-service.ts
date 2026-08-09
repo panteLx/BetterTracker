@@ -1,6 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { caseFiles, caseFileSubmissions, pvsSubmissionBatches } from "@/lib/db/schema";
+import {
+  caseFiles,
+  caseFileStatusHistory,
+  caseFileSubmissions,
+  pvsSubmissionBatches,
+} from "@/lib/db/schema";
 import { toDateInputValue } from "@/lib/utils";
 import { ValidationError, NotFoundError } from "@/lib/errors";
 import type { CaseType } from "@/lib/services/case-file-service";
@@ -52,6 +57,16 @@ export async function sendCaseFilesToPvs(
 
     tx.insert(caseFileSubmissions)
       .values(uniqueIds.map((caseFileId) => ({ caseFileId, batchId: batch.id })))
+      .run();
+
+    tx.insert(caseFileStatusHistory)
+      .values(
+        uniqueIds.map((caseFileId) => ({
+          caseFileId,
+          status: "sent_to_pvs" as const,
+          changedByUserId: actorUserId,
+        }))
+      )
       .run();
 
     const updatedCaseFiles = tx

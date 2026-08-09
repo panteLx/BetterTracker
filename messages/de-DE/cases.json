@@ -43,7 +43,7 @@
   },
   "board": {
     "newCaseFile": "Neue Akte",
-    "searchPlaceholder": "Patient oder Aktennummer suchen…",
+    "searchPlaceholder": "Patient oder Fallnummer suchen…",
     "statusFilterLabel": "Nach Status filtern",
     "caseTypeFilterLabel": "Nach Fallart filtern",
     "submittedFromPlaceholder": "Übermittelt von",
@@ -59,15 +59,14 @@
     },
     "table": {
       "patientName": "Patient",
-      "fileNumber": "Fall-/Aktennummer",
+      "fileNumber": "Fallnummer",
       "dateOfBirth": "Geburtsdatum",
       "caseType": "Fallart",
       "status": "Status",
-      "batch": "Übermittelt am",
+      "lastStatusChangeAt": "Statusänderung",
       "addedOn": "Hinzugefügt am",
       "comments": "Kommentare",
-      "returnedBadge": "{count}× zurück",
-      "submissionBadge": "{count}. Einreichung"
+      "returnedBadge": "{count}× zurück"
     },
     "bulkBar": {
       "selectedCount": "{count} ausgewählt",
@@ -120,7 +119,7 @@
     "editTitle": "Akte bearbeiten",
     "description": "Angaben zur Patientenakte erfassen.",
     "patientName": "Patientenname",
-    "fileNumber": "Fall-/Aktennummer",
+    "fileNumber": "Fallnummer",
     "dateOfBirth": "Geburtsdatum",
     "caseType": "Fallart",
     "caseTypeOptions": {
@@ -133,14 +132,15 @@
     "create": "Anlegen",
     "confirmDelete": "Diese Akte wirklich löschen?",
     "delete": "Akte löschen",
+    "statusHistoryTitle": "Statusverlauf",
     "commentsTitle": "Kommentare",
     "returnedNotice": "Diese Akte kam {count}× von der PVS zurück (zuletzt am {date}).",
     "toast": {
       "created": "Akte angelegt.",
       "saved": "Akte gespeichert.",
       "saveFailed": "Akte konnte nicht gespeichert werden.",
-      "duplicateFileNumber": "Diese Fall-/Aktennummer wird in diesem Bereich bereits verwendet.",
-      "requiredFields": "Bitte Patientenname und Aktennummer angeben.",
+      "duplicateFileNumber": "Diese Fallnummer wird in diesem Bereich bereits verwendet.",
+      "requiredFields": "Bitte Patientenname und Fallnummer angeben.",
       "deleted": "Akte gelöscht.",
       "deleteFailed": "Akte konnte nicht gelöscht werden."
     }
@@ -151,6 +151,10 @@
     "placeholder": "Kommentar hinzufügen…",
     "send": "Senden",
     "addFailed": "Kommentar konnte nicht gespeichert werden."
+  },
+  "statusHistory": {
+    "empty": "Noch keine Statusänderungen.",
+    "unknownActor": "Unbekannt"
   },
   "batches": {
     "title": "PVS-Übermittlungen",
