@@ -1,11 +1,22 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { fetchJson } from "@/lib/client-fetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -15,11 +26,17 @@ type AdminUser = {
   email: string;
   role: "user" | "admin" | "superadmin";
   banned: boolean;
+  hasPassword: boolean;
 };
+
+const MIN_PASSWORD_LENGTH = 8;
 
 export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: string; currentUserId: string }) {
   const t = useTranslations("Admin.users");
   const queryClient = useQueryClient();
+  const [editTarget, setEditTarget] = useState<AdminUser | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<AdminUser | null>(null);
+
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
     queryFn: () => fetchJson<{ items: AdminUser[] }>("/api/admin/users"),
@@ -34,9 +51,25 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
     onSuccess: () => {
       toast.success(t("toasts.updated"));
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditTarget(null);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : t("toasts.updateError"));
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      fetchJson(`/api/admin/users/${id}/password`, {
+        method: "POST",
+        body: JSON.stringify({ newPassword }),
+      }),
+    onSuccess: () => {
+      toast.success(t("toasts.passwordReset"));
+      setPasswordTarget(null);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toasts.passwordResetError"));
     },
   });
 
@@ -83,6 +116,11 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
     }
   }
 
+  function canEditUser(item: AdminUser) {
+    if (currentRole === "superadmin") return true;
+    return currentRole === "admin" && item.role === "user";
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -127,7 +165,25 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                 </TableCell>
                 <TableCell>{item.banned ? t("status.banned") : t("status.active")}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {canEditUser(item) ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditTarget(item)}
+                      >
+                        {t("actions.edit")}
+                      </Button>
+                    ) : null}
+                    {canEditUser(item) && item.hasPassword ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPasswordTarget(item)}
+                      >
+                        {t("actions.resetPassword")}
+                      </Button>
+                    ) : null}
                     {currentRole === "superadmin" ? (
                       <Button
                         size="sm"
@@ -161,6 +217,153 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
           </TableBody>
         </Table>
       </CardContent>
+
+      <EditUserDialog
+        key={editTarget?.id ?? "edit-none"}
+        user={editTarget}
+        onOpenChange={(open) => !open && setEditTarget(null)}
+        onSave={(payload) => {
+          if (editTarget) patchMutation.mutate({ id: editTarget.id, payload });
+        }}
+        isPending={patchMutation.isPending}
+      />
+
+      <ResetPasswordDialog
+        key={passwordTarget?.id ?? "password-none"}
+        user={passwordTarget}
+        onOpenChange={(open) => !open && setPasswordTarget(null)}
+        onSave={(newPassword) => {
+          if (passwordTarget) passwordMutation.mutate({ id: passwordTarget.id, newPassword });
+        }}
+        isPending={passwordMutation.isPending}
+      />
     </Card>
+  );
+}
+
+function EditUserDialog({
+  user,
+  onOpenChange,
+  onSave,
+  isPending,
+}: {
+  user: AdminUser | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (payload: { name: string; email: string }) => void;
+  isPending: boolean;
+}) {
+  const t = useTranslations("Admin.users.editDialog");
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    onSave({ name: name.trim(), email: email.trim() });
+  }
+
+  return (
+    <Dialog open={!!user} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("title")}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-user-name">{t("name")}</Label>
+            <Input id="edit-user-name" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-user-email">{t("email")}</Label>
+            <Input
+              id="edit-user-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("cancel")}
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {t("save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ResetPasswordDialog({
+  user,
+  onOpenChange,
+  onSave,
+  isPending,
+}: {
+  user: AdminUser | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (newPassword: string) => void;
+  isPending: boolean;
+}) {
+  const t = useTranslations("Admin.users.resetPasswordDialog");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(t("tooShort"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("mismatch"));
+      return;
+    }
+    onSave(newPassword);
+  }
+
+  return (
+    <Dialog open={!!user} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description", { name: user?.name ?? "" })}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="reset-password-new">{t("newPassword")}</Label>
+            <Input
+              id="reset-password-new"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              minLength={MIN_PASSWORD_LENGTH}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="reset-password-confirm">{t("confirmPassword")}</Label>
+            <Input
+              id="reset-password-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={MIN_PASSWORD_LENGTH}
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("cancel")}
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {t("submit")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

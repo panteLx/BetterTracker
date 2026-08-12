@@ -1,25 +1,27 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { SectionCard } from "@/components/ui/section-card";
-import { Badge } from "@/components/ui/badge";
-import { SignOutButton } from "@/components/profile/sign-out-button";
 import { AppearanceCard } from "@/components/profile/appearance-card";
 import { LanguageCard } from "@/components/profile/language-card";
+import { AccountDetailsCard } from "@/components/profile/account-details-card";
+import { ChangePasswordCard } from "@/components/profile/change-password-card";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
 import { env } from "@/lib/env";
 import {
   requireUser,
   getActiveSessionsForUser,
   getCurrentUserRecord,
+  hasCredentialAccount,
 } from "@/lib/auth/session";
 import { formatDateTime } from "@/lib/utils";
 
 export default async function ProfilePage() {
   const current = await requireUser();
   await ensureBootstrapForUser(current.id);
-  const [userRecord, sessions, t, locale] = await Promise.all([
+  const [userRecord, sessions, hasPassword, t, locale] = await Promise.all([
     getCurrentUserRecord(current.id),
     getActiveSessionsForUser(current.id),
+    hasCredentialAccount(current.id),
     getTranslations("Profile"),
     getLocale(),
   ]);
@@ -34,40 +36,14 @@ export default async function ProfilePage() {
         <AppearanceCard />
         <LanguageCard />
 
-        <SectionCard
-          title={t("account.title")}
-          titleRight={
-            userRecord?.role ? (
-              <Badge variant="outline" className="text-xs">
-                {userRecord.role}
-              </Badge>
-            ) : null
-          }
-        >
-          <dl className="space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
-              <dt className="text-muted-foreground">{t("account.name")}</dt>
-              <dd className="font-medium">{userRecord?.name}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
-              <dt className="text-muted-foreground">{t("account.email")}</dt>
-              <dd className="font-medium">{userRecord?.email}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5">
-              <dt className="text-muted-foreground">{t("account.status")}</dt>
-              <dd>
-                {userRecord?.banned ? (
-                  <Badge variant="destructive" className="text-xs">{t("account.banned")}</Badge>
-                ) : (
-                  <Badge variant="secondary" className="border-income/30 bg-income-muted text-income text-xs">{t("account.active")}</Badge>
-                )}
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-5 border-t border-border pt-5">
-            <SignOutButton />
-          </div>
-        </SectionCard>
+        <AccountDetailsCard
+          initialName={userRecord?.name ?? ""}
+          initialEmail={userRecord?.email ?? ""}
+          role={userRecord?.role ?? null}
+          banned={userRecord?.banned ?? false}
+        />
+
+        <ChangePasswordCard hasPassword={hasPassword} />
 
         <SectionCard
           title={t("sessions.title")}

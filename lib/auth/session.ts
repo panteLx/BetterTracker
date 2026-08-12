@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { session as sessionTable, user as userTable } from "@/lib/db/schema";
+import { account as accountTable, session as sessionTable, user as userTable } from "@/lib/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 
 export async function getServerSession() {
@@ -60,4 +60,16 @@ export async function getCurrentUserRecord(userId: string) {
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+export async function hasCredentialAccount(userId: string) {
+  const rows = await db
+    .select({ id: accountTable.id })
+    .from(accountTable)
+    .where(
+      and(eq(accountTable.userId, userId), eq(accountTable.providerId, "credential"))
+    )
+    .limit(1);
+
+  return rows.length > 0;
 }
