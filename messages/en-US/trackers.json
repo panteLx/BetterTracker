@@ -21,6 +21,8 @@
     "categoryArchived": "Category archived",
     "payeeReactivated": "Payee reactivated",
     "payeeArchived": "Payee archived",
+    "payeeWeightTrackingEnabled": "Weight tracking enabled for payee",
+    "payeeWeightTrackingDisabled": "Weight tracking disabled for payee",
     "actionFailed": "Action failed",
     "memberAdded": "Share added",
     "memberAddFailed": "Share could not be created",
@@ -59,6 +61,8 @@
     "discordDebugDescription": "Send extra info along.",
     "archiveTracker": "Archive tracker",
     "archiveTrackerDescription": "No new transactions can be created.",
+    "weightTracking": "Weight tracking",
+    "weightTrackingDescription": "Track the weight in kg for selected payees (e.g. coffee/cacao) and see a yearly chart.",
     "saving": "Saving...",
     "save": "Save tracker"
   },
@@ -104,7 +108,11 @@
     "archiveAriaLabel": "Archive payee {name}",
     "reactivateAriaLabel": "Reactivate payee {name}",
     "delete": "Delete",
-    "deleteAriaLabel": "Delete payee {name}"
+    "deleteAriaLabel": "Delete payee {name}",
+    "weightTracked": "kg tracking",
+    "weightTrackingEnable": "Enable weight tracking",
+    "weightTrackingDisable": "Disable weight tracking",
+    "weightTrackingAriaLabel": "Toggle weight tracking for {name}"
   },
   "publicShare": {
     "title": "Share publicly",

@@ -49,8 +49,10 @@
       "submitting": "Speichere...",
       "errorAmount": "Bitte einen gültigen Betrag eingeben.",
       "errorCategory": "Bitte eine Kategorie wählen.",
+      "errorWeight": "Bitte die Menge in kg angeben.",
       "errorGeneric": "Fehler beim Speichern",
-      "success": "Buchung gespeichert!"
+      "success": "Buchung gespeichert!",
+      "weightLabel": "Menge (kg)"
     },
     "scheduleForm": {
       "header": "Neuer Termin",

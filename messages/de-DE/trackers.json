@@ -21,6 +21,8 @@
     "categoryArchived": "Kategorie archiviert",
     "payeeReactivated": "Einzahler reaktiviert",
     "payeeArchived": "Einzahler archiviert",
+    "payeeWeightTrackingEnabled": "Kilogramm-Tracking für Einzahler aktiviert",
+    "payeeWeightTrackingDisabled": "Kilogramm-Tracking für Einzahler deaktiviert",
     "actionFailed": "Aktion fehlgeschlagen",
     "memberAdded": "Freigabe hinzugefügt",
     "memberAddFailed": "Freigabe konnte nicht erstellt werden",
@@ -59,6 +61,8 @@
     "discordDebugDescription": "Zusatzinfos mitsenden.",
     "archiveTracker": "Tracker archivieren",
     "archiveTrackerDescription": "Es können keine neuen Buchungen angelegt werden.",
+    "weightTracking": "Kilogramm-Tracking",
+    "weightTrackingDescription": "Erfasse bei ausgewählten Einzahlern (z. B. Kaffee/Kakao) die Menge in kg und sieh eine Jahresstatistik.",
     "saving": "Speichert...",
     "save": "Tracker speichern"
   },
@@ -104,7 +108,11 @@
     "archiveAriaLabel": "Einzahler {name} archivieren",
     "reactivateAriaLabel": "Einzahler {name} reaktivieren",
     "delete": "Löschen",
-    "deleteAriaLabel": "Einzahler {name} löschen"
+    "deleteAriaLabel": "Einzahler {name} löschen",
+    "weightTracked": "kg-Tracking",
+    "weightTrackingEnable": "Kilogramm-Tracking aktivieren",
+    "weightTrackingDisable": "Kilogramm-Tracking deaktivieren",
+    "weightTrackingAriaLabel": "Kilogramm-Tracking für {name} umschalten"
   },
   "publicShare": {
     "title": "Öffentlich freigeben",

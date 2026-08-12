@@ -21,6 +21,7 @@ const trackerSelect = {
   discordWebhookUrl: trackers.discordWebhookUrl,
   discordDebugEnabled: trackers.discordDebugEnabled,
   discordPingRoleId: trackers.discordPingRoleId,
+  weightTrackingEnabled: trackers.weightTrackingEnabled,
   isActive: trackers.isActive,
   isHidden: trackers.isHidden,
   isPublic: trackers.isPublic,

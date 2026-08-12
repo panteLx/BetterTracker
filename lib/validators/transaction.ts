@@ -9,6 +9,7 @@ export const transactionInputSchema = z.object({
   categoryId: z.string().trim().min(1, "Category is required"),
   payeeId: z.string().optional().nullable(),
   customPayeeName: z.string().trim().optional().nullable(),
+  weightKg: z.union([z.string(), z.number()]).optional().nullable(),
   notes: z.string().trim().optional().nullable(),
   source: z.enum(["manual", "schedule"]).default("manual"),
   scheduleId: z.string().optional().nullable(),
@@ -23,6 +24,7 @@ export const transactionUpdateSchema = z
     categoryId: z.string().trim().min(1).optional().nullable(),
     payeeId: z.string().optional().nullable(),
     customPayeeName: z.string().trim().optional().nullable(),
+    weightKg: z.union([z.string(), z.number()]).optional().nullable(),
     notes: z.string().trim().optional().nullable(),
   })
   .strict();

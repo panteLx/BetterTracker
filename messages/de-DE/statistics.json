@@ -27,6 +27,10 @@
     "noBookingsInYear": {
       "title": "Keine Buchungen in {year}",
       "description": "Wähle ein anderes Jahr oder einen anderen Tracker."
+    },
+    "noWeightData": {
+      "title": "Noch keine Mengenangaben",
+      "description": "Sobald Buchungen mit Kilogramm-Angabe erfasst wurden, erscheint hier die Übersicht pro Einzahler."
     }
   },
   "statTiles": {
@@ -40,7 +44,8 @@
     "avgPerTransactionHelper": "Über Einnahmen und Ausgaben hinweg",
     "topExpense": "Größte Ausgabe",
     "topExpenseHelper": "{payee} · {date}",
-    "noExpensesThisYear": "Keine Ausgaben in diesem Jahr"
+    "noExpensesThisYear": "Keine Ausgaben in diesem Jahr",
+    "totalWeight": "Gesamtmenge"
   },
   "charts": {
     "monthly": "Monat für Monat {year}",
@@ -48,14 +53,16 @@
     "yearComparison": "Jahresvergleich",
     "category": "Nach Kategorie",
     "payee": "Größte Posten",
-    "balanceTrend": "Kontostand {year}"
+    "balanceTrend": "Kontostand {year}",
+    "weightByPayee": "Kilogramm pro Einzahler"
   },
   "dataKeys": {
     "income": "Einnahmen",
     "expense": "Ausgaben",
     "balance": "Kontostand",
     "thisYear": "Dieses Jahr",
-    "previousYear": "Vorjahr"
+    "previousYear": "Vorjahr",
+    "weight": "Menge (kg)"
   },
   "months": ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
 }

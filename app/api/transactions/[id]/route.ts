@@ -1,12 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { canMutateTrackerResource } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
-import { categories, transactions } from "@/lib/db/schema";
+import { categories, payees, transactions } from "@/lib/db/schema";
 import { requireTrackerReadAccess } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { conflict, forbidden, mapServiceError, notFound, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
-import { parseAmountToCents } from "@/lib/utils";
+import { parseAmountToCents, parseWeightToGrams } from "@/lib/utils";
 import { ValidationError } from "@/lib/errors";
 import { transactionUpdateSchema } from "@/lib/validators/transaction";
 
@@ -72,6 +72,32 @@ export async function PATCH(
       throw new ValidationError("Transaction category does not match the selected direction");
     }
 
+    const nextPayeeId = body.payeeId === undefined ? existing.payeeId : body.payeeId;
+    let nextWeightGrams: number | null;
+    if (body.weightKg === undefined) {
+      nextWeightGrams = existing.weightGrams;
+    } else if (body.weightKg === null) {
+      nextWeightGrams = null;
+    } else {
+      nextWeightGrams = parseWeightToGrams(body.weightKg);
+    }
+
+    if (access.trackerAccess!.tracker.weightTrackingEnabled && nextPayeeId) {
+      const [nextPayee] = await db
+        .select({ trackWeight: payees.trackWeight })
+        .from(payees)
+        .where(eq(payees.id, nextPayeeId))
+        .limit(1);
+
+      if (nextPayee?.trackWeight) {
+        if (nextWeightGrams === null || nextWeightGrams <= 0) {
+          throw new ValidationError("Weight in kg is required for this payee");
+        }
+      } else {
+        nextWeightGrams = null;
+      }
+    }
+
     const [updated] = await db
       .update(transactions)
       .set({
@@ -81,9 +107,10 @@ export async function PATCH(
           body.amount !== undefined
             ? parseAmountToCents(body.amount) ?? existing.amountCents
             : existing.amountCents,
+        weightGrams: nextWeightGrams,
         direction: nextDirection,
         categoryId: nextCategoryId,
-        payeeId: body.payeeId === undefined ? existing.payeeId : body.payeeId,
+        payeeId: nextPayeeId,
         customPayeeName:
           body.customPayeeName === undefined
             ? existing.customPayeeName
