@@ -47,6 +47,7 @@ type Tracker = {
   color: string;
   currency: string;
   isActive: boolean;
+  weightTrackingEnabled?: boolean;
   permission?: "owner" | "admin" | "write" | "read";
 };
 type Category = {
@@ -55,7 +56,7 @@ type Category = {
   type: "expense" | "income" | "transfer";
   isActive: boolean;
 };
-type Payee = { id: string; name: string; isActive: boolean };
+type Payee = { id: string; name: string; isActive: boolean; trackWeight?: boolean };
 
 export function QuickAddSheet({
   open,
@@ -96,6 +97,7 @@ export function QuickAddSheet({
   const [categoryId, setCategoryId] = useState(EMPTY);
   const [payeeId, setPayeeId] = useState(EMPTY);
   const [customPayeeName, setCustomPayeeName] = useState("");
+  const [weightKg, setWeightKg] = useState("");
   const [notes, setNotes] = useState("");
 
   const [entryFieldsKey, setEntryFieldsKey] = useState(0);
@@ -147,6 +149,12 @@ export function QuickAddSheet({
     (c) => c.isActive && (c.type === direction || c.type === "transfer"),
   );
   const payees = (payeesQuery.data?.items ?? []).filter((p) => p.isActive);
+
+  const activeTracker = trackers.find((t) => t.id === activeTrackerId);
+  const selectedPayee = payees.find((p) => p.id === payeeId);
+  const showWeightField = Boolean(
+    activeTracker?.weightTrackingEnabled && selectedPayee?.trackWeight,
+  );
 
   const effectiveCategoryId = filteredCategories.some(
     (c) => c.id === categoryId,
@@ -200,6 +208,7 @@ export function QuickAddSheet({
     setAmount("");
     setNotes("");
     setCustomPayeeName("");
+    setWeightKg("");
     setCategoryId(EMPTY);
     setPayeeId(EMPTY);
     setDirection("expense");
@@ -246,6 +255,10 @@ export function QuickAddSheet({
       toast.error(t("transactionForm.errorCategory"));
       return;
     }
+    if (showWeightField && !weightKg.trim()) {
+      toast.error(t("transactionForm.errorWeight"));
+      return;
+    }
     txMutation.mutate({
       trackerId: activeTrackerId,
       date,
@@ -254,6 +267,7 @@ export function QuickAddSheet({
       categoryId: effectiveCategoryId,
       payeeId: payeeId === EMPTY ? null : payeeId,
       customPayeeName: customPayeeName.trim() || null,
+      weightKg: showWeightField ? weightKg : null,
       notes: notes.trim() || null,
     });
   }
@@ -449,6 +463,20 @@ export function QuickAddSheet({
                     customTextValue={customPayeeName}
                     onCustomTextChange={setCustomPayeeName}
                   />
+
+                  {showWeightField ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="qa-tx-weight">{t("transactionForm.weightLabel")}</Label>
+                      <Input
+                        id="qa-tx-weight"
+                        inputMode="decimal"
+                        placeholder="0,250"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value)}
+                        required
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="space-y-2">
                     <Label htmlFor="qa-tx-notes">{t("transactionForm.notesLabel")}</Label>

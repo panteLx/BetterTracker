@@ -49,8 +49,10 @@
       "submitting": "Saving...",
       "errorAmount": "Please enter a valid amount.",
       "errorCategory": "Please choose a category.",
+      "errorWeight": "Please enter the weight in kg.",
       "errorGeneric": "Failed to save",
-      "success": "Transaction saved!"
+      "success": "Transaction saved!",
+      "weightLabel": "Weight (kg)"
     },
     "scheduleForm": {
       "header": "New schedule",

@@ -30,6 +30,7 @@ import {
   TrendingDown,
   TrendingUp,
   Wallet,
+  Weight,
 } from "lucide-react";
 import { Amount } from "@/components/ui/amount";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -44,7 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn, formatCurrency, formatDateShort } from "@/lib/utils";
+import { cn, formatCurrency, formatDateShort, formatWeight } from "@/lib/utils";
 import { useChartColors } from "@/lib/chart-colors";
 
 /** Shared axis/grid treatment — recessive, so the marks stay the loudest thing. */
@@ -60,6 +61,7 @@ type Tracker = {
   color: string;
   currency: string;
   isActive: boolean;
+  weightTrackingEnabled?: boolean;
 };
 
 type CategoryBreakdownItem = {
@@ -118,6 +120,16 @@ type StatisticsData = {
     payeeName: string;
     categoryName: string;
   } | null;
+  weight: {
+    totalGrams: number;
+    previousYearTotalGrams: number;
+    byPayee: Array<{
+      payeeId: string | null;
+      payeeName: string;
+      totalGrams: number;
+      count: number;
+    }>;
+  };
 };
 
 type Direction = "expense" | "income";
@@ -221,6 +233,36 @@ function ChartTooltipCurrency({
           <span className="text-muted-foreground">{entry.name}</span>
           <span className="ml-auto font-medium tabular-nums">
             {formatCurrency(entry.value, currency, locale)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChartTooltipWeight({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-popover p-2.5 text-xs shadow-overlay">
+      {label ? <p className="mb-1.5 font-medium">{label}</p> : null}
+      {payload.map((entry) => (
+        <div key={entry.name} className="flex items-center gap-2">
+          <span
+            className="inline-block h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-muted-foreground">{entry.name}</span>
+          <span className="ml-auto font-medium tabular-nums">
+            {entry.value} kg
           </span>
         </div>
       ))}
@@ -392,6 +434,81 @@ function PayeeChart({
         <Bar
           dataKey={dataKey}
           fill={barColor}
+          radius={[0, 4, 4, 0]}
+          maxBarSize={18}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+type WeightPayeeItem = {
+  payeeId: string | null;
+  payeeName: string;
+  totalGrams: number;
+  count: number;
+};
+
+/** Mirrors PayeeChart's layout so the weight breakdown reads as part of the
+ * same system rather than a bolted-on chart type. */
+function WeightPayeeChart({ items }: { items: WeightPayeeItem[] }) {
+  const t = useTranslations("Statistics");
+  const colors = useChartColors();
+  const dataKey = t("dataKeys.weight");
+
+  const data = items
+    .slice(0, 6)
+    .map((payee) => ({
+      name:
+        payee.payeeName.length > 20
+          ? `${payee.payeeName.slice(0, 18)}…`
+          : payee.payeeName,
+      [dataKey]: Math.round((payee.totalGrams / 1000) * 100) / 100,
+    }))
+    .reverse();
+
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={Weight}
+        title={t("emptyState.noWeightData.title")}
+        description={t("emptyState.noWeightData.description")}
+      />
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={data.length * 40 + 24}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 0, right: 8, left: 4, bottom: 0 }}
+      >
+        <CartesianGrid stroke="var(--border)" horizontal={false} />
+        <XAxis
+          type="number"
+          tickFormatter={(value) => `${value} kg`}
+          tick={AXIS_TICK}
+          axisLine={false}
+          tickLine={false}
+          className="fill-muted-foreground"
+        />
+        <YAxis
+          type="category"
+          dataKey="name"
+          tick={AXIS_TICK}
+          axisLine={false}
+          tickLine={false}
+          width={100}
+          className="fill-muted-foreground"
+        />
+        <Tooltip
+          cursor={{ fill: "var(--muted)" }}
+          content={<ChartTooltipWeight />}
+        />
+        <Bar
+          dataKey={dataKey}
+          fill={colors.chart2}
           radius={[0, 4, 4, 0]}
           maxBarSize={18}
         />
@@ -652,7 +769,12 @@ export function StatisticsClient() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <div
+            className={cn(
+              "grid grid-cols-2 gap-3",
+              activeTracker?.weightTrackingEnabled ? "lg:grid-cols-4" : "lg:grid-cols-3",
+            )}
+          >
             <StatTile
               label={t("statTiles.savingsRate")}
               icon={PiggyBank}
@@ -699,6 +821,20 @@ export function StatisticsClient() {
               }
               className="col-span-2 lg:col-span-1"
             />
+            {activeTracker?.weightTrackingEnabled ? (
+              <StatTile
+                label={t("statTiles.totalWeight")}
+                icon={Weight}
+                value={formatWeight(stats!.weight.totalGrams, locale)}
+                sublabel={
+                  <YoyDelta
+                    current={stats!.weight.totalGrams}
+                    previous={stats!.weight.previousYearTotalGrams}
+                    positiveIsGood
+                  />
+                }
+              />
+            ) : null}
           </div>
 
           <SectionCard title={t("charts.monthly", { year: selectedYear })}>
@@ -954,6 +1090,12 @@ export function StatisticsClient() {
               </AreaChart>
             </ResponsiveContainer>
           </SectionCard>
+
+          {activeTracker?.weightTrackingEnabled ? (
+            <SectionCard title={t("charts.weightByPayee")}>
+              <WeightPayeeChart items={stats!.weight.byPayee} />
+            </SectionCard>
+          ) : null}
         </>
       )}
     </div>

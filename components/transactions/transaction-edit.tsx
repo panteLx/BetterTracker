@@ -6,7 +6,12 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
-import { amountToInputValue, EMPTY_SELECT_VALUE, formatDateShort } from "@/lib/utils";
+import {
+  amountToInputValue,
+  EMPTY_SELECT_VALUE,
+  formatDateShort,
+  gramsToKgInputValue,
+} from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DirectionToggle } from "@/components/ui/direction-toggle";
@@ -19,6 +24,7 @@ export type EditableTransaction = {
   id: string;
   date: string;
   amountCents: number;
+  weightGrams?: number | null;
   direction: "expense" | "income";
   categoryId?: string | null;
   payeeId?: string | null;
@@ -35,11 +41,12 @@ type EditTransactionState = {
   categoryId: string;
   payeeId: string;
   customPayeeName: string;
+  weightKg: string;
   notes: string;
 };
 
 type EditableCategory = { id: string; name: string; type: "expense" | "income" | "transfer" };
-type EditablePayee = { id: string; name: string };
+type EditablePayee = { id: string; name: string; trackWeight?: boolean };
 
 /**
  * Edit/delete state and mutations for a transaction list, shared between the
@@ -102,6 +109,7 @@ export function useTransactionEdit(trackerId: string) {
       categoryId: item.categoryId ?? "",
       payeeId: item.payeeId ?? EMPTY_SELECT_VALUE,
       customPayeeName: item.customPayeeName ?? "",
+      weightKg: item.weightGrams ? gramsToKgInputValue(item.weightGrams) : "",
       notes: item.notes ?? "",
     });
   }
@@ -119,11 +127,15 @@ export function useTransactionEdit(trackerId: string) {
     }
   }
 
-  function submitEdit(id: string) {
+  function submitEdit(id: string, weightRequired = false) {
     if (!editState) return;
 
     if (!editState.date || !editState.amount.trim() || !editState.categoryId) {
       toast.error(t("requiredFields"));
+      return;
+    }
+    if (weightRequired && !editState.weightKg.trim()) {
+      toast.error(t("requiredWeight"));
       return;
     }
 
@@ -137,6 +149,7 @@ export function useTransactionEdit(trackerId: string) {
         payeeId:
           editState.payeeId === EMPTY_SELECT_VALUE ? null : editState.payeeId,
         customPayeeName: editState.customPayeeName.trim() || null,
+        weightKg: editState.weightKg.trim() || null,
         notes: editState.notes.trim() || null,
       },
     });
@@ -164,6 +177,7 @@ type TransactionEditFormProps = {
   ) => void;
   categories: EditableCategory[];
   payees: EditablePayee[];
+  weightTrackingEnabled?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
   isSaving: boolean;
@@ -176,6 +190,7 @@ export function TransactionEditForm({
   onEditStateChange,
   categories,
   payees,
+  weightTrackingEnabled,
   onCancel,
   onSubmit,
   isSaving,
@@ -185,6 +200,8 @@ export function TransactionEditForm({
     (category) =>
       category.type === editState.direction || category.type === "transfer",
   );
+  const selectedPayee = payees.find((payee) => payee.id === editState.payeeId);
+  const showWeightField = Boolean(weightTrackingEnabled && selectedPayee?.trackWeight);
 
   return (
     <div className="grid gap-4">
@@ -276,6 +293,23 @@ export function TransactionEditForm({
           }
         />
       </div>
+
+      {showWeightField ? (
+        <div className="space-y-2">
+          <Label>{t("weightLabel")}</Label>
+          <Input
+            value={editState.weightKg}
+            onChange={(event) =>
+              onEditStateChange((current) => ({
+                ...current,
+                weightKg: event.target.value,
+              }))
+            }
+            placeholder="0,250"
+            inputMode="decimal"
+          />
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         <Label>{t("notesLabel")}</Label>

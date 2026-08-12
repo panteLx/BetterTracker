@@ -27,6 +27,10 @@
     "noBookingsInYear": {
       "title": "No transactions in {year}",
       "description": "Choose a different year or tracker."
+    },
+    "noWeightData": {
+      "title": "No weight data yet",
+      "description": "Once transactions with a kg amount are recorded, the per-payee breakdown appears here."
     }
   },
   "statTiles": {
@@ -40,7 +44,8 @@
     "avgPerTransactionHelper": "Across income and expenses",
     "topExpense": "Largest expense",
     "topExpenseHelper": "{payee} · {date}",
-    "noExpensesThisYear": "No expenses this year"
+    "noExpensesThisYear": "No expenses this year",
+    "totalWeight": "Total weight"
   },
   "charts": {
     "monthly": "Month by month {year}",
@@ -48,14 +53,16 @@
     "yearComparison": "Year comparison",
     "category": "By category",
     "payee": "Top payees",
-    "balanceTrend": "Balance {year}"
+    "balanceTrend": "Balance {year}",
+    "weightByPayee": "Kilograms by payee"
   },
   "dataKeys": {
     "income": "Income",
     "expense": "Expenses",
     "balance": "Balance",
     "thisYear": "This year",
-    "previousYear": "Previous year"
+    "previousYear": "Previous year",
+    "weight": "Weight (kg)"
   },
   "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 }

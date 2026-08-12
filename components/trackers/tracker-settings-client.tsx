@@ -18,6 +18,7 @@ import {
   Trash2,
   Upload,
   UserRound,
+  Weight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -54,6 +55,7 @@ type Tracker = {
   discordWebhookUrl: string;
   discordDebugEnabled: boolean;
   discordPingRoleId: string;
+  weightTrackingEnabled: boolean;
   isActive: boolean;
   isHidden?: boolean;
   isPublic?: boolean;
@@ -72,6 +74,7 @@ type Payee = {
   id: string;
   name: string;
   isActive: boolean;
+  trackWeight: boolean;
 };
 
 type TrackerMember = {
@@ -121,6 +124,7 @@ export function TrackerSettingsClient({
     discordWebhookUrl?: string;
     discordPingRoleId?: string;
     discordDebugEnabled?: boolean;
+    weightTrackingEnabled?: boolean;
     isActive?: boolean;
     isPublic?: boolean;
   }>({});
@@ -182,6 +186,8 @@ export function TrackerSettingsClient({
       draft.discordPingRoleId ?? tracker?.discordPingRoleId ?? "",
     discordDebugEnabled:
       draft.discordDebugEnabled ?? tracker?.discordDebugEnabled ?? false,
+    weightTrackingEnabled:
+      draft.weightTrackingEnabled ?? tracker?.weightTrackingEnabled ?? false,
     isActive: draft.isActive ?? tracker?.isActive ?? true,
     isPublic: draft.isPublic ?? tracker?.isPublic ?? false,
   };
@@ -211,6 +217,7 @@ export function TrackerSettingsClient({
       discordWebhookUrl: string;
       discordPingRoleId: string;
       discordDebugEnabled: boolean;
+      weightTrackingEnabled: boolean;
       isActive: boolean;
       isPublic: boolean;
     }) =>
@@ -224,6 +231,7 @@ export function TrackerSettingsClient({
           discordWebhookUrl: payload.discordWebhookUrl,
           discordPingRoleId: payload.discordPingRoleId,
           discordDebugEnabled: payload.discordDebugEnabled,
+          weightTrackingEnabled: payload.weightTrackingEnabled,
           isActive: payload.isActive,
           isPublic: payload.isPublic,
         }),
@@ -379,6 +387,34 @@ export function TrackerSettingsClient({
     },
   });
 
+  const updatePayeeWeightTrackingMutation = useMutation({
+    mutationFn: ({ id, trackWeight }: { id: string; trackWeight: boolean }) =>
+      fetchJson<{ item: Payee }>(`/api/payees/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ trackWeight }),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Payee[] } | undefined>(
+        ["payees", activeTrackerId],
+        (current) => ({
+          items: (current?.items || []).map((entry) =>
+            entry.id === item.id ? { ...entry, ...item } : entry,
+          ),
+        }),
+      );
+      toast.success(
+        item.trackWeight
+          ? t("toast.payeeWeightTrackingEnabled")
+          : t("toast.payeeWeightTrackingDisabled"),
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("toast.actionFailed"),
+      );
+    },
+  });
+
   const addMemberMutation = useMutation({
     mutationFn: (payload: {
       userId: string;
@@ -480,6 +516,7 @@ export function TrackerSettingsClient({
       discordWebhookUrl: trackerDraft.discordWebhookUrl.trim(),
       discordPingRoleId: trackerDraft.discordPingRoleId.trim(),
       discordDebugEnabled: trackerDraft.discordDebugEnabled,
+      weightTrackingEnabled: trackerDraft.weightTrackingEnabled,
       isActive: trackerDraft.isActive,
       isPublic: trackerDraft.isPublic,
     });
@@ -674,6 +711,24 @@ export function TrackerSettingsClient({
                       setDraft((current) => ({
                         ...current,
                         isActive: !value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
+                  <div>
+                    <p className="text-sm font-medium">{t("form.weightTracking")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("form.weightTrackingDescription")}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={trackerDraft.weightTrackingEnabled}
+                    onCheckedChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        weightTrackingEnabled: value,
                       }))
                     }
                   />
@@ -1013,9 +1068,14 @@ export function TrackerSettingsClient({
                       className={cn(!item.isActive && "opacity-60")}
                       leading={<EntityIcon icon={UserRound} size="sm" />}
                       meta={
-                        !item.isActive ? (
-                          <Badge variant="outline">{t("payees.archived")}</Badge>
-                        ) : undefined
+                        <>
+                          {item.trackWeight ? (
+                            <Badge variant="outline">{t("payees.weightTracked")}</Badge>
+                          ) : null}
+                          {!item.isActive ? (
+                            <Badge variant="outline">{t("payees.archived")}</Badge>
+                          ) : null}
+                        </>
                       }
                       title={
                         <span className={cn(!item.isActive && "line-through")}>
@@ -1024,6 +1084,35 @@ export function TrackerSettingsClient({
                       }
                       actions={
                         <>
+                          {tracker.weightTrackingEnabled &&
+                          (tracker.permission === "owner" ||
+                            tracker.permission === "admin") ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              shape="pill"
+                              title={
+                                item.trackWeight
+                                  ? t("payees.weightTrackingDisable")
+                                  : t("payees.weightTrackingEnable")
+                              }
+                              aria-label={t("payees.weightTrackingAriaLabel", {
+                                name: item.name,
+                              })}
+                              className={cn(
+                                item.trackWeight && "text-primary-on bg-primary-subtle",
+                              )}
+                              disabled={updatePayeeWeightTrackingMutation.isPending}
+                              onClick={() =>
+                                updatePayeeWeightTrackingMutation.mutate({
+                                  id: item.id,
+                                  trackWeight: !item.trackWeight,
+                                })
+                              }
+                            >
+                              <Weight className="h-4 w-4" />
+                            </Button>
+                          ) : null}
                           {(tracker.permission === "owner" ||
                             tracker.permission === "admin") ? (
                             <Button

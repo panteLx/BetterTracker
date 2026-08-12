@@ -124,6 +124,47 @@ async function queryWeekdayBreakdown(trackerId: string, from: string, to: string
   });
 }
 
+async function queryWeightTotal(trackerId: string, from: string, to: string) {
+  const [row] = await db
+    .select({
+      totalGrams: sql<number>`coalesce(sum(${transactions.weightGrams}), 0)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.trackerId, trackerId),
+        gte(transactions.date, from),
+        lte(transactions.date, to),
+        sql`${transactions.weightGrams} is not null`
+      )
+    );
+
+  return row?.totalGrams ?? 0;
+}
+
+async function queryWeightByPayee(trackerId: string, from: string, to: string) {
+  return db
+    .select({
+      payeeId: transactions.payeeId,
+      payeeName: sql<string>`coalesce(${payees.name}, ${transactions.customPayeeName}, 'Unbekannt')`,
+      totalGrams: sql<number>`sum(${transactions.weightGrams})`,
+      count: sql<number>`count(*)`,
+    })
+    .from(transactions)
+    .leftJoin(payees, eq(payees.id, transactions.payeeId))
+    .where(
+      and(
+        eq(transactions.trackerId, trackerId),
+        gte(transactions.date, from),
+        lte(transactions.date, to),
+        sql`${transactions.weightGrams} is not null`
+      )
+    )
+    .groupBy(transactions.payeeId)
+    .orderBy(sql`sum(${transactions.weightGrams}) desc`)
+    .limit(8);
+}
+
 async function queryTopExpense(trackerId: string, from: string, to: string) {
   const [row] = await db
     .select({
@@ -222,6 +263,8 @@ export async function GET(request: Request) {
     const previousYearFrom = `${year - 1}-01-01`;
     const previousYearTo = `${year - 1}-12-31`;
 
+    const weightTrackingEnabled = access.trackerAccess!.tracker.weightTrackingEnabled;
+
     const [
       categoryExpense,
       categoryIncome,
@@ -230,6 +273,9 @@ export async function GET(request: Request) {
       previousYear,
       weekday,
       topExpense,
+      weightTotal,
+      weightPreviousYearTotal,
+      weightByPayee,
     ] = await Promise.all([
       queryCategoryBreakdown(trackerId, from, to, "expense"),
       queryCategoryBreakdown(trackerId, from, to, "income"),
@@ -238,6 +284,15 @@ export async function GET(request: Request) {
       querySummary(trackerId, previousYearFrom, previousYearTo),
       queryWeekdayBreakdown(trackerId, from, to),
       queryTopExpense(trackerId, from, to),
+      weightTrackingEnabled
+        ? queryWeightTotal(trackerId, from, to)
+        : Promise.resolve(0),
+      weightTrackingEnabled
+        ? queryWeightTotal(trackerId, previousYearFrom, previousYearTo)
+        : Promise.resolve(0),
+      weightTrackingEnabled
+        ? queryWeightByPayee(trackerId, from, to)
+        : Promise.resolve([]),
     ]);
 
     return ok({
@@ -256,6 +311,11 @@ export async function GET(request: Request) {
       balanceTrend,
       weekday,
       topExpense,
+      weight: {
+        totalGrams: weightTotal,
+        previousYearTotalGrams: weightPreviousYearTotal,
+        byPayee: weightByPayee,
+      },
     });
   } catch (error) {
     return serverError(error);

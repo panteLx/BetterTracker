@@ -21,6 +21,7 @@ export type TrackerUpdateInput = {
   discordWebhookUrl?: string;
   discordDebugEnabled?: boolean;
   discordPingRoleId?: string;
+  weightTrackingEnabled?: boolean;
   isActive?: boolean;
   isHidden?: boolean;
   isPublic?: boolean;
@@ -39,6 +40,7 @@ export function buildTrackerUpdateValues(body: TrackerUpdateInput) {
     discordDebugEnabled: body.discordDebugEnabled,
     discordPingRoleId:
       body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),
+    weightTrackingEnabled: body.weightTrackingEnabled,
     isActive: body.isActive,
     isHidden: body.isHidden,
     isPublic: body.isPublic,

@@ -43,6 +43,7 @@ export async function POST(request: Request) {
         trackerId: body.trackerId,
         name: body.name,
         notes: body.notes || null,
+        trackWeight: body.trackWeight ?? false,
       })
       .returning();
     return created({ item });

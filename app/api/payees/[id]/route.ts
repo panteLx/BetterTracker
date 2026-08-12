@@ -31,6 +31,7 @@ export async function PATCH(
         name: body.name,
         notes: body.notes === undefined ? undefined : body.notes || null,
         isActive: body.isActive,
+        trackWeight: body.trackWeight,
         updatedAt: new Date(),
       })
       .where(eq(payees.id, id))

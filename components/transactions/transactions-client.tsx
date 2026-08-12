@@ -64,6 +64,7 @@ type Tracker = {
   color?: string;
   currency: string;
   isActive: boolean;
+  weightTrackingEnabled?: boolean;
   permission?: "owner" | "admin" | "write" | "read";
 };
 
@@ -74,13 +75,14 @@ type Category = {
   isActive: boolean;
 };
 
-type Payee = { id: string; name: string; isActive: boolean };
+type Payee = { id: string; name: string; isActive: boolean; trackWeight?: boolean };
 
 type Transaction = {
   id: string;
   trackerId: string;
   date: string;
   amountCents: number;
+  weightGrams?: number | null;
   direction: "expense" | "income";
   categoryId?: string | null;
   payeeId?: string | null;
@@ -248,6 +250,13 @@ export function TransactionsClient({
 
   function renderEditForm(itemId: string) {
     if (!trackerEdit.editState) return null;
+    const payees = payeesQuery.data?.items || [];
+    const selectedPayee = payees.find(
+      (payee) => payee.id === trackerEdit.editState?.payeeId,
+    );
+    const weightRequired = Boolean(
+      tracker?.weightTrackingEnabled && selectedPayee?.trackWeight,
+    );
     return (
       <TransactionEditForm
         trackerId={activeTrackerId}
@@ -259,9 +268,10 @@ export function TransactionsClient({
           )
         }
         categories={categoriesQuery.data?.items || []}
-        payees={payeesQuery.data?.items || []}
+        payees={payees}
+        weightTrackingEnabled={tracker?.weightTrackingEnabled}
         onCancel={trackerEdit.cancelEdit}
-        onSubmit={() => trackerEdit.submitEdit(itemId)}
+        onSubmit={() => trackerEdit.submitEdit(itemId, weightRequired)}
         isSaving={trackerEdit.updateMutation.isPending}
       />
     );

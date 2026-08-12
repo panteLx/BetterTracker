@@ -143,6 +143,27 @@ export function amountToInputValue(amountCents: number) {
   return (amountCents / 100).toFixed(2).replace(".", ",");
 }
 
+export function parseWeightToGrams(value: string | number) {
+  const normalized = String(value).trim().replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return Math.round(parsed * 1000);
+}
+
+export function gramsToKgInputValue(weightGrams: number) {
+  return (weightGrams / 1000).toFixed(3).replace(".", ",");
+}
+
+export function formatWeight(weightGrams: number, locale = "de-DE") {
+  const kg = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 2,
+  }).format(weightGrams / 1000);
+  return `${kg} kg`;
+}
+
 export function sortByName<T extends { name: string }>(items: T[], locale: string): T[] {
   return [...items].sort((left, right) => left.name.localeCompare(right.name, locale));
 }

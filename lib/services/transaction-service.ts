@@ -2,7 +2,12 @@ import { aliasedTable, and, count, desc, eq, gte, like, lte, or, sql } from "dri
 import { canMutateTrackerResource, type TrackerPermission } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import { categories, payees, trackers, transactions, user } from "@/lib/db/schema";
-import { formatCurrency, parseAmountToCents } from "@/lib/utils";
+import {
+  formatCurrency,
+  gramsToKgInputValue,
+  parseAmountToCents,
+  parseWeightToGrams,
+} from "@/lib/utils";
 import { transactionInputSchema, transactionQuerySchema } from "@/lib/validators/transaction";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { sendDiscordNotification } from "@/lib/services/discord-service";
@@ -46,6 +51,7 @@ export async function listTransactions(
       accountName: transactions.accountName,
       date: transactions.date,
       amountCents: transactions.amountCents,
+      weightGrams: transactions.weightGrams,
       direction: transactions.direction,
       categoryId: transactions.categoryId,
       payeeId: transactions.payeeId,
@@ -140,6 +146,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
 
   let resolvedPayeeId = parsed.payeeId ?? null;
   let resolvedPayeeName: string | null = null;
+  let resolvedPayeeTrackWeight = false;
   const trimmedCustomPayeeName = parsed.customPayeeName?.trim();
   let resolvedAccountName = parsed.accountName?.trim() || "";
 
@@ -158,6 +165,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
       .select({
         id: payees.id,
         name: payees.name,
+        trackWeight: payees.trackWeight,
       })
       .from(payees)
       .where(and(eq(payees.id, resolvedPayeeId), eq(payees.trackerId, parsed.trackerId)))
@@ -168,11 +176,13 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     }
 
     resolvedPayeeName = payee.name;
+    resolvedPayeeTrackWeight = payee.trackWeight;
   } else if (trimmedCustomPayeeName) {
     const [existingPayee] = await db
       .select({
         id: payees.id,
         name: payees.name,
+        trackWeight: payees.trackWeight,
       })
       .from(payees)
       .where(
@@ -186,6 +196,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
     if (existingPayee) {
       resolvedPayeeId = existingPayee.id;
       resolvedPayeeName = existingPayee.name;
+      resolvedPayeeTrackWeight = existingPayee.trackWeight;
     } else {
       const [createdPayee] = await db
         .insert(payees)
@@ -196,10 +207,23 @@ export async function createTransaction(input: unknown, actorUserId: string) {
         .returning({
           id: payees.id,
           name: payees.name,
+          trackWeight: payees.trackWeight,
         });
 
       resolvedPayeeId = createdPayee.id;
       resolvedPayeeName = createdPayee.name;
+      resolvedPayeeTrackWeight = createdPayee.trackWeight;
+    }
+  }
+
+  let weightGrams: number | null = null;
+  if (tracker.weightTrackingEnabled && resolvedPayeeTrackWeight) {
+    if (parsed.weightKg === undefined || parsed.weightKg === null || parsed.weightKg === "") {
+      throw new ValidationError("Weight in kg is required for this payee");
+    }
+    weightGrams = parseWeightToGrams(parsed.weightKg);
+    if (weightGrams === null || weightGrams <= 0) {
+      throw new ValidationError("Invalid weight value");
     }
   }
 
@@ -216,6 +240,7 @@ export async function createTransaction(input: unknown, actorUserId: string) {
       accountName: resolvedAccountName,
       date: parsed.date,
       amountCents,
+      weightGrams,
       direction: parsed.direction,
       categoryId: parsed.categoryId ?? null,
       payeeId: resolvedPayeeId,
@@ -273,6 +298,15 @@ export async function createTransaction(input: unknown, actorUserId: string) {
       { name: "Kategorie", value: category.name, inline: true },
       ...(resolvedPayeeName
         ? [{ name: "Empfaenger", value: resolvedPayeeName, inline: true as const }]
+        : []),
+      ...(created.weightGrams
+        ? [
+            {
+              name: "Gewicht",
+              value: `${gramsToKgInputValue(created.weightGrams)} kg`,
+              inline: true as const,
+            },
+          ]
         : []),
       {
         name: "Quelle",

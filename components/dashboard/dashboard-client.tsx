@@ -44,7 +44,7 @@ import { useChartColors } from "@/lib/chart-colors";
 import { fetchJson } from "@/lib/client-fetch";
 import { rememberTracker } from "@/lib/last-tracker";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
-import { cn, formatDayLabel, groupByDate } from "@/lib/utils";
+import { cn, formatDayLabel, formatWeight, groupByDate } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
 type Tracker = {
@@ -56,6 +56,7 @@ type Tracker = {
   discordWebhookUrl: string;
   discordDebugEnabled: boolean;
   discordPingRoleId: string;
+  weightTrackingEnabled?: boolean;
   isActive: boolean;
   permission?: "owner" | "admin" | "write" | "read";
   sortOrder?: number;
@@ -65,6 +66,7 @@ type TransactionItem = {
   id: string;
   date: string;
   amountCents: number;
+  weightGrams?: number | null;
   direction: "expense" | "income";
   categoryId?: string | null;
   payeeId?: string | null;
@@ -83,7 +85,7 @@ type Category = {
   isActive: boolean;
 };
 
-type Payee = { id: string; name: string; isActive: boolean };
+type Payee = { id: string; name: string; isActive: boolean; trackWeight?: boolean };
 
 type TransactionResponse = {
   items: TransactionItem[];
@@ -816,7 +818,9 @@ export function DashboardClient() {
                           t("recent.anonymousPayee")
                         }
                         subtitle={
-                          item.categoryName || t("recent.noCategory")
+                          item.weightGrams
+                            ? `${item.categoryName || t("recent.noCategory")} · ${formatWeight(item.weightGrams, locale)}`
+                            : item.categoryName || t("recent.noCategory")
                         }
                         trailing={
                           <Amount
@@ -855,8 +859,19 @@ export function DashboardClient() {
                             }
                             categories={categoriesQuery.data?.items || []}
                             payees={payeesQuery.data?.items || []}
+                            weightTrackingEnabled={tracker?.weightTrackingEnabled}
                             onCancel={trackerEdit.cancelEdit}
-                            onSubmit={() => trackerEdit.submitEdit(item.id)}
+                            onSubmit={() =>
+                              trackerEdit.submitEdit(
+                                item.id,
+                                Boolean(
+                                  tracker?.weightTrackingEnabled &&
+                                    (payeesQuery.data?.items || []).find(
+                                      (payee) => payee.id === trackerEdit.editState?.payeeId,
+                                    )?.trackWeight,
+                                ),
+                              )
+                            }
                             isSaving={trackerEdit.updateMutation.isPending}
                           />
                         ) : null}

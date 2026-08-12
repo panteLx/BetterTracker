@@ -94,6 +94,9 @@ export const trackers = sqliteTable(
       .default(false)
       .notNull(),
     discordPingRoleId: text("discord_ping_role_id").notNull().default(""),
+    weightTrackingEnabled: integer("weight_tracking_enabled", { mode: "boolean" })
+      .default(false)
+      .notNull(),
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
     isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
     isPublic: integer("is_public", { mode: "boolean" }).default(false).notNull(),
@@ -165,6 +168,7 @@ export const payees = sqliteTable(
     name: text("name").notNull(),
     notes: text("notes"),
     isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    trackWeight: integer("track_weight", { mode: "boolean" }).default(false).notNull(),
     ...timestamps,
   },
   (table) => [
@@ -226,6 +230,7 @@ export const transactions = sqliteTable(
     accountName: text("account_name").notNull().default(""),
     date: text("date").notNull(),
     amountCents: integer("amount_cents").notNull(),
+    weightGrams: integer("weight_grams"),
     direction: text("direction", { enum: ["expense", "income"] }).notNull(),
     categoryId: text("category_id").references(() => categories.id, {
       onDelete: "set null",
