@@ -1,7 +1,7 @@
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
+import { account, user } from "@/lib/db/schema";
 import { ok, serverError } from "@/lib/http";
 
 export async function GET(request: Request) {
@@ -9,21 +9,34 @@ export async function GET(request: Request) {
   if (access.response) return access.response;
 
   try {
-    const items = await db
-      .select({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        banned: user.banned,
-        banReason: user.banReason,
-        banExpires: user.banExpires,
-        createdAt: user.createdAt,
-      })
-      .from(user)
-      .orderBy(asc(user.createdAt));
+    const [items, credentialAccounts] = await Promise.all([
+      db
+        .select({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          banned: user.banned,
+          banReason: user.banReason,
+          banExpires: user.banExpires,
+          createdAt: user.createdAt,
+        })
+        .from(user)
+        .orderBy(asc(user.createdAt)),
+      db
+        .select({ userId: account.userId })
+        .from(account)
+        .where(eq(account.providerId, "credential")),
+    ]);
 
-    return ok({ items });
+    const usersWithPassword = new Set(credentialAccounts.map((row) => row.userId));
+
+    return ok({
+      items: items.map((item) => ({
+        ...item,
+        hasPassword: usersWithPassword.has(item.id),
+      })),
+    });
   } catch (error) {
     return serverError(error);
   }

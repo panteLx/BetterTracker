@@ -171,7 +171,26 @@
     "actions": {
       "ban": "Ban",
       "unban": "Unban",
-      "delete": "Delete"
+      "delete": "Delete",
+      "edit": "Edit",
+      "resetPassword": "Reset password"
+    },
+    "editDialog": {
+      "title": "Edit user",
+      "name": "Name",
+      "email": "Email",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "resetPasswordDialog": {
+      "title": "Reset password",
+      "description": "Set a new password for {name}.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Reset password",
+      "cancel": "Cancel",
+      "mismatch": "Passwords do not match",
+      "tooShort": "Password must be at least 8 characters"
     },
     "deleteConfirm": "Really delete user \"{name}\" ({email})?\n\nAll transactions, schedules, and tracker memberships belonging to this user will be permanently deleted.",
     "toasts": {
@@ -180,7 +199,9 @@
       "statusUpdated": "Status updated",
       "statusError": "Action failed",
       "deleted": "User deleted",
-      "deleteError": "Delete failed"
+      "deleteError": "Delete failed",
+      "passwordReset": "Password reset",
+      "passwordResetError": "Reset failed"
     }
   },
   "errors": {

@@ -18,7 +18,26 @@
     "email": "Email",
     "status": "Status",
     "banned": "Banned",
-    "active": "Active"
+    "active": "Active",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "you@example.com",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saveSuccess": "Account updated",
+    "saveError": "Update failed"
+  },
+  "security": {
+    "title": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Change password",
+    "submitting": "Changing…",
+    "successToast": "Password changed",
+    "errorToast": "Could not change password",
+    "mismatch": "Passwords do not match",
+    "tooShort": "Password must be at least 8 characters",
+    "ssoOnly": "Your account signs in through single sign-on and has no password to change."
   },
   "sessions": {
     "title": "Active sessions",
