@@ -9,7 +9,8 @@
     "incomeHint": "Salary, credits"
   },
   "datePicker": {
-    "placeholder": "Pick a date"
+    "placeholder": "Pick a date",
+    "openCalendar": "Open calendar"
   },
   "frequency": {
     "monthly": "Monthly",

@@ -38,6 +38,9 @@ export type CaseFileFilters = {
    * Case files that were never submitted (no batch) never match either bound. */
   submittedFrom?: string;
   submittedTo?: string;
+  /** Defaults to false — the board only shows archived case files when
+   * explicitly asked for. */
+  archived?: boolean;
   page?: number;
   sortKey?: CaseFileSortKey;
   sortDir?: CaseFileSortDir;
@@ -77,7 +80,10 @@ function buildConditions(
   filters: CaseFileFilters,
   options: { skipStatus?: boolean; skipCaseType?: boolean } = {}
 ) {
-  const conditions = [eq(caseFiles.workspaceId, workspaceId)];
+  const conditions = [
+    eq(caseFiles.workspaceId, workspaceId),
+    eq(caseFiles.isArchived, filters.archived ?? false),
+  ];
 
   if (filters.status && !options.skipStatus) {
     conditions.push(eq(caseFiles.status, filters.status));
@@ -178,6 +184,7 @@ export async function listCaseFiles(
       submissionBatchId: caseFiles.submissionBatchId,
       returnCount: caseFiles.returnCount,
       lastReturnedAt: caseFiles.lastReturnedAt,
+      isArchived: caseFiles.isArchived,
       createdByUserId: caseFiles.createdByUserId,
       createdAt: caseFiles.createdAt,
       updatedAt: caseFiles.updatedAt,
@@ -354,6 +361,7 @@ export async function updateCaseFile(
       fileNumber: data.fileNumber,
       dateOfBirth: data.dateOfBirth === undefined ? undefined : data.dateOfBirth,
       caseType: data.caseType,
+      isArchived: data.isArchived,
       updatedAt: new Date(),
     })
     .where(eq(caseFiles.id, caseFileId))

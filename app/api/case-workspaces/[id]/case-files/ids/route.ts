@@ -24,6 +24,7 @@ export async function GET(
       q: searchParams.get("q") || undefined,
       submittedFrom: searchParams.get("submittedFrom") || undefined,
       submittedTo: searchParams.get("submittedTo") || undefined,
+      archived: searchParams.get("archived") === "true" || undefined,
     };
 
     const ids = await listCaseFileIds(id, filters);

@@ -1,0 +1,1 @@
+ALTER TABLE `todo_lists` ADD `is_archived` integer DEFAULT false NOT NULL;

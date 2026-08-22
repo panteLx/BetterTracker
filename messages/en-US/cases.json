@@ -1,6 +1,7 @@
 {
   "nav": {
     "board": "Overview",
+    "todos": "To-dos",
     "batches": "PVS submissions",
     "settings": "Settings"
   },
@@ -53,9 +54,15 @@
     "clearSubmittedRange": "Clear submitted date range",
     "selectAllAria": "Select all eligible case files",
     "selectRowAria": "Select case file for {name}",
+    "showArchivedToggle": "Show archived case files",
+    "hideArchivedToggle": "Hide archived case files",
     "empty": {
       "title": "No case files yet",
       "description": "Create the first patient case file to get started."
+    },
+    "archivedEmpty": {
+      "title": "No archived case files",
+      "description": "Archived case files will appear here."
     },
     "table": {
       "patientName": "Patient",
@@ -132,6 +139,10 @@
     "create": "Create",
     "confirmDelete": "Really delete this case file?",
     "delete": "Delete case file",
+    "archive": "Archive",
+    "confirmArchive": "Archive this case file? It will be hidden but kept.",
+    "unarchive": "Restore",
+    "archivedNotice": "This case file is archived and read-only.",
     "statusHistoryTitle": "Status history",
     "commentsTitle": "Comments",
     "returnedNotice": "This case file was returned by PVS {count}× (last on {date}).",
@@ -141,6 +152,10 @@
       "saveFailed": "Could not save case file.",
       "duplicateFileNumber": "This case/file number is already used in this workspace.",
       "requiredFields": "Please enter patient name and file number.",
+      "archived": "Case file archived.",
+      "archiveFailed": "Could not archive case file.",
+      "unarchived": "Case file restored.",
+      "unarchiveFailed": "Could not restore case file.",
       "deleted": "Case file deleted.",
       "deleteFailed": "Could not delete case file."
     }
@@ -236,8 +251,43 @@
     "routes": {
       "allWorkspaces": "All case workspaces",
       "board": "Overview",
+      "todos": "To-dos",
       "batches": "PVS submissions",
       "settings": "Settings"
+    }
+  },
+  "todos": {
+    "title": "To-dos",
+    "newListPlaceholder": "New list name…",
+    "newList": "New list",
+    "listNameAria": "List name",
+    "deleteList": "Delete list",
+    "confirmDeleteList": "Really delete this list and all its to-dos?",
+    "archiveList": "Archive list",
+    "confirmArchiveList": "Archive this list? It will be hidden but kept.",
+    "unarchiveList": "Restore list",
+    "showArchivedToggle": "Show archived lists",
+    "hideArchivedToggle": "Hide archived lists",
+    "archivedSectionTitle": "Archived lists",
+    "noArchived": "No archived lists.",
+    "emptyItems": "No to-dos yet.",
+    "addItemPlaceholder": "Add a to-do…",
+    "addItem": "Add to-do",
+    "deleteItem": "Delete to-do",
+    "toggleItemAria": "Mark \"{body}\" as done",
+    "empty": {
+      "title": "No lists yet",
+      "description": "Create a list to collect to-dos for this workspace."
+    },
+    "toast": {
+      "createListFailed": "Could not create list.",
+      "renameListFailed": "Could not rename list.",
+      "deleteListFailed": "Could not delete list.",
+      "archiveListFailed": "Could not archive list.",
+      "unarchiveListFailed": "Could not restore list.",
+      "addItemFailed": "Could not add to-do.",
+      "updateItemFailed": "Could not update to-do.",
+      "deleteItemFailed": "Could not delete to-do."
     }
   }
 }

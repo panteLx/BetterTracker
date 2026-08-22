@@ -26,6 +26,7 @@ function useWorkspaceNavItems(workspaceId: string) {
   const t = useTranslations("Cases.nav");
   return [
     { href: `/cases/${workspaceId}`, key: "board" as const, exact: true },
+    { href: `/cases/${workspaceId}/todos`, key: "todos" as const, exact: false },
     { href: `/cases/${workspaceId}/batches`, key: "batches" as const, exact: false },
     { href: `/cases/${workspaceId}/settings`, key: "settings" as const, exact: false },
   ].map((item) => ({ ...item, label: t(item.key) }));

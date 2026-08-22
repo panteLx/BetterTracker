@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,8 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
   const locale = useLocale();
   const queryClient = useQueryClient();
   const isEdit = Boolean(caseFile);
-  const readOnly = isEdit && !caseFile?.canEdit;
+  const isArchived = Boolean(caseFile?.isArchived);
+  const readOnly = isEdit && (!caseFile?.canEdit || isArchived);
 
   function reportSaveError(error: unknown) {
     if (error instanceof FetchError && error.status === 409) {
@@ -131,6 +133,24 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
     },
   });
 
+  const setArchivedMutation = useMutation({
+    mutationFn: (nextIsArchived: boolean) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/${caseFile!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isArchived: nextIsArchived }),
+      }),
+    onSuccess: (_data, nextIsArchived) => {
+      invalidateCaseFiles();
+      toast.success(nextIsArchived ? t("toast.archived") : t("toast.unarchived"));
+      if (nextIsArchived) {
+        onOpenChange(false);
+      }
+    },
+    onError: (_error, nextIsArchived) => {
+      toast.error(nextIsArchived ? t("toast.archiveFailed") : t("toast.unarchiveFailed"));
+    },
+  });
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!patientName.trim() || !fileNumber.trim()) {
@@ -162,6 +182,11 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
           <SheetDescription>{t("description")}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4">
+          {isEdit && isArchived ? (
+            <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+              {t("archivedNotice")}
+            </p>
+          ) : null}
           {isEdit && caseFile && caseFile.returnCount > 0 ? (
             <p className="rounded-lg bg-warning-muted px-3 py-2 text-xs text-warning">
               {t("returnedNotice", {
@@ -194,11 +219,10 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
             </div>
             <div className="space-y-2">
               <Label htmlFor="case-dob">{t("dateOfBirth")}</Label>
-              <Input
+              <DatePicker
                 id="case-dob"
-                type="date"
                 value={dateOfBirth}
-                onChange={(event) => setDateOfBirth(event.target.value)}
+                onChange={setDateOfBirth}
                 disabled={readOnly}
               />
             </div>
@@ -232,20 +256,49 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
           {isEdit && caseFile ? (
             <>
               {caseFile.canDelete ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={deleteMutation.isPending}
-                  onClick={() => {
-                    if (window.confirm(t("confirmDelete"))) {
-                      deleteMutation.mutate();
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t("delete")}
-                </Button>
+                <div className="flex gap-2">
+                  {isArchived ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={setArchivedMutation.isPending}
+                      onClick={() => setArchivedMutation.mutate(false)}
+                    >
+                      <ArchiveRestore className="h-4 w-4" />
+                      {t("unarchive")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={setArchivedMutation.isPending}
+                      onClick={() => {
+                        if (window.confirm(t("confirmArchive"))) {
+                          setArchivedMutation.mutate(true);
+                        }
+                      }}
+                    >
+                      <Archive className="h-4 w-4" />
+                      {t("archive")}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (window.confirm(t("confirmDelete"))) {
+                        deleteMutation.mutate();
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {t("delete")}
+                  </Button>
+                </div>
               ) : null}
 
               <div className="border-t border-border pt-4">
@@ -258,7 +311,7 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
                 <CaseComments
                   workspaceId={workspaceId}
                   caseFileId={caseFile.id}
-                  canComment={caseFile.canEdit}
+                  canComment={caseFile.canEdit && !isArchived}
                 />
               </div>
             </>

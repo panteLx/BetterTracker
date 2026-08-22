@@ -28,6 +28,7 @@ export async function GET(
       q: searchParams.get("q") || undefined,
       submittedFrom: searchParams.get("submittedFrom") || undefined,
       submittedTo: searchParams.get("submittedTo") || undefined,
+      archived: searchParams.get("archived") === "true" || undefined,
       page: Number.isFinite(pageParam) && pageParam > 0 ? pageParam : undefined,
       sortKey: (searchParams.get("sortKey") as CaseFileFilters["sortKey"]) || undefined,
       sortDir: (searchParams.get("sortDir") as CaseFileFilters["sortDir"]) || undefined,
