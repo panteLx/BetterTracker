@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Eye,
+  EyeOff,
   FileStack,
   ListChecks,
   MessageSquare,
@@ -67,6 +69,7 @@ export type CaseFile = {
   lastStatusChangeAt: string;
   returnCount: number;
   lastReturnedAt: string | null;
+  isArchived: boolean;
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -108,6 +111,7 @@ type Filters = {
   q?: string;
   submittedFrom?: string;
   submittedTo?: string;
+  archived?: boolean;
   page?: number;
   sortKey?: SortKey;
   sortDir?: SortDir;
@@ -120,6 +124,7 @@ function buildQueryString(filters: Filters) {
   if (filters.q) params.set("q", filters.q);
   if (filters.submittedFrom) params.set("submittedFrom", filters.submittedFrom);
   if (filters.submittedTo) params.set("submittedTo", filters.submittedTo);
+  if (filters.archived) params.set("archived", "true");
   params.set("page", String(filters.page ?? 1));
   params.set("sortKey", filters.sortKey ?? DEFAULT_SORT_KEY);
   params.set("sortDir", filters.sortDir ?? DEFAULT_SORT_DIR);
@@ -188,6 +193,7 @@ export function CaseBoardClient({
 
   const [statusFilter, setStatusFilter] = useState<CaseFileStatus | "all">("all");
   const [caseTypeFilter, setCaseTypeFilter] = useState<CaseType | "all">("all");
+  const [showArchived, setShowArchived] = useState(false);
   const [search, setSearch] = useState("");
   const [submittedFrom, setSubmittedFrom] = useState("");
   const [submittedTo, setSubmittedTo] = useState("");
@@ -267,6 +273,13 @@ export function CaseBoardClient({
 
   const handleCaseTypeFilterChange = resetPageAnd(setCaseTypeFilter);
 
+  function toggleShowArchived() {
+    setShowArchived((current) => !current);
+    setPage(1);
+    setSelectedIds(new Set());
+    setSelectionSpansAllPages(false);
+  }
+
   function handleSearchChange(value: string) {
     setSearch(value);
     setPage(1);
@@ -305,11 +318,12 @@ export function CaseBoardClient({
       q: search.trim() || undefined,
       submittedFrom: submittedFrom || undefined,
       submittedTo: submittedTo || undefined,
+      archived: showArchived || undefined,
       page: page > 1 ? page : undefined,
       sortKey: sortKey !== DEFAULT_SORT_KEY ? sortKey : undefined,
       sortDir: sortKey !== DEFAULT_SORT_KEY || sortDir !== DEFAULT_SORT_DIR ? sortDir : undefined,
     }),
-    [statusFilter, caseTypeFilter, search, submittedFrom, submittedTo, page, sortKey, sortDir]
+    [statusFilter, caseTypeFilter, search, submittedFrom, submittedTo, showArchived, page, sortKey, sortDir]
   );
 
   const caseFilesQuery = useQuery({
@@ -340,8 +354,11 @@ export function CaseBoardClient({
   // send/etc.) — "done" rows are still selectable individually (for PDF
   // export below), just not swept in by the header checkbox.
   const eligibleIds = useMemo(
-    () => caseFiles.filter((item) => canCreate && item.status !== "done").map((item) => item.id),
-    [caseFiles, canCreate]
+    () =>
+      caseFiles
+        .filter((item) => canCreate && !showArchived && item.status !== "done")
+        .map((item) => item.id),
+    [caseFiles, canCreate, showArchived]
   );
 
   const selectedCaseFiles = useMemo(
@@ -398,6 +415,7 @@ export function CaseBoardClient({
       if (filters.q) params.set("q", filters.q);
       if (filters.submittedFrom) params.set("submittedFrom", filters.submittedFrom);
       if (filters.submittedTo) params.set("submittedTo", filters.submittedTo);
+      if (filters.archived) params.set("archived", "true");
       return fetchJson<{ ids: string[] }>(
         `/api/case-workspaces/${workspaceId}/case-files/ids?${params.toString()}`
       );
@@ -540,6 +558,7 @@ export function CaseBoardClient({
   // single status — offering it under "all" would silently mix statuses.
   const canOfferSelectAllMatching =
     canCreate &&
+    !showArchived &&
     statusFilter !== "all" &&
     allEligibleSelected &&
     !selectionSpansAllPages &&
@@ -573,12 +592,26 @@ export function CaseBoardClient({
             <p className="mt-1 text-sm text-muted-foreground">{workspace.description}</p>
           ) : null}
         </div>
-        {canCreate ? (
-          <Button size="sm" shape="pill" onClick={openCreateSheet}>
-            <Plus className="h-4 w-4" />
-            {t("newCaseFile")}
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {canCreate ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              shape="pill"
+              onClick={toggleShowArchived}
+            >
+              {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showArchived ? t("hideArchivedToggle") : t("showArchivedToggle")}
+            </Button>
+          ) : null}
+          {canCreate ? (
+            <Button size="sm" shape="pill" onClick={openCreateSheet}>
+              <Plus className="h-4 w-4" />
+              {t("newCaseFile")}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -679,10 +712,10 @@ export function CaseBoardClient({
       {!caseFilesQuery.isLoading && caseFiles.length === 0 ? (
         <EmptyState
           icon={FileStack}
-          title={t("empty.title")}
-          description={t("empty.description")}
+          title={showArchived ? t("archivedEmpty.title") : t("empty.title")}
+          description={showArchived ? t("archivedEmpty.description") : t("empty.description")}
           action={
-            canCreate ? (
+            !showArchived && canCreate ? (
               <Button onClick={openCreateSheet}>
                 <Plus className="h-4 w-4" />
                 {t("newCaseFile")}
@@ -695,7 +728,7 @@ export function CaseBoardClient({
           <TableHeader>
             <TableRow>
               <TableHead>
-                {canCreate ? (
+                {canCreate && !showArchived ? (
                   <Checkbox
                     checked={allEligibleSelected}
                     onCheckedChange={toggleSelectAll}
@@ -755,7 +788,7 @@ export function CaseBoardClient({
                 }}
               >
                 <TableCell onClick={(event) => event.stopPropagation()}>
-                  {canCreate ? (
+                  {canCreate && !showArchived ? (
                     <Checkbox
                       checked={selectedIds.has(caseFile.id)}
                       onCheckedChange={() => toggleRow(caseFile.id)}

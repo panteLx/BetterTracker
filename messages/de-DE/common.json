@@ -9,7 +9,8 @@
     "incomeHint": "Gehalt, Gutschriften"
   },
   "datePicker": {
-    "placeholder": "Datum wählen"
+    "placeholder": "Datum wählen",
+    "openCalendar": "Kalender öffnen"
   },
   "frequency": {
     "monthly": "Monatlich",

@@ -1,0 +1,1 @@
+ALTER TABLE `case_files` ADD `is_archived` integer DEFAULT false NOT NULL;

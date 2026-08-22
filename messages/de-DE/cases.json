@@ -1,6 +1,7 @@
 {
   "nav": {
     "board": "Übersicht",
+    "todos": "Aufgaben",
     "batches": "PVS-Übermittlungen",
     "settings": "Einstellungen"
   },
@@ -53,9 +54,15 @@
     "clearSubmittedRange": "Übermittlungszeitraum entfernen",
     "selectAllAria": "Alle auswählbaren Akten auswählen",
     "selectRowAria": "Akte von {name} auswählen",
+    "showArchivedToggle": "Archivierte Akten anzeigen",
+    "hideArchivedToggle": "Archivierte Akten verbergen",
     "empty": {
       "title": "Noch keine Akten",
       "description": "Lege die erste Patientenakte an, um loszulegen."
+    },
+    "archivedEmpty": {
+      "title": "Keine archivierten Akten",
+      "description": "Archivierte Akten erscheinen hier."
     },
     "table": {
       "patientName": "Patient",
@@ -132,6 +139,10 @@
     "create": "Anlegen",
     "confirmDelete": "Diese Akte wirklich löschen?",
     "delete": "Akte löschen",
+    "archive": "Archivieren",
+    "confirmArchive": "Diese Akte archivieren? Sie wird ausgeblendet, bleibt aber erhalten.",
+    "unarchive": "Wiederherstellen",
+    "archivedNotice": "Diese Akte ist archiviert und schreibgeschützt.",
     "statusHistoryTitle": "Statusverlauf",
     "commentsTitle": "Kommentare",
     "returnedNotice": "Diese Akte kam {count}× von der PVS zurück (zuletzt am {date}).",
@@ -141,6 +152,10 @@
       "saveFailed": "Akte konnte nicht gespeichert werden.",
       "duplicateFileNumber": "Diese Fallnummer wird in diesem Bereich bereits verwendet.",
       "requiredFields": "Bitte Patientenname und Fallnummer angeben.",
+      "archived": "Akte archiviert.",
+      "archiveFailed": "Akte konnte nicht archiviert werden.",
+      "unarchived": "Akte wiederhergestellt.",
+      "unarchiveFailed": "Akte konnte nicht wiederhergestellt werden.",
       "deleted": "Akte gelöscht.",
       "deleteFailed": "Akte konnte nicht gelöscht werden."
     }
@@ -236,8 +251,43 @@
     "routes": {
       "allWorkspaces": "Alle Akten-Bereiche",
       "board": "Übersicht",
+      "todos": "Aufgaben",
       "batches": "PVS-Übermittlungen",
       "settings": "Einstellungen"
+    }
+  },
+  "todos": {
+    "title": "Aufgaben",
+    "newListPlaceholder": "Name der neuen Liste…",
+    "newList": "Neue Liste",
+    "listNameAria": "Name der Liste",
+    "deleteList": "Liste löschen",
+    "confirmDeleteList": "Diese Liste mit allen Aufgaben wirklich löschen?",
+    "archiveList": "Liste archivieren",
+    "confirmArchiveList": "Diese Liste archivieren? Sie wird ausgeblendet, bleibt aber erhalten.",
+    "unarchiveList": "Liste wiederherstellen",
+    "showArchivedToggle": "Archivierte Listen anzeigen",
+    "hideArchivedToggle": "Archivierte Listen verbergen",
+    "archivedSectionTitle": "Archivierte Listen",
+    "noArchived": "Keine archivierten Listen.",
+    "emptyItems": "Noch keine Aufgaben.",
+    "addItemPlaceholder": "Aufgabe hinzufügen…",
+    "addItem": "Aufgabe hinzufügen",
+    "deleteItem": "Aufgabe löschen",
+    "toggleItemAria": "„{body}“ als erledigt markieren",
+    "empty": {
+      "title": "Noch keine Listen",
+      "description": "Lege eine Liste an, um Aufgaben für diesen Bereich zu sammeln."
+    },
+    "toast": {
+      "createListFailed": "Liste konnte nicht angelegt werden.",
+      "renameListFailed": "Liste konnte nicht umbenannt werden.",
+      "deleteListFailed": "Liste konnte nicht gelöscht werden.",
+      "archiveListFailed": "Liste konnte nicht archiviert werden.",
+      "unarchiveListFailed": "Liste konnte nicht wiederhergestellt werden.",
+      "addItemFailed": "Aufgabe konnte nicht hinzugefügt werden.",
+      "updateItemFailed": "Aufgabe konnte nicht aktualisiert werden.",
+      "deleteItemFailed": "Aufgabe konnte nicht gelöscht werden."
     }
   }
 }

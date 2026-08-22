@@ -1,33 +1,31 @@
-import {
-  requireCaseWorkspaceContentCreateAccess,
-} from "@/lib/auth/case-workspace-guards";
+import { requireCaseWorkspaceContentCreateAccess } from "@/lib/auth/case-workspace-guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { deleteCaseFile, updateCaseFile } from "@/lib/services/case-file-service";
+import { deleteTodoList, updateTodoList } from "@/lib/services/todo-service";
 import { ok, mapServiceError, parseRequestJson } from "@/lib/http";
 
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string; caseFileId: string }> }
+  context: { params: Promise<{ id: string; listId: string }> }
 ) {
-  const { id, caseFileId } = await context.params;
+  const { id, listId } = await context.params;
   const access = await requireCaseWorkspaceContentCreateAccess(request.headers, id);
   if (access.response) return access.response;
 
   try {
-    const body = await parseRequestJson<{ isArchived?: boolean }>(request);
-    const updated = await updateCaseFile(id, caseFileId, body, access.workspaceAccess!.permission);
+    const body = await parseRequestJson<{ name?: string; isArchived?: boolean }>(request);
+    const updated = await updateTodoList(id, listId, body, access.workspaceAccess!.permission);
 
     await logAuditEvent({
       actorUserId: access.user!.id,
       action:
         body.isArchived === true
-          ? "case_file_archived"
+          ? "todo_list_archived"
           : body.isArchived === false
-            ? "case_file_unarchived"
-            : "case_file_updated",
-      resourceType: "case_file",
-      resourceId: caseFileId,
-      metadata: updated,
+            ? "todo_list_unarchived"
+            : "todo_list_renamed",
+      resourceType: "todo_list",
+      resourceId: listId,
+      metadata: { workspaceId: id },
       ...(await getRequestAuditContext()),
     });
 
@@ -39,20 +37,21 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string; caseFileId: string }> }
+  context: { params: Promise<{ id: string; listId: string }> }
 ) {
-  const { id, caseFileId } = await context.params;
+  const { id, listId } = await context.params;
   const access = await requireCaseWorkspaceContentCreateAccess(request.headers, id);
   if (access.response) return access.response;
 
   try {
-    await deleteCaseFile(id, caseFileId, access.workspaceAccess!.permission);
+    await deleteTodoList(id, listId, access.workspaceAccess!.permission);
 
     await logAuditEvent({
       actorUserId: access.user!.id,
-      action: "case_file_deleted",
-      resourceType: "case_file",
-      resourceId: caseFileId,
+      action: "todo_list_deleted",
+      resourceType: "todo_list",
+      resourceId: listId,
+      metadata: { workspaceId: id },
       ...(await getRequestAuditContext()),
     });
 

@@ -363,6 +363,7 @@ export const caseFiles = sqliteTable(
     ),
     returnCount: integer("return_count").default(0).notNull(),
     lastReturnedAt: integer("last_returned_at", { mode: "timestamp_ms" }),
+    isArchived: integer("is_archived", { mode: "boolean" }).default(false).notNull(),
     createdByUserId: text("created_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -446,6 +447,44 @@ export const caseFileStatusHistory = sqliteTable(
     createdAt: timestamps.createdAt,
   },
   (table) => [index("case_file_status_history_case_file_idx").on(table.caseFileId)]
+);
+
+export const todoLists = sqliteTable(
+  "todo_lists",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    isArchived: integer("is_archived", { mode: "boolean" }).default(false).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [index("todo_lists_workspace_idx").on(table.workspaceId)]
+);
+
+export const todoItems = sqliteTable(
+  "todo_items",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    listId: text("list_id")
+      .notNull()
+      .references(() => todoLists.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    isDone: integer("is_done", { mode: "boolean" }).default(false).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [index("todo_items_list_idx").on(table.listId)]
 );
 
 export const appSettings = sqliteTable("app_settings", {
@@ -539,6 +578,22 @@ export const caseWorkspaceRelations = relations(caseWorkspaces, ({ many }) => ({
   members: many(caseWorkspaceMembers),
   caseFiles: many(caseFiles),
   batches: many(pvsSubmissionBatches),
+  todoLists: many(todoLists),
+}));
+
+export const todoListRelations = relations(todoLists, ({ one, many }) => ({
+  workspace: one(caseWorkspaces, {
+    fields: [todoLists.workspaceId],
+    references: [caseWorkspaces.id],
+  }),
+  items: many(todoItems),
+}));
+
+export const todoItemRelations = relations(todoItems, ({ one }) => ({
+  list: one(todoLists, {
+    fields: [todoItems.listId],
+    references: [todoLists.id],
+  }),
 }));
 
 export const caseWorkspaceMemberRelations = relations(
@@ -628,3 +683,7 @@ export type CaseFileComment = typeof caseFileComments.$inferSelect;
 export type PvsSubmissionBatch = typeof pvsSubmissionBatches.$inferSelect;
 export type CaseFileSubmission = typeof caseFileSubmissions.$inferSelect;
 export type CaseFileStatusHistory = typeof caseFileStatusHistory.$inferSelect;
+export type TodoList = typeof todoLists.$inferSelect;
+export type NewTodoList = typeof todoLists.$inferInsert;
+export type TodoItem = typeof todoItems.$inferSelect;
+export type NewTodoItem = typeof todoItems.$inferInsert;

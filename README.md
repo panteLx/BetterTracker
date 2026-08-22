@@ -4,7 +4,7 @@
 
 **Your favorite self-hosted finance tracker!**
 
-_BetterTracker is a self-hosted, multi-user expense and income tracker. Manage multiple trackers with custom categories, payees, and recurring schedules. Share trackers publicly, monitor your finances with statistics and charts, and administrate users via a built-in admin panel with role-based permissions and audit logging. A separate Cases area adds patient case file management for medical billing (PVS), with a status workflow, submission batches, and per-case-type PDF exports._
+_BetterTracker is a self-hosted, multi-user expense and income tracker. Manage multiple trackers with custom categories, payees, and recurring schedules. Share trackers publicly, monitor your finances with statistics and charts, and administrate users via a built-in admin panel with role-based permissions and audit logging. A separate Cases area adds patient case file management for medical billing (PVS), with a status workflow, submission batches, per-case-type PDF exports, archiving, and shared to-do lists per workspace._
 
 ![Version](https://img.shields.io/github/v/release/pantelx/bettertracker?style=flat-square&label=version)
 ![Build](https://img.shields.io/github/check-runs/pantelx/bettertracker/main?style=flat-square&label=build)
@@ -33,7 +33,8 @@ _BetterTracker is a self-hosted, multi-user expense and income tracker. Manage m
 | **Admin Panel**    | User management, registration control, and audit logging        |
 | **Roles**          | Superadmin, admin, and user roles with per-tracker permissions  |
 | **Discord**        | Optional webhook notifications per tracker                      |
-| **Cases**          | Patient case file management for PVS medical billing, with a status workflow, submission batches, and PDF exports |
+| **Cases**          | Patient case file management for PVS medical billing, with a status workflow, submission batches, PDF exports, and archiving |
+| **Case To-dos**    | Shared, archivable to-do lists per case workspace                |
 
 ## Quick Start
 
@@ -119,6 +120,12 @@ Patient case files live in their own **workspaces** (the same owner/admin/write/
 **Status workflow:** Needs processing → Medical controlling → Queued for PVS _(optional)_ → Sent to PVS → Done, with a Returned action that resets a case back to Needs processing and tracks a return count.
 
 **PVS submissions:** Sending case files to PVS groups them into a dated submission batch with per-case-type PDF exports. Admins can hide/unhide a batch from the submissions list without changing its case files' status or history.
+
+**Archiving:** Case files can be archived instead of deleted — they disappear from the default board (and from bulk actions and status counts) but stay intact and reversible via a "Show archived" toggle, where they're read-only until restored.
+
+**To-dos:** Each case workspace has its own **Aufgaben/To-dos** tab with any number of shared to-do lists, visible and editable by every workspace member with write access. Lists can be archived and restored the same way as case files.
+
+**Date entry:** Date fields (like a case file's date of birth) accept typed shorthand — `18.11.99`, `18111999`, or `181199` all resolve to `18.11.1999` (day/month order follows the active locale).
 
 <div align="center">
 

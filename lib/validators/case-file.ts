@@ -19,5 +19,6 @@ export const caseFileUpdateSchema = z
     fileNumber: caseFileBaseSchema.fileNumber.optional(),
     dateOfBirth: caseFileBaseSchema.dateOfBirth,
     caseType: caseFileBaseSchema.caseType.optional(),
+    isArchived: z.boolean().optional(),
   })
   .strict();

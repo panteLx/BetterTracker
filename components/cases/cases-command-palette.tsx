@@ -10,6 +10,7 @@ import {
   FileStack,
   FolderClock,
   FolderPlus,
+  ListChecks,
   Moon,
   Plus,
   Search,
@@ -88,6 +89,7 @@ export function CasesCommandPalette({ workspaceId }: { workspaceId?: string }) {
     ...(workspaceId
       ? [
           { href: `/cases/${workspaceId}`, key: "board" as const, icon: ClipboardList },
+          { href: `/cases/${workspaceId}/todos`, key: "todos" as const, icon: ListChecks },
           { href: `/cases/${workspaceId}/batches`, key: "batches" as const, icon: FolderClock },
           { href: `/cases/${workspaceId}/settings`, key: "settings" as const, icon: Settings },
         ]
