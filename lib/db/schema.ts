@@ -479,12 +479,38 @@ export const todoItems = sqliteTable(
       .references(() => todoLists.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
     isDone: integer("is_done", { mode: "boolean" }).default(false).notNull(),
+    dueDate: text("due_date"),
+    priority: text("priority", { enum: ["low", "normal", "high"] })
+      .notNull()
+      .default("normal"),
+    position: integer("position").notNull().default(0),
+    assigneeUserId: text("assignee_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdByUserId: text("created_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
     ...timestamps,
   },
   (table) => [index("todo_items_list_idx").on(table.listId)]
+);
+
+export const todoComments = sqliteTable(
+  "todo_comments",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    itemId: text("item_id")
+      .notNull()
+      .references(() => todoItems.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    body: text("body").notNull(),
+    createdAt: timestamps.createdAt,
+  },
+  (table) => [index("todo_comments_item_idx").on(table.itemId)]
 );
 
 export const appSettings = sqliteTable("app_settings", {
@@ -589,10 +615,18 @@ export const todoListRelations = relations(todoLists, ({ one, many }) => ({
   items: many(todoItems),
 }));
 
-export const todoItemRelations = relations(todoItems, ({ one }) => ({
+export const todoItemRelations = relations(todoItems, ({ one, many }) => ({
   list: one(todoLists, {
     fields: [todoItems.listId],
     references: [todoLists.id],
+  }),
+  comments: many(todoComments),
+}));
+
+export const todoCommentRelations = relations(todoComments, ({ one }) => ({
+  item: one(todoItems, {
+    fields: [todoComments.itemId],
+    references: [todoItems.id],
   }),
 }));
 
@@ -687,3 +721,5 @@ export type TodoList = typeof todoLists.$inferSelect;
 export type NewTodoList = typeof todoLists.$inferInsert;
 export type TodoItem = typeof todoItems.$inferSelect;
 export type NewTodoItem = typeof todoItems.$inferInsert;
+export type TodoComment = typeof todoComments.$inferSelect;
+export type NewTodoComment = typeof todoComments.$inferInsert;

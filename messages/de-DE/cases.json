@@ -275,6 +275,28 @@
     "addItem": "Aufgabe hinzufügen",
     "deleteItem": "Aufgabe löschen",
     "toggleItemAria": "„{body}“ als erledigt markieren",
+    "dragHandleAria": "Zum Verschieben ziehen",
+    "openItemDetails": "Details zu „{body}“ öffnen",
+    "itemDetailsTitle": "Aufgabe bearbeiten",
+    "dueDate": "Fällig am",
+    "dueDateNone": "Kein Fälligkeitsdatum",
+    "dueDateAria": "Fälligkeitsdatum",
+    "overdue": "Überfällig",
+    "priority": "Priorität",
+    "priorityLow": "Niedrig",
+    "priorityNormal": "Normal",
+    "priorityHigh": "Hoch",
+    "assignee": "Zuständig",
+    "assigneeNone": "Niemand zugewiesen",
+    "assigneeUnassignedOption": "Nicht zugewiesen",
+    "comments": {
+      "title": "Kommentare",
+      "empty": "Noch keine Kommentare.",
+      "placeholder": "Kommentar schreiben…",
+      "send": "Kommentar senden",
+      "delete": "Kommentar löschen",
+      "unknownAuthor": "Unbekannt"
+    },
     "empty": {
       "title": "Noch keine Listen",
       "description": "Lege eine Liste an, um Aufgaben für diesen Bereich zu sammeln."
@@ -287,7 +309,10 @@
       "unarchiveListFailed": "Liste konnte nicht wiederhergestellt werden.",
       "addItemFailed": "Aufgabe konnte nicht hinzugefügt werden.",
       "updateItemFailed": "Aufgabe konnte nicht aktualisiert werden.",
-      "deleteItemFailed": "Aufgabe konnte nicht gelöscht werden."
+      "deleteItemFailed": "Aufgabe konnte nicht gelöscht werden.",
+      "reorderFailed": "Reihenfolge konnte nicht gespeichert werden.",
+      "addCommentFailed": "Kommentar konnte nicht hinzugefügt werden.",
+      "deleteCommentFailed": "Kommentar konnte nicht gelöscht werden."
     }
   }
 }

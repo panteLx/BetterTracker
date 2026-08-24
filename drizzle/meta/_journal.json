@@ -92,6 +92,13 @@
       "when": 1787404030577,
       "tag": "0012_premium_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1787583920492,
+      "tag": "0013_misty_krista_starr",
+      "breakpoints": true
     }
   ]
 }

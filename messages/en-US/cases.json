@@ -275,6 +275,28 @@
     "addItem": "Add to-do",
     "deleteItem": "Delete to-do",
     "toggleItemAria": "Mark \"{body}\" as done",
+    "dragHandleAria": "Drag to reorder",
+    "openItemDetails": "Open details for \"{body}\"",
+    "itemDetailsTitle": "Edit to-do",
+    "dueDate": "Due date",
+    "dueDateNone": "No due date",
+    "dueDateAria": "Due date",
+    "overdue": "Overdue",
+    "priority": "Priority",
+    "priorityLow": "Low",
+    "priorityNormal": "Normal",
+    "priorityHigh": "High",
+    "assignee": "Assignee",
+    "assigneeNone": "Unassigned",
+    "assigneeUnassignedOption": "Unassigned",
+    "comments": {
+      "title": "Comments",
+      "empty": "No comments yet.",
+      "placeholder": "Write a comment…",
+      "send": "Send comment",
+      "delete": "Delete comment",
+      "unknownAuthor": "Unknown"
+    },
     "empty": {
       "title": "No lists yet",
       "description": "Create a list to collect to-dos for this workspace."
@@ -287,7 +309,10 @@
       "unarchiveListFailed": "Could not restore list.",
       "addItemFailed": "Could not add to-do.",
       "updateItemFailed": "Could not update to-do.",
-      "deleteItemFailed": "Could not delete to-do."
+      "deleteItemFailed": "Could not delete to-do.",
+      "reorderFailed": "Could not save the new order.",
+      "addCommentFailed": "Could not add comment.",
+      "deleteCommentFailed": "Could not delete comment."
     }
   }
 }

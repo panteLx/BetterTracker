@@ -1,26 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, Eye, EyeOff, ListChecks, Plus, Trash2, X } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Eye,
+  EyeOff,
+  GripVertical,
+  ListChecks,
+  MessageSquare,
+  Plus,
+  Trash2,
+  UserRound,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { TodoItemDetailDialog } from "@/components/cases/todo-item-detail-dialog";
 import { fetchJson } from "@/lib/client-fetch";
-import { cn } from "@/lib/utils";
+import { cn, formatDateShort } from "@/lib/utils";
 import { canWriteTracker as canWriteWorkspace } from "@/lib/auth/permissions";
 
-type TodoItem = {
+export type TodoItem = {
   id: string;
   listId: string;
   body: string;
   isDone: boolean;
+  dueDate: string | null;
+  priority: "low" | "normal" | "high";
+  position: number;
+  assigneeUserId: string | null;
+  assigneeName: string | null;
+  commentCount: number;
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AssignableMember = {
+  userId: string;
+  name: string;
+  email: string;
 };
 
 type TodoList = {
@@ -41,14 +67,180 @@ type CaseWorkspace = {
   permission: "owner" | "admin" | "write" | "read";
 };
 
+function isOverdue(item: TodoItem) {
+  if (!item.dueDate || item.isDone) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(`${item.dueDate}T00:00:00`) < today;
+}
+
+function TodoItemRow({
+  workspaceId,
+  list,
+  item,
+  canEdit,
+  members,
+  draggable,
+  isDragging,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  workspaceId: string;
+  list: TodoList;
+  item: TodoItem;
+  canEdit: boolean;
+  members: AssignableMember[];
+  draggable: boolean;
+  isDragging: boolean;
+  onDragStart: () => void;
+  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
+}) {
+  const t = useTranslations("Cases.todos");
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ["todo-lists", workspaceId] });
+  }
+
+  const toggleItemMutation = useMutation({
+    mutationFn: (isDone: boolean) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${list.id}/items/${item.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isDone }),
+      }),
+    onSuccess: invalidate,
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.updateItemFailed"));
+    },
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: () =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${list.id}/items/${item.id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: invalidate,
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.deleteItemFailed"));
+    },
+  });
+
+  const overdue = isOverdue(item);
+  const hasMeta = item.dueDate || item.priority !== "normal" || item.assigneeName || item.commentCount > 0;
+
+  return (
+    <div
+      draggable={draggable}
+      onDragStart={(event) => {
+        event.dataTransfer.setData("text/plain", item.id);
+        onDragStart();
+      }}
+      onDragOver={onDragOver}
+      onDrop={(event) => {
+        event.preventDefault();
+        onDrop();
+      }}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "group flex flex-col gap-1 rounded-lg px-1.5 py-1.5 hover:bg-surface-muted",
+        isDragging && "opacity-40"
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {draggable ? (
+          <GripVertical
+            className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100"
+            aria-hidden
+          />
+        ) : null}
+        <Checkbox
+          checked={item.isDone}
+          disabled={!canEdit || toggleItemMutation.isPending}
+          onCheckedChange={(checked) => toggleItemMutation.mutate(checked === true)}
+          aria-label={t("toggleItemAria", { body: item.body })}
+        />
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          aria-label={t("openItemDetails", { body: item.body })}
+          className={cn(
+            "flex-1 truncate text-left text-sm",
+            item.isDone && "text-muted-foreground line-through"
+          )}
+        >
+          {item.body}
+        </button>
+        {canEdit ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+            disabled={deleteItemMutation.isPending}
+            onClick={() => deleteItemMutation.mutate()}
+            aria-label={t("deleteItem")}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
+      </div>
+
+      {hasMeta ? (
+        <div className={cn("flex flex-wrap items-center gap-1.5", draggable ? "pl-9" : "pl-7")}>
+          {item.dueDate ? (
+            <Badge variant={overdue ? "destructive" : "outline"}>
+              {overdue ? `${t("overdue")} · ` : ""}
+              {formatDateShort(item.dueDate, locale)}
+            </Badge>
+          ) : null}
+          {item.priority === "high" ? (
+            <Badge variant="destructive">{t("priorityHigh")}</Badge>
+          ) : null}
+          {item.priority === "low" ? <Badge variant="outline">{t("priorityLow")}</Badge> : null}
+          {item.assigneeName ? (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <UserRound className="h-3 w-3" />
+              {item.assigneeName}
+            </span>
+          ) : null}
+          {item.commentCount > 0 ? (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <MessageSquare className="h-3 w-3" />
+              {item.commentCount}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <TodoItemDetailDialog
+        workspaceId={workspaceId}
+        listId={list.id}
+        item={item}
+        members={members}
+        canEdit={canEdit}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+    </div>
+  );
+}
+
 function TodoListCard({
   workspaceId,
   list,
   canEdit,
+  members,
 }: {
   workspaceId: string;
   list: TodoList;
   canEdit: boolean;
+  members: AssignableMember[];
 }) {
   const t = useTranslations("Cases.todos");
   const queryClient = useQueryClient();
@@ -60,6 +252,7 @@ function TodoListCard({
     setName(list.name);
   }
   const [newItemBody, setNewItemBody] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["todo-lists", workspaceId] });
@@ -122,26 +315,16 @@ function TodoListCard({
     },
   });
 
-  const toggleItemMutation = useMutation({
-    mutationFn: ({ itemId, isDone }: { itemId: string; isDone: boolean }) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${list.id}/items/${itemId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ isDone }),
+  const reorderMutation = useMutation({
+    mutationFn: (itemIds: string[]) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${list.id}/items/reorder`, {
+        method: "POST",
+        body: JSON.stringify({ itemIds }),
       }),
     onSuccess: invalidate,
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.updateItemFailed"));
-    },
-  });
-
-  const deleteItemMutation = useMutation({
-    mutationFn: (itemId: string) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${list.id}/items/${itemId}`, {
-        method: "DELETE",
-      }),
-    onSuccess: invalidate,
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.deleteItemFailed"));
+      toast.error(error instanceof Error ? error.message : t("toast.reorderFailed"));
+      invalidate();
     },
   });
 
@@ -154,6 +337,24 @@ function TodoListCard({
     if (trimmed !== list.name) {
       renameMutation.mutate(trimmed);
     }
+  }
+
+  function handleDropOnItem(targetItem: TodoItem) {
+    if (!draggedId || draggedId === targetItem.id) {
+      setDraggedId(null);
+      return;
+    }
+    const activeItems = list.items.filter((current) => !current.isDone);
+    const doneItems = list.items.filter((current) => current.isDone);
+    const draggedIndex = activeItems.findIndex((current) => current.id === draggedId);
+    const targetIndex = activeItems.findIndex((current) => current.id === targetItem.id);
+    setDraggedId(null);
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const reordered = [...activeItems];
+    const [moved] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    reorderMutation.mutate([...reordered, ...doneItems].map((current) => current.id));
   }
 
   const canEditItems = canEdit && !archived;
@@ -232,40 +433,22 @@ function TodoListCard({
           <p className="px-1.5 py-2 text-xs text-muted-foreground">{t("emptyItems")}</p>
         ) : (
           list.items.map((item) => (
-            <div
+            <TodoItemRow
               key={item.id}
-              className="group flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-surface-muted"
-            >
-              <Checkbox
-                checked={item.isDone}
-                disabled={!canEditItems || toggleItemMutation.isPending}
-                onCheckedChange={(checked) =>
-                  toggleItemMutation.mutate({ itemId: item.id, isDone: checked === true })
-                }
-                aria-label={t("toggleItemAria", { body: item.body })}
-              />
-              <span
-                className={cn(
-                  "flex-1 break-words text-sm",
-                  item.isDone && "text-muted-foreground line-through",
-                )}
-              >
-                {item.body}
-              </span>
-              {canEditItems ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  className="shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-                  disabled={deleteItemMutation.isPending}
-                  onClick={() => deleteItemMutation.mutate(item.id)}
-                  aria-label={t("deleteItem")}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              ) : null}
-            </div>
+              workspaceId={workspaceId}
+              list={list}
+              item={item}
+              canEdit={canEditItems}
+              members={members}
+              draggable={canEditItems && !item.isDone}
+              isDragging={draggedId === item.id}
+              onDragStart={() => setDraggedId(item.id)}
+              onDragOver={(event) => {
+                if (!item.isDone) event.preventDefault();
+              }}
+              onDrop={() => handleDropOnItem(item)}
+              onDragEnd={() => setDraggedId(null)}
+            />
           ))
         )}
       </div>
@@ -304,15 +487,23 @@ function TodoListGrid({
   workspaceId,
   lists,
   canEdit,
+  members,
 }: {
   workspaceId: string;
   lists: TodoList[];
   canEdit: boolean;
+  members: AssignableMember[];
 }) {
   return (
     <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {lists.map((list) => (
-        <TodoListCard key={list.id} workspaceId={workspaceId} list={list} canEdit={canEdit} />
+        <TodoListCard
+          key={list.id}
+          workspaceId={workspaceId}
+          list={list}
+          canEdit={canEdit}
+          members={members}
+        />
       ))}
     </div>
   );
@@ -343,6 +534,15 @@ export function TodoBoardClient({ workspaceId }: { workspaceId: string }) {
     enabled: canEdit && showArchived,
   });
 
+  const membersQuery = useQuery({
+    queryKey: ["todo-assignable-members", workspaceId],
+    queryFn: () =>
+      fetchJson<{ items: AssignableMember[] }>(
+        `/api/case-workspaces/${workspaceId}/todo-lists/assignable-members`
+      ),
+    enabled: canEdit,
+  });
+
   const createListMutation = useMutation({
     mutationFn: (name: string) =>
       fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists`, {
@@ -360,6 +560,7 @@ export function TodoBoardClient({ workspaceId }: { workspaceId: string }) {
 
   const lists = listsQuery.data?.items || [];
   const archivedLists = archivedListsQuery.data?.items || [];
+  const members = membersQuery.data?.items || [];
 
   return (
     <div className="space-y-4">
@@ -405,7 +606,7 @@ export function TodoBoardClient({ workspaceId }: { workspaceId: string }) {
       {!listsQuery.isLoading && lists.length === 0 ? (
         <EmptyState icon={ListChecks} title={t("empty.title")} description={t("empty.description")} />
       ) : (
-        <TodoListGrid workspaceId={workspaceId} lists={lists} canEdit={canEdit} />
+        <TodoListGrid workspaceId={workspaceId} lists={lists} canEdit={canEdit} members={members} />
       )}
 
       {showArchived ? (
@@ -414,7 +615,7 @@ export function TodoBoardClient({ workspaceId }: { workspaceId: string }) {
           {!archivedListsQuery.isLoading && archivedLists.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noArchived")}</p>
           ) : (
-            <TodoListGrid workspaceId={workspaceId} lists={archivedLists} canEdit={canEdit} />
+            <TodoListGrid workspaceId={workspaceId} lists={archivedLists} canEdit={canEdit} members={members} />
           )}
         </div>
       ) : null}
