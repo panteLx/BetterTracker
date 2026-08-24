@@ -224,6 +224,7 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
                 value={dateOfBirth}
                 onChange={setDateOfBirth}
                 disabled={readOnly}
+                assumePastTwoDigitYears
               />
             </div>
             <div className="space-y-2">

@@ -32,6 +32,12 @@ type DatePickerProps = {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  /**
+   * Treat a typed two-digit year as always being in the 1900s instead of
+   * using the sliding pivot. Intended for birth-date fields, where a future
+   * (2000s) reading is never correct.
+   */
+  assumePastTwoDigitYears?: boolean;
 };
 
 function toDate(value: string): Date | undefined {
@@ -44,7 +50,18 @@ function toDate(value: string): Date | undefined {
 // %y): 00-68 lands in the 2000s, 69-99 in the 1900s. Fixed rather than
 // sliding with the current year, so a typed date parses the same way
 // regardless of when it's entered.
-function expandTwoDigitYear(year: number) {
+//
+// When `assumePast` is set (birth dates), the pivot instead slides with
+// today's date: the 2000s reading is used unless it would be a future date,
+// in which case it falls back to the 1900s. A birth date can never be in the
+// future, so this never guesses "not yet born" — but it also doesn't force
+// everyone into the 1900s the way a fixed cutoff would, so e.g. "08" for
+// someone born in (the now more plausible) 2008 isn't misread as 1908.
+function expandTwoDigitYear(year: number, assumePast: boolean) {
+  if (assumePast) {
+    const asRecent = 2000 + year;
+    return asRecent <= new Date().getFullYear() ? asRecent : 1900 + year;
+  }
   return year < 69 ? 2000 + year : 1900 + year;
 }
 
@@ -69,7 +86,11 @@ function splitContiguousDigits(digits: string): string[] | null {
  * an ISO "yyyy-MM-dd" string. Returns "" for a cleared field, null if the
  * text isn't a parseable date.
  */
-function parseTypedDate(text: string, locale: SupportedLocale): string | null {
+function parseTypedDate(
+  text: string,
+  locale: SupportedLocale,
+  assumePastTwoDigitYears: boolean
+): string | null {
   const trimmed = text.trim();
   if (!trimmed) return "";
 
@@ -90,7 +111,7 @@ function parseTypedDate(text: string, locale: SupportedLocale): string | null {
     return null;
   }
   if (parts[yearIndex].length <= 2) {
-    year = expandTwoDigitYear(year);
+    year = expandTwoDigitYear(year, assumePastTwoDigitYears);
   }
   if (month < 1 || month > 12 || day < 1 || day > 31) {
     return null;
@@ -112,6 +133,7 @@ export function DatePicker({
   disabled,
   placeholder,
   className,
+  assumePastTwoDigitYears = false,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const date = toDate(value);
@@ -137,7 +159,7 @@ export function DatePicker({
   }
 
   function commit() {
-    const parsed = parseTypedDate(text, locale);
+    const parsed = parseTypedDate(text, locale, assumePastTwoDigitYears);
     if (parsed === null) {
       // Unparseable — revert to the last known-good value instead of
       // silently submitting garbage.

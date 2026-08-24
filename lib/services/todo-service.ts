@@ -1,17 +1,40 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { todoItems, todoLists } from "@/lib/db/schema";
+import { todoComments, todoItems, todoLists, user } from "@/lib/db/schema";
 import { canWriteTracker as canWriteWorkspace, type TrackerPermission } from "@/lib/auth/permissions";
 import {
+  todoCommentInputSchema,
   todoItemInputSchema,
+  todoItemReorderSchema,
   todoItemUpdateSchema,
   todoListInputSchema,
   todoListUpdateSchema,
 } from "@/lib/validators/todo";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 
+const itemSelect = {
+  id: todoItems.id,
+  listId: todoItems.listId,
+  body: todoItems.body,
+  isDone: todoItems.isDone,
+  dueDate: todoItems.dueDate,
+  priority: todoItems.priority,
+  position: todoItems.position,
+  assigneeUserId: todoItems.assigneeUserId,
+  assigneeName: user.name,
+  createdByUserId: todoItems.createdByUserId,
+  createdAt: todoItems.createdAt,
+  updatedAt: todoItems.updatedAt,
+  commentCount: sql<number>`(select count(*) from ${todoComments} where ${todoComments.itemId} = ${todoItems.id})`,
+};
+
+export type TodoItemWithMeta = typeof todoItems.$inferSelect & {
+  assigneeName: string | null;
+  commentCount: number;
+};
+
 export type TodoListWithItems = typeof todoLists.$inferSelect & {
-  items: (typeof todoItems.$inferSelect)[];
+  items: TodoItemWithMeta[];
 };
 
 export async function listTodoLists(
@@ -30,17 +53,18 @@ export async function listTodoLists(
   }
 
   const items = await db
-    .select()
+    .select(itemSelect)
     .from(todoItems)
+    .leftJoin(user, eq(user.id, todoItems.assigneeUserId))
     .where(
       inArray(
         todoItems.listId,
         lists.map((list) => list.id)
       )
     )
-    .orderBy(asc(todoItems.isDone), asc(todoItems.createdAt));
+    .orderBy(asc(todoItems.isDone), asc(todoItems.position), asc(todoItems.createdAt));
 
-  const itemsByListId = new Map<string, (typeof todoItems.$inferSelect)[]>();
+  const itemsByListId = new Map<string, TodoItemWithMeta[]>();
   for (const item of items) {
     const bucket = itemsByListId.get(item.listId);
     if (bucket) {
@@ -80,7 +104,7 @@ export async function createTodoList(workspaceId: string, input: unknown, actorU
     })
     .returning();
 
-  return { ...list, items: [] as (typeof todoItems.$inferSelect)[] };
+  return { ...list, items: [] as TodoItemWithMeta[] };
 }
 
 export async function updateTodoList(
@@ -144,11 +168,20 @@ export async function createTodoItem(
 
   const data = todoItemInputSchema.parse(input);
 
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(todoItems)
+    .where(eq(todoItems.listId, listId));
+
   const [item] = await db
     .insert(todoItems)
     .values({
       listId,
       body: data.body,
+      dueDate: data.dueDate ?? null,
+      priority: data.priority ?? "normal",
+      assigneeUserId: data.assigneeUserId ?? null,
+      position: count,
       createdByUserId: actorUserId,
     })
     .returning();
@@ -180,12 +213,49 @@ export async function updateTodoItem(
     .set({
       body: data.body,
       isDone: data.isDone,
+      dueDate: data.dueDate,
+      priority: data.priority,
+      assigneeUserId: data.assigneeUserId,
       updatedAt: new Date(),
     })
     .where(eq(todoItems.id, itemId))
     .returning();
 
   return updated;
+}
+
+export async function reorderTodoItems(
+  workspaceId: string,
+  listId: string,
+  input: unknown,
+  permission: TrackerPermission | null
+) {
+  const list = await getTodoListById(workspaceId, listId);
+  if (!list) {
+    throw new NotFoundError("To-do list not found");
+  }
+  assertCanWrite(permission);
+
+  const data = todoItemReorderSchema.parse(input);
+
+  const existingItems = await db
+    .select({ id: todoItems.id })
+    .from(todoItems)
+    .where(eq(todoItems.listId, listId));
+  const existingIds = new Set(existingItems.map((item) => item.id));
+
+  if (
+    data.itemIds.length !== existingIds.size ||
+    data.itemIds.some((id) => !existingIds.has(id))
+  ) {
+    throw new ValidationError("itemIds must match the list's current items");
+  }
+
+  await Promise.all(
+    data.itemIds.map((id, index) =>
+      db.update(todoItems).set({ position: index }).where(eq(todoItems.id, id))
+    )
+  );
 }
 
 export async function deleteTodoItem(
@@ -205,4 +275,91 @@ export async function deleteTodoItem(
   assertCanWrite(permission);
 
   await db.delete(todoItems).where(eq(todoItems.id, itemId));
+}
+
+export async function listTodoComments(workspaceId: string, listId: string, itemId: string) {
+  const list = await getTodoListById(workspaceId, listId);
+  if (!list) {
+    throw new NotFoundError("To-do list not found");
+  }
+  const item = await getTodoItemById(listId, itemId);
+  if (!item) {
+    throw new NotFoundError("To-do item not found");
+  }
+
+  return db
+    .select({
+      id: todoComments.id,
+      itemId: todoComments.itemId,
+      authorUserId: todoComments.authorUserId,
+      authorName: user.name,
+      body: todoComments.body,
+      createdAt: todoComments.createdAt,
+    })
+    .from(todoComments)
+    .leftJoin(user, eq(user.id, todoComments.authorUserId))
+    .where(eq(todoComments.itemId, itemId))
+    .orderBy(asc(todoComments.createdAt));
+}
+
+export async function createTodoComment(
+  workspaceId: string,
+  listId: string,
+  itemId: string,
+  input: unknown,
+  permission: TrackerPermission | null,
+  actorUserId: string
+) {
+  const list = await getTodoListById(workspaceId, listId);
+  if (!list) {
+    throw new NotFoundError("To-do list not found");
+  }
+  const item = await getTodoItemById(listId, itemId);
+  if (!item) {
+    throw new NotFoundError("To-do item not found");
+  }
+  assertCanWrite(permission);
+
+  const data = todoCommentInputSchema.parse(input);
+
+  const [comment] = await db
+    .insert(todoComments)
+    .values({
+      itemId,
+      authorUserId: actorUserId,
+      body: data.body,
+    })
+    .returning();
+
+  return comment;
+}
+
+export async function deleteTodoComment(
+  workspaceId: string,
+  listId: string,
+  itemId: string,
+  commentId: string,
+  permission: TrackerPermission | null
+) {
+  const list = await getTodoListById(workspaceId, listId);
+  if (!list) {
+    throw new NotFoundError("To-do list not found");
+  }
+  const item = await getTodoItemById(listId, itemId);
+  if (!item) {
+    throw new NotFoundError("To-do item not found");
+  }
+
+  const rows = await db
+    .select()
+    .from(todoComments)
+    .where(and(eq(todoComments.id, commentId), eq(todoComments.itemId, itemId)))
+    .limit(1);
+  if (!rows[0]) {
+    throw new NotFoundError("Comment not found");
+  }
+
+  assertCanWrite(permission);
+
+  await db.delete(todoComments).where(eq(todoComments.id, commentId));
 }
