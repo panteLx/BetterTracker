@@ -58,6 +58,12 @@ export function TodoItemDetailDialog({
   const locale = useLocale();
   const queryClient = useQueryClient();
   const [commentBody, setCommentBody] = useState("");
+  const [bodyDraft, setBodyDraft] = useState(item.body);
+  const [lastItemBody, setLastItemBody] = useState(item.body);
+  if (item.body !== lastItemBody) {
+    setLastItemBody(item.body);
+    setBodyDraft(item.body);
+  }
 
   function invalidateItems() {
     queryClient.invalidateQueries({ queryKey: ["todo-lists", workspaceId] });
@@ -74,6 +80,30 @@ export function TodoItemDetailDialog({
       toast.error(error instanceof Error ? error.message : t("toast.updateItemFailed"));
     },
   });
+
+  const updateBodyMutation = useMutation({
+    mutationFn: (body: string) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/todo-lists/${listId}/items/${item.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ body }),
+      }),
+    onSuccess: invalidateItems,
+    onError: (error) => {
+      setBodyDraft(item.body);
+      toast.error(error instanceof Error ? error.message : t("toast.updateItemFailed"));
+    },
+  });
+
+  function commitBody() {
+    const trimmed = bodyDraft.trim();
+    if (!trimmed) {
+      setBodyDraft(item.body);
+      return;
+    }
+    if (trimmed !== item.body) {
+      updateBodyMutation.mutate(trimmed);
+    }
+  }
 
   const commentsQuery = useQuery({
     queryKey: ["todo-comments", item.id],
@@ -121,10 +151,29 @@ export function TodoItemDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="break-words pr-6">{item.body}</DialogTitle>
+          <DialogTitle className="pr-6">{t("itemDetailsTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2 space-y-1.5">
+            <Label htmlFor="todo-body">{t("bodyLabel")}</Label>
+            <Textarea
+              id="todo-body"
+              value={bodyDraft}
+              onChange={(event) => setBodyDraft(event.target.value)}
+              onBlur={commitBody}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+              }}
+              placeholder={t("bodyPlaceholder")}
+              rows={2}
+              disabled={!canEdit}
+              className="resize-none"
+            />
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="todo-due-date">{t("dueDate")}</Label>
             <DatePicker

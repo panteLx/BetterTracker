@@ -460,6 +460,7 @@ export const todoLists = sqliteTable(
       .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     isArchived: integer("is_archived", { mode: "boolean" }).default(false).notNull(),
+    position: integer("position").notNull().default(0),
     createdByUserId: text("created_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),

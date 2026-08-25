@@ -5,9 +5,10 @@ import { canWriteTracker as canWriteWorkspace, type TrackerPermission } from "@/
 import {
   todoCommentInputSchema,
   todoItemInputSchema,
-  todoItemReorderSchema,
+  todoItemMoveSchema,
   todoItemUpdateSchema,
   todoListInputSchema,
+  todoListReorderSchema,
   todoListUpdateSchema,
 } from "@/lib/validators/todo";
 import { NotFoundError, ValidationError } from "@/lib/errors";
@@ -46,7 +47,7 @@ export async function listTodoLists(
     .select()
     .from(todoLists)
     .where(and(eq(todoLists.workspaceId, workspaceId), eq(todoLists.isArchived, isArchived)))
-    .orderBy(asc(todoLists.createdAt));
+    .orderBy(asc(todoLists.position), asc(todoLists.createdAt));
 
   if (lists.length === 0) {
     return [];
@@ -62,7 +63,7 @@ export async function listTodoLists(
         lists.map((list) => list.id)
       )
     )
-    .orderBy(asc(todoItems.isDone), asc(todoItems.position), asc(todoItems.createdAt));
+    .orderBy(asc(todoItems.position), asc(todoItems.createdAt));
 
   const itemsByListId = new Map<string, TodoItemWithMeta[]>();
   for (const item of items) {
@@ -95,16 +96,48 @@ function assertCanWrite(permission: TrackerPermission | null) {
 export async function createTodoList(workspaceId: string, input: unknown, actorUserId: string) {
   const data = todoListInputSchema.parse(input);
 
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(todoLists)
+    .where(eq(todoLists.workspaceId, workspaceId));
+
   const [list] = await db
     .insert(todoLists)
     .values({
       workspaceId,
       name: data.name,
+      position: count,
       createdByUserId: actorUserId,
     })
     .returning();
 
   return { ...list, items: [] as TodoItemWithMeta[] };
+}
+
+export async function reorderTodoLists(
+  workspaceId: string,
+  input: unknown,
+  permission: TrackerPermission | null
+) {
+  assertCanWrite(permission);
+
+  const data = todoListReorderSchema.parse(input);
+
+  const existingLists = await db
+    .select({ id: todoLists.id })
+    .from(todoLists)
+    .where(and(eq(todoLists.workspaceId, workspaceId), eq(todoLists.isArchived, false)));
+  const existingIds = new Set(existingLists.map((row) => row.id));
+
+  if (data.listIds.length !== existingIds.size || data.listIds.some((id) => !existingIds.has(id))) {
+    throw new ValidationError("listIds must match the workspace's current non-archived columns");
+  }
+
+  db.transaction((tx) => {
+    data.listIds.forEach((id, position) => {
+      tx.update(todoLists).set({ position }).where(eq(todoLists.id, id)).run();
+    });
+  });
 }
 
 export async function updateTodoList(
@@ -224,38 +257,76 @@ export async function updateTodoItem(
   return updated;
 }
 
-export async function reorderTodoItems(
+export async function moveTodoItem(
   workspaceId: string,
-  listId: string,
+  sourceListId: string,
+  itemId: string,
   input: unknown,
   permission: TrackerPermission | null
 ) {
-  const list = await getTodoListById(workspaceId, listId);
-  if (!list) {
+  const sourceList = await getTodoListById(workspaceId, sourceListId);
+  if (!sourceList) {
     throw new NotFoundError("To-do list not found");
+  }
+  const item = await getTodoItemById(sourceListId, itemId);
+  if (!item) {
+    throw new NotFoundError("To-do item not found");
   }
   assertCanWrite(permission);
 
-  const data = todoItemReorderSchema.parse(input);
+  const data = todoItemMoveSchema.parse(input);
 
-  const existingItems = await db
-    .select({ id: todoItems.id })
-    .from(todoItems)
-    .where(eq(todoItems.listId, listId));
-  const existingIds = new Set(existingItems.map((item) => item.id));
-
-  if (
-    data.itemIds.length !== existingIds.size ||
-    data.itemIds.some((id) => !existingIds.has(id))
-  ) {
-    throw new ValidationError("itemIds must match the list's current items");
+  const targetList = await getTodoListById(workspaceId, data.targetListId);
+  if (!targetList) {
+    throw new NotFoundError("Target list not found");
   }
 
-  await Promise.all(
-    data.itemIds.map((id, index) =>
-      db.update(todoItems).set({ position: index }).where(eq(todoItems.id, id))
-    )
-  );
+  db.transaction((tx) => {
+    if (sourceListId === data.targetListId) {
+      const siblings = tx
+        .select({ id: todoItems.id })
+        .from(todoItems)
+        .where(eq(todoItems.listId, sourceListId))
+        .orderBy(asc(todoItems.position))
+        .all();
+      const ids = siblings.map((row) => row.id).filter((id) => id !== itemId);
+      const index = Math.max(0, Math.min(data.position, ids.length));
+      ids.splice(index, 0, itemId);
+      ids.forEach((id, position) => {
+        tx.update(todoItems).set({ position }).where(eq(todoItems.id, id)).run();
+      });
+    } else {
+      const sourceSiblings = tx
+        .select({ id: todoItems.id })
+        .from(todoItems)
+        .where(eq(todoItems.listId, sourceListId))
+        .orderBy(asc(todoItems.position))
+        .all();
+      const remainingSourceIds = sourceSiblings.map((row) => row.id).filter((id) => id !== itemId);
+      remainingSourceIds.forEach((id, position) => {
+        tx.update(todoItems).set({ position }).where(eq(todoItems.id, id)).run();
+      });
+
+      const targetSiblings = tx
+        .select({ id: todoItems.id })
+        .from(todoItems)
+        .where(eq(todoItems.listId, data.targetListId))
+        .orderBy(asc(todoItems.position))
+        .all();
+      const targetIds = targetSiblings.map((row) => row.id);
+      const index = Math.max(0, Math.min(data.position, targetIds.length));
+      targetIds.splice(index, 0, itemId);
+
+      tx.update(todoItems)
+        .set({ listId: data.targetListId, updatedAt: new Date() })
+        .where(eq(todoItems.id, itemId))
+        .run();
+
+      targetIds.forEach((id, position) => {
+        tx.update(todoItems).set({ position }).where(eq(todoItems.id, id)).run();
+      });
+    }
+  });
 }
 
 export async function deleteTodoItem(

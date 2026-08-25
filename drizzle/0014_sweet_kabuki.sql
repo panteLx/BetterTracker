@@ -1,0 +1,1 @@
+ALTER TABLE `todo_lists` ADD `position` integer DEFAULT 0 NOT NULL;
