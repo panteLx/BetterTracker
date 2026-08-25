@@ -13,6 +13,12 @@ export const todoListUpdateSchema = z
   })
   .strict();
 
+export const todoListReorderSchema = z
+  .object({
+    listIds: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
 const priority = z.enum(["low", "normal", "high"]);
 
@@ -35,9 +41,10 @@ export const todoItemUpdateSchema = z
   })
   .strict();
 
-export const todoItemReorderSchema = z
+export const todoItemMoveSchema = z
   .object({
-    itemIds: z.array(z.string().min(1)).min(1),
+    targetListId: z.string().min(1),
+    position: z.number().int().min(0),
   })
   .strict();
 
