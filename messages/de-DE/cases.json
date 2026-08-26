@@ -2,8 +2,9 @@
   "nav": {
     "board": "Übersicht",
     "todos": "Aufgaben",
-    "batches": "PVS-Übermittlungen",
-    "settings": "Einstellungen"
+    "batches": "Übermittlungen",
+    "settings": "Einstellungen",
+    "newCaseFileAria": "Neue Akte hinzufügen"
   },
   "workspaceList": {
     "title": "Akten",

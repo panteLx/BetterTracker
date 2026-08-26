@@ -2,8 +2,9 @@
   "nav": {
     "board": "Overview",
     "todos": "To-dos",
-    "batches": "PVS submissions",
-    "settings": "Settings"
+    "batches": "Submissions",
+    "settings": "Settings",
+    "newCaseFileAria": "Add new case file"
   },
   "workspaceList": {
     "title": "Cases",
