@@ -25,6 +25,12 @@ export const user = sqliteTable("user", {
   banned: integer("banned", { mode: "boolean" }).default(false).notNull(),
   banReason: text("ban_reason"),
   banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
+  canAccessTrackers: integer("can_access_trackers", { mode: "boolean" })
+    .default(true)
+    .notNull(),
+  canAccessCases: integer("can_access_cases", { mode: "boolean" })
+    .default(true)
+    .notNull(),
   ...timestamps,
 });
 

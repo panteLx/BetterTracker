@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  canAccessTrackerModule,
   canCreateTrackerContent,
   canManageTracker,
   canManageTrackerMembers,
@@ -23,10 +24,27 @@ export async function requireAuthenticatedApi(headers: Headers) {
   return { user: sessionUser, response: null };
 }
 
+export async function requireTrackerModuleApi(headers: Headers) {
+  const authResult = await requireAuthenticatedApi(headers);
+  if (authResult.response || !authResult.user) {
+    return authResult;
+  }
+
+  if (!canAccessTrackerModule(authResult.user)) {
+    return { user: null, response: forbidden() };
+  }
+
+  return authResult;
+}
+
 async function loadTrackerAccess(headers: Headers, trackerId: string, options?: TrackerAccessOptions) {
   const authResult = await requireAuthenticatedApi(headers);
   if (authResult.response || !authResult.user) {
     return authResult;
+  }
+
+  if (!canAccessTrackerModule(authResult.user)) {
+    return { user: null, response: forbidden() };
   }
 
   const access = await getTrackerAccessForUser(trackerId, authResult.user.id, options);

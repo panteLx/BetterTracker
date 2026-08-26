@@ -12,6 +12,8 @@ type PageContainerProps = {
     name: string;
     email: string;
     role?: string | null;
+    canAccessTrackers?: boolean | null;
+    canAccessCases?: boolean | null;
   } | null;
   title?: string;
   description?: string;
@@ -34,6 +36,8 @@ export function PageContainer({
   size = "default",
   hideQuickAdd = false,
 }: PageContainerProps) {
+  const hasTrackerAccess = user ? (user.canAccessTrackers ?? true) : false;
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <AppHeader user={user} />
@@ -54,8 +58,8 @@ export function PageContainer({
         {children}
       </main>
       <AppFooter />
-      {user ? <MobileNav /> : null}
-      {user && !hideQuickAdd ? <QuickAddFab /> : null}
+      {hasTrackerAccess ? <MobileNav /> : null}
+      {hasTrackerAccess && !hideQuickAdd ? <QuickAddFab /> : null}
     </div>
   );
 }

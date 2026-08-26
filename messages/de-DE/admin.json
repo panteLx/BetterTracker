@@ -169,9 +169,11 @@
       "active": "Aktiv"
     },
     "actions": {
+      "menu": "Aktionen",
       "ban": "Sperren",
       "unban": "Entsperren",
       "delete": "Löschen",
+      "deleteSuperadminHint": "Erst die Super-Admin-Rolle entziehen, um diesen Benutzer löschen zu können",
       "edit": "Bearbeiten",
       "resetPassword": "Passwort zurücksetzen"
     },
@@ -180,7 +182,13 @@
       "name": "Name",
       "email": "E-Mail",
       "save": "Speichern",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "access": {
+        "trackersTitle": "Tracker-Bereich",
+        "trackersDescription": "Zugriff auf Finanz-Tracker, Buchungen, Termine und Statistiken",
+        "casesTitle": "Akten-Bereich",
+        "casesDescription": "Zugriff auf die Aktenverwaltung (Akten-Arbeitsbereiche)"
+      }
     },
     "resetPasswordDialog": {
       "title": "Passwort zurücksetzen",

@@ -2,7 +2,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trackerMembers, trackers } from "@/lib/db/schema";
 import { listTrackersForUser } from "@/lib/auth/tracker-access";
-import { requireAuthenticatedApi, requireTrackerReadAccess } from "@/lib/auth/guards";
+import { requireTrackerModuleApi, requireTrackerReadAccess } from "@/lib/auth/guards";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
 import { badRequest, created, ok, serverError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
@@ -11,7 +11,7 @@ import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { slugify } from "@/lib/utils";
 
 export async function GET(request: Request) {
-  const authResult = await requireAuthenticatedApi(request.headers);
+  const authResult = await requireTrackerModuleApi(request.headers);
   if (authResult.response) return authResult.response;
 
   try {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireAuthenticatedApi(request.headers);
+  const authResult = await requireTrackerModuleApi(request.headers);
   if (authResult.response) return authResult.response;
 
   try {
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authResult = await requireAuthenticatedApi(request.headers);
+  const authResult = await requireTrackerModuleApi(request.headers);
   if (authResult.response) return authResult.response;
 
   try {

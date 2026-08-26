@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedApi } from "@/lib/auth/guards";
 import { getCaseWorkspaceAccessForUser } from "@/lib/auth/case-workspace-access";
+import { canAccessCaseModule } from "@/lib/auth/permissions";
 import { forbidden } from "@/lib/http";
 
 type CaseWorkspaceAccessOptions = {
   includeHidden?: boolean;
 };
+
+export async function requireCaseModuleApi(headers: Headers) {
+  const authResult = await requireAuthenticatedApi(headers);
+  if (authResult.response || !authResult.user) {
+    return authResult;
+  }
+
+  if (!canAccessCaseModule(authResult.user)) {
+    return { user: null, response: forbidden() };
+  }
+
+  return authResult;
+}
 
 async function loadCaseWorkspaceAccess(
   headers: Headers,
@@ -15,6 +29,10 @@ async function loadCaseWorkspaceAccess(
   const authResult = await requireAuthenticatedApi(headers);
   if (authResult.response || !authResult.user) {
     return authResult;
+  }
+
+  if (!canAccessCaseModule(authResult.user)) {
+    return { user: null, response: forbidden() };
   }
 
   const access = await getCaseWorkspaceAccessForUser(workspaceId, authResult.user.id, options);

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { KeyRound, MoreHorizontal, Pencil, ShieldBan, ShieldCheck, Trash2 } from "lucide-react";
 import { fetchJson } from "@/lib/client-fetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +16,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type AdminUser = {
@@ -27,6 +36,8 @@ type AdminUser = {
   role: "user" | "admin" | "superadmin";
   banned: boolean;
   hasPassword: boolean;
+  canAccessTrackers: boolean;
+  canAccessCases: boolean;
 };
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -121,6 +132,14 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
     return currentRole === "admin" && item.role === "user";
   }
 
+  function canDeleteUser(item: AdminUser) {
+    return currentRole === "superadmin" && item.id !== currentUserId && item.role !== "superadmin";
+  }
+
+  function hasAnyAction(item: AdminUser) {
+    return canEditUser(item) || currentRole === "superadmin";
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -165,52 +184,66 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                 </TableCell>
                 <TableCell>{item.banned ? t("status.banned") : t("status.active")}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    {canEditUser(item) ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditTarget(item)}
-                      >
-                        {t("actions.edit")}
-                      </Button>
-                    ) : null}
-                    {canEditUser(item) && item.hasPassword ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPasswordTarget(item)}
-                      >
-                        {t("actions.resetPassword")}
-                      </Button>
-                    ) : null}
-                    {currentRole === "superadmin" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          banMutation.mutate({
-                            id: item.id,
-                            action: item.banned ? "unban" : "ban",
-                          })
-                        }
-                        disabled={banMutation.isPending}
-                      >
-                        {item.banned ? t("actions.unban") : t("actions.ban")}
-                      </Button>
-                    ) : null}
-                    {currentRole === "superadmin" && item.id !== currentUserId ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => handleDelete(item)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {t("actions.delete")}
-                      </Button>
-                    ) : null}
-                  </div>
+                  {hasAnyAction(item) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="ml-auto">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">{t("actions.menu")}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canEditUser(item) ? (
+                          <DropdownMenuItem onClick={() => setEditTarget(item)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            {t("actions.edit")}
+                          </DropdownMenuItem>
+                        ) : null}
+                        {canEditUser(item) && item.hasPassword ? (
+                          <DropdownMenuItem onClick={() => setPasswordTarget(item)}>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            {t("actions.resetPassword")}
+                          </DropdownMenuItem>
+                        ) : null}
+                        {currentRole === "superadmin" ? (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              banMutation.mutate({
+                                id: item.id,
+                                action: item.banned ? "unban" : "ban",
+                              })
+                            }
+                            disabled={banMutation.isPending}
+                          >
+                            {item.banned ? (
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                            ) : (
+                              <ShieldBan className="mr-2 h-4 w-4" />
+                            )}
+                            {item.banned ? t("actions.unban") : t("actions.ban")}
+                          </DropdownMenuItem>
+                        ) : null}
+                        {currentRole === "superadmin" && item.id !== currentUserId ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              disabled={!canDeleteUser(item) || deleteMutation.isPending}
+                              title={
+                                item.role === "superadmin"
+                                  ? t("actions.deleteSuperadminHint")
+                                  : undefined
+                              }
+                              onClick={() => handleDelete(item)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t("actions.delete")}
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}
@@ -249,16 +282,23 @@ function EditUserDialog({
 }: {
   user: AdminUser | null;
   onOpenChange: (open: boolean) => void;
-  onSave: (payload: { name: string; email: string }) => void;
+  onSave: (payload: {
+    name: string;
+    email: string;
+    canAccessTrackers: boolean;
+    canAccessCases: boolean;
+  }) => void;
   isPending: boolean;
 }) {
   const t = useTranslations("Admin.users.editDialog");
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
+  const [canAccessTrackers, setCanAccessTrackers] = useState(user?.canAccessTrackers ?? true);
+  const [canAccessCases, setCanAccessCases] = useState(user?.canAccessCases ?? true);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    onSave({ name: name.trim(), email: email.trim() });
+    onSave({ name: name.trim(), email: email.trim(), canAccessTrackers, canAccessCases });
   }
 
   return (
@@ -281,6 +321,30 @@ function EditUserDialog({
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-user-access-trackers">{t("access.trackersTitle")}</Label>
+                <p className="text-xs text-muted-foreground">{t("access.trackersDescription")}</p>
+              </div>
+              <Switch
+                id="edit-user-access-trackers"
+                checked={canAccessTrackers}
+                onCheckedChange={setCanAccessTrackers}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-user-access-cases">{t("access.casesTitle")}</Label>
+                <p className="text-xs text-muted-foreground">{t("access.casesDescription")}</p>
+              </div>
+              <Switch
+                id="edit-user-access-cases"
+                checked={canAccessCases}
+                onCheckedChange={setCanAccessCases}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

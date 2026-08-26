@@ -75,6 +75,20 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
     },
+    additionalFields: {
+      canAccessTrackers: {
+        type: "boolean",
+        required: true,
+        defaultValue: true,
+        input: false,
+      },
+      canAccessCases: {
+        type: "boolean",
+        required: true,
+        defaultValue: true,
+        input: false,
+      },
+    },
   },
   databaseHooks: {
     user: {

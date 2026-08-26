@@ -19,6 +19,8 @@ export async function PATCH(
       name?: string;
       email?: string;
       role?: "user" | "admin" | "superadmin";
+      canAccessTrackers?: boolean;
+      canAccessCases?: boolean;
     }>(request);
 
     const existingRows = await db.select().from(user).where(eq(user.id, id)).limit(1);
@@ -39,6 +41,8 @@ export async function PATCH(
         name: body.name?.trim() ?? existing.name,
         email: body.email?.trim() ?? existing.email,
         role: body.role ?? existing.role,
+        canAccessTrackers: body.canAccessTrackers ?? existing.canAccessTrackers,
+        canAccessCases: body.canAccessCases ?? existing.canAccessCases,
         updatedAt: new Date(),
       })
       .where(eq(user.id, id))
@@ -75,6 +79,10 @@ export async function DELETE(
     const existingRows = await db.select().from(user).where(eq(user.id, id)).limit(1);
     const existing = existingRows[0];
     if (!existing) return notFound("User not found");
+
+    if (existing.role === "superadmin") {
+      return forbidden("Superadmins cannot be deleted. Remove the superadmin role first.");
+    }
 
     await db.delete(user).where(eq(user.id, id));
 

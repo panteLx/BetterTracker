@@ -2,14 +2,14 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { caseWorkspaceMembers, caseWorkspaces } from "@/lib/db/schema";
 import { listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
-import { requireAuthenticatedApi } from "@/lib/auth/guards";
+import { requireCaseModuleApi } from "@/lib/auth/case-workspace-guards";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
 import { badRequest, created, ok, serverError, parseRequestJson } from "@/lib/http";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { slugify } from "@/lib/utils";
 
 export async function GET(request: Request) {
-  const authResult = await requireAuthenticatedApi(request.headers);
+  const authResult = await requireCaseModuleApi(request.headers);
   if (authResult.response) return authResult.response;
 
   try {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireAuthenticatedApi(request.headers);
+  const authResult = await requireCaseModuleApi(request.headers);
   if (authResult.response) return authResult.response;
 
   try {
