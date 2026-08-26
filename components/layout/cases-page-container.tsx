@@ -1,5 +1,6 @@
 import { type ElementType, type ReactNode } from "react";
 import { CasesHeader } from "@/components/layout/cases-header";
+import { CasesMobileNav } from "@/components/layout/cases-mobile-nav";
 import { AppFooter } from "@/components/layout/app-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
@@ -24,9 +25,9 @@ type CasesPageContainerProps = {
 
 /**
  * Parallel shell to PageContainer, for the standalone cases module. No
- * MobileNav/QuickAddFab — there is no single "add one thing fast" analog
- * here the way there is for transactions; primary actions live in the
- * table/header of each page instead.
+ * QuickAddFab — there is no single "add one thing fast" analog here the way
+ * there is for transactions; primary actions live in the table/header of
+ * each page instead.
  */
 export function CasesPageContainer({
   children,
@@ -54,6 +55,7 @@ export function CasesPageContainer({
         {children}
       </main>
       <AppFooter />
+      {user && workspaceId ? <CasesMobileNav workspaceId={workspaceId} /> : null}
     </div>
   );
 }

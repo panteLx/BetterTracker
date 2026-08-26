@@ -606,7 +606,12 @@ export function CaseBoardClient({
             </Button>
           ) : null}
           {canCreate ? (
-            <Button size="sm" shape="pill" onClick={openCreateSheet}>
+            <Button
+              size="sm"
+              shape="pill"
+              onClick={openCreateSheet}
+              className="hidden md:inline-flex"
+            >
               <Plus className="h-4 w-4" />
               {t("newCaseFile")}
             </Button>
