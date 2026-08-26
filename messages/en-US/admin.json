@@ -169,9 +169,11 @@
       "active": "Active"
     },
     "actions": {
+      "menu": "Actions",
       "ban": "Ban",
       "unban": "Unban",
       "delete": "Delete",
+      "deleteSuperadminHint": "Remove the superadmin role first to delete this user",
       "edit": "Edit",
       "resetPassword": "Reset password"
     },
@@ -180,7 +182,13 @@
       "name": "Name",
       "email": "Email",
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "access": {
+        "trackersTitle": "Tracker area",
+        "trackersDescription": "Access to finance trackers, transactions, schedules, and statistics",
+        "casesTitle": "Cases area",
+        "casesDescription": "Access to the case management module (case workspaces)"
+      }
     },
     "resetPasswordDialog": {
       "title": "Reset password",

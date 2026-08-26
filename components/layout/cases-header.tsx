@@ -18,6 +18,8 @@ type CasesHeaderProps = {
     name: string;
     email: string;
     role?: string | null;
+    canAccessTrackers?: boolean | null;
+    canAccessCases?: boolean | null;
   } | null;
   workspaceId?: string;
 };
@@ -53,7 +55,10 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
           {user ? (
             <>
               <CasesCommandPalette workspaceId={workspaceId} />
-              <ModuleSwitcher />
+              <ModuleSwitcher
+                canAccessTrackers={user.canAccessTrackers ?? true}
+                canAccessCases={user.canAccessCases ?? true}
+              />
               <ThemeToggleButton />
               <UserMenu name={user.name} email={user.email} role={user.role} />
             </>

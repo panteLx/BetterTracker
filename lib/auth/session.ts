@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { account as accountTable, session as sessionTable, user as userTable } from "@/lib/db/schema";
 import { and, eq, gt } from "drizzle-orm";
+import { canAccessCaseModule, canAccessTrackerModule } from "@/lib/auth/permissions";
 
 export async function getServerSession() {
   const headerStore = await headers();
@@ -18,6 +19,26 @@ export async function requireUser() {
     redirect("/login");
   }
   return session.user;
+}
+
+// Gates the finance module: falls back to the cases module (or the
+// dedicated no-access page when neither module is reachable) when a user's
+// per-user module access was revoked by an admin, so redirecting never
+// lands on another blocked page.
+export async function requireTrackerModuleUser() {
+  const user = await requireUser();
+  if (canAccessTrackerModule(user)) {
+    return user;
+  }
+  redirect(canAccessCaseModule(user) ? "/cases" : "/no-access");
+}
+
+export async function requireCaseModuleUser() {
+  const user = await requireUser();
+  if (canAccessCaseModule(user)) {
+    return user;
+  }
+  redirect(canAccessTrackerModule(user) ? "/" : "/no-access");
 }
 
 export async function requireApiUser(requestHeaders: Headers) {

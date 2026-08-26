@@ -18,6 +18,7 @@ async function loadMessages(locale: Locale) {
     publicShare,
     errors,
     cases,
+    noAccess,
   ] = await Promise.all([
     import(`../../messages/${locale}/common.json`),
     import(`../../messages/${locale}/nav.json`),
@@ -32,6 +33,7 @@ async function loadMessages(locale: Locale) {
     import(`../../messages/${locale}/public-share.json`),
     import(`../../messages/${locale}/errors.json`),
     import(`../../messages/${locale}/cases.json`),
+    import(`../../messages/${locale}/no-access.json`),
   ]);
 
   return {
@@ -48,6 +50,7 @@ async function loadMessages(locale: Locale) {
     PublicShare: publicShare.default,
     Errors: errors.default,
     Cases: cases.default,
+    NoAccess: noAccess.default,
   };
 }
 

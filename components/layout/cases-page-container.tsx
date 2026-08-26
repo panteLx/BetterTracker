@@ -10,6 +10,8 @@ type CasesPageContainerProps = {
     name: string;
     email: string;
     role?: string | null;
+    canAccessTrackers?: boolean | null;
+    canAccessCases?: boolean | null;
   } | null;
   workspaceId?: string;
   title?: string;

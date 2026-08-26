@@ -9,6 +9,14 @@ export function isSuperAdminRole(role?: string | null): role is "superadmin" {
   return role === "superadmin";
 }
 
+export function canAccessTrackerModule(user: { canAccessTrackers?: boolean | null }) {
+  return user.canAccessTrackers !== false;
+}
+
+export function canAccessCaseModule(user: { canAccessCases?: boolean | null }) {
+  return user.canAccessCases !== false;
+}
+
 export function canManageTracker(permission: TrackerPermission | null) {
   return permission === "owner" || permission === "admin";
 }

@@ -19,6 +19,8 @@ export async function GET(request: Request) {
           banned: user.banned,
           banReason: user.banReason,
           banExpires: user.banExpires,
+          canAccessTrackers: user.canAccessTrackers,
+          canAccessCases: user.canAccessCases,
           createdAt: user.createdAt,
         })
         .from(user)

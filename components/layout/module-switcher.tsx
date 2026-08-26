@@ -22,10 +22,23 @@ import { cn } from "@/lib/utils";
  * built around exactly 4 finance destinations + a transaction FAB, and the
  * cases module has no equivalent primary action.
  */
-export function ModuleSwitcher() {
+type ModuleSwitcherProps = {
+  canAccessTrackers?: boolean;
+  canAccessCases?: boolean;
+};
+
+export function ModuleSwitcher({
+  canAccessTrackers = true,
+  canAccessCases = true,
+}: ModuleSwitcherProps) {
   const pathname = usePathname();
   const t = useTranslations("Nav.moduleSwitcher");
   const inCases = pathname.startsWith("/cases");
+
+  // Nothing to switch to if an admin restricted this user to a single module.
+  if (!canAccessTrackers || !canAccessCases) {
+    return null;
+  }
 
   return (
     <DropdownMenu>

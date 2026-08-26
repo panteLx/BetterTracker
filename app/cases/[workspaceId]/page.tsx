@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { CasesPageContainer } from "@/components/layout/cases-page-container";
 import { CaseBoardClient } from "@/components/cases/case-board-client";
-import { requireUser } from "@/lib/auth/session";
+import { requireCaseModuleUser } from "@/lib/auth/session";
 import { getCaseWorkspaceAccessForUser, listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
 import { listCaseFiles } from "@/lib/services/case-file-service";
 import { makeQueryClient } from "@/lib/query-client";
@@ -12,7 +12,7 @@ export default async function CaseWorkspaceBoardPage({
 }: {
   params: Promise<{ workspaceId: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireCaseModuleUser();
   const { workspaceId } = await params;
 
   const access = await getCaseWorkspaceAccessForUser(workspaceId, user.id);

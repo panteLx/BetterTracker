@@ -3,12 +3,12 @@ import { getTranslations } from "next-intl/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { SchedulesClient } from "@/components/schedules/schedules-client";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
-import { requireUser } from "@/lib/auth/session";
+import { requireTrackerModuleUser } from "@/lib/auth/session";
 import { listTrackersForUser } from "@/lib/auth/tracker-access";
 import { makeQueryClient } from "@/lib/query-client";
 
 export default async function SchedulesPage() {
-  const user = await requireUser();
+  const user = await requireTrackerModuleUser();
   await ensureBootstrapForUser(user.id);
   const t = await getTranslations("Schedules");
 

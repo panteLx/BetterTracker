@@ -2,12 +2,12 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { getTranslations } from "next-intl/server";
 import { CasesPageContainer } from "@/components/layout/cases-page-container";
 import { CaseWorkspaceListClient } from "@/components/cases/case-workspace-list-client";
-import { requireUser } from "@/lib/auth/session";
+import { requireCaseModuleUser } from "@/lib/auth/session";
 import { listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
 import { makeQueryClient } from "@/lib/query-client";
 
 export default async function CasesPage() {
-  const user = await requireUser();
+  const user = await requireCaseModuleUser();
   const t = await getTranslations("Cases.workspaceList");
 
   const queryClient = makeQueryClient();

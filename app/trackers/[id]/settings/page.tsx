@@ -3,7 +3,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { TrackerSettingsClient } from "@/components/trackers/tracker-settings-client";
 import { getTrackerAccessForUser } from "@/lib/auth/tracker-access";
 import { ensureBootstrapForUser } from "@/lib/bootstrap";
-import { requireUser } from "@/lib/auth/session";
+import { requireTrackerModuleUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 
 export default async function TrackerSettingsPage({
@@ -11,7 +11,7 @@ export default async function TrackerSettingsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireTrackerModuleUser();
   await ensureBootstrapForUser(user.id);
   const { id } = await params;
   const access = await getTrackerAccessForUser(id, user.id, {

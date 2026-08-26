@@ -38,6 +38,8 @@ type HeaderProps = {
     name: string;
     email: string;
     role?: string | null;
+    canAccessTrackers?: boolean | null;
+    canAccessCases?: boolean | null;
   } | null;
   registrationEnabled?: boolean;
 };
@@ -51,6 +53,7 @@ type HeaderProps = {
 export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
   const pathname = usePathname();
   const t = useTranslations("Nav");
+  const hasTrackerAccess = user ? (user.canAccessTrackers ?? true) : false;
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
@@ -64,7 +67,7 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
           </span>
         </Link>
 
-        {user ? (
+        {user && hasTrackerAccess ? (
           <nav
             aria-label={t("ariaMainNav")}
             className={segmentedTrackClass(
@@ -98,8 +101,11 @@ export function AppHeader({ user, registrationEnabled = true }: HeaderProps) {
         <div className="flex shrink-0 items-center gap-1.5">
           {user ? (
             <>
-              <CommandPalette role={user.role} />
-              <ModuleSwitcher />
+              {hasTrackerAccess ? <CommandPalette role={user.role} /> : null}
+              <ModuleSwitcher
+                canAccessTrackers={user.canAccessTrackers ?? true}
+                canAccessCases={user.canAccessCases ?? true}
+              />
               <ThemeToggleButton />
               <UserMenu name={user.name} email={user.email} role={user.role} />
             </>
