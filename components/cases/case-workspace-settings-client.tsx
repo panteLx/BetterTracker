@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, UserRound } from "lucide-react";
+import { Archive, RotateCcw, Trash2, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EntityIcon } from "@/components/ui/entity-icon";
@@ -19,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { TrackerColorPicker } from "@/components/trackers/tracker-color-picker";
 import { fetchJson } from "@/lib/client-fetch";
@@ -50,6 +50,7 @@ type CaseWorkspaceMemberCandidate = {
 
 export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: string }) {
   const t = useTranslations("Cases.settingsPage");
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [memberSearch, setMemberSearch] = useState("");
   const [newMemberPermission, setNewMemberPermission] = useState<"admin" | "write" | "read">(
@@ -59,7 +60,6 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
     name?: string;
     description?: string;
     color?: string;
-    isActive?: boolean;
   }>({});
 
   const workspacesQuery = useQuery({
@@ -88,16 +88,10 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
     name: draft.name ?? workspace?.name ?? "",
     description: draft.description ?? workspace?.description ?? "",
     color: draft.color ?? workspace?.color ?? DEFAULT_TRACKER_COLOR,
-    isActive: draft.isActive ?? workspace?.isActive ?? true,
   };
 
   const updateWorkspaceMutation = useMutation({
-    mutationFn: (payload: {
-      name: string;
-      description: string;
-      color: string;
-      isActive: boolean;
-    }) =>
+    mutationFn: (payload: { name: string; description: string; color: string }) =>
       fetchJson<{ item: CaseWorkspace }>(`/api/case-workspaces/${workspaceId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
@@ -116,6 +110,51 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : t("toast.saveFailed"));
+    },
+  });
+
+  const archiveWorkspaceMutation = useMutation({
+    mutationFn: (isActive: boolean) =>
+      fetchJson<{ item: CaseWorkspace }>(`/api/case-workspaces/${workspaceId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: CaseWorkspace[] } | undefined>(
+        ["case-workspaces"],
+        (current) => ({
+          items: (current?.items || []).map((entry) =>
+            entry.id === item.id ? { ...entry, ...item } : entry
+          ),
+        })
+      );
+      toast.success(
+        item.isActive ? t("dangerZone.reactivateSuccess") : t("dangerZone.archiveSuccess")
+      );
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.saveFailed"));
+    },
+  });
+
+  const hideWorkspaceMutation = useMutation({
+    mutationFn: () =>
+      fetchJson<{ item: CaseWorkspace }>(`/api/case-workspaces/${workspaceId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isHidden: true }),
+      }),
+    onSuccess: () => {
+      queryClient.setQueryData<{ items: CaseWorkspace[] } | undefined>(
+        ["case-workspaces"],
+        (current) => ({
+          items: (current?.items || []).filter((entry) => entry.id !== workspaceId),
+        })
+      );
+      toast.success(t("dangerZone.deleteSuccess"));
+      router.push("/cases");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("dangerZone.deleteFailed"));
     },
   });
 
@@ -180,7 +219,6 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
       name: workspaceDraft.name.trim(),
       description: workspaceDraft.description.trim(),
       color: workspaceDraft.color,
-      isActive: workspaceDraft.isActive,
     });
   }
 
@@ -189,54 +227,96 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <SectionCard title={t("form.sectionTitle")}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ws-name">{t("form.name")}</Label>
-              <Input
-                id="ws-name"
-                value={workspaceDraft.name}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, name: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ws-description">{t("form.description")}</Label>
-              <Textarea
-                id="ws-description"
-                value={workspaceDraft.description}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, description: event.target.value }))
-                }
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ws-color">{t("form.color")}</Label>
-              <TrackerColorPicker
-                id="ws-color"
-                value={workspaceDraft.color}
-                onChange={(value) => setDraft((current) => ({ ...current, color: value }))}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
-              <div>
-                <p className="text-sm font-medium">{t("form.archive")}</p>
-                <p className="text-xs text-muted-foreground">{t("form.archiveDescription")}</p>
+        <div className="space-y-4">
+          <SectionCard title={t("form.sectionTitle")}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ws-name">{t("form.name")}</Label>
+                <Input
+                  id="ws-name"
+                  value={workspaceDraft.name}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, name: event.target.value }))
+                  }
+                />
               </div>
-              <Switch
-                checked={!workspaceDraft.isActive}
-                onCheckedChange={(value) =>
-                  setDraft((current) => ({ ...current, isActive: !value }))
-                }
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={updateWorkspaceMutation.isPending}>
-              {updateWorkspaceMutation.isPending ? t("form.saving") : t("form.save")}
-            </Button>
-          </form>
-        </SectionCard>
+              <div className="space-y-2">
+                <Label htmlFor="ws-description">{t("form.description")}</Label>
+                <Textarea
+                  id="ws-description"
+                  value={workspaceDraft.description}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, description: event.target.value }))
+                  }
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ws-color">{t("form.color")}</Label>
+                <TrackerColorPicker
+                  id="ws-color"
+                  value={workspaceDraft.color}
+                  onChange={(value) => setDraft((current) => ({ ...current, color: value }))}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={updateWorkspaceMutation.isPending}>
+                {updateWorkspaceMutation.isPending ? t("form.saving") : t("form.save")}
+              </Button>
+            </form>
+          </SectionCard>
+
+          {workspace && workspace.permission === "owner" ? (
+            <SectionCard title={t("dangerZone.title")}>
+              <div className="space-y-3">
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={archiveWorkspaceMutation.isPending}
+                    onClick={() => archiveWorkspaceMutation.mutate(!workspace.isActive)}
+                  >
+                    {workspace.isActive ? (
+                      <Archive className="h-4 w-4" />
+                    ) : (
+                      <RotateCcw className="h-4 w-4" />
+                    )}
+                    {workspace.isActive
+                      ? archiveWorkspaceMutation.isPending
+                        ? t("dangerZone.archiving")
+                        : t("dangerZone.archive")
+                      : archiveWorkspaceMutation.isPending
+                        ? t("dangerZone.reactivating")
+                        : t("dangerZone.reactivate")}
+                  </Button>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {t("dangerZone.archiveNote")}
+                  </p>
+                </div>
+
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={hideWorkspaceMutation.isPending}
+                    onClick={() => {
+                      if (window.confirm(t("confirm.deleteWorkspace", { name: workspace.name }))) {
+                        hideWorkspaceMutation.mutate();
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {hideWorkspaceMutation.isPending
+                      ? t("dangerZone.deleting")
+                      : t("dangerZone.delete")}
+                  </Button>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{t("dangerZone.note")}</p>
+                </div>
+              </div>
+            </SectionCard>
+          ) : null}
+        </div>
 
         <SectionCard title={t("members.title")}>
           <div className="space-y-4">

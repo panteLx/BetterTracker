@@ -59,8 +59,6 @@
     "optional": "Optional",
     "discordDebug": "Discord Debug",
     "discordDebugDescription": "Zusatzinfos mitsenden.",
-    "archiveTracker": "Tracker archivieren",
-    "archiveTrackerDescription": "Es können keine neuen Buchungen angelegt werden.",
     "weightTracking": "Kilogramm-Tracking",
     "weightTrackingDescription": "Erfasse bei ausgewählten Einzahlern (z. B. Kaffee/Kakao) die Menge in kg und sieh eine Jahresstatistik.",
     "saving": "Speichert...",
@@ -68,6 +66,13 @@
   },
   "dangerZone": {
     "title": "Gefahrenzone",
+    "archive": "Tracker archivieren",
+    "archiving": "Wird archiviert…",
+    "archiveNote": "Archivierte Tracker können nicht mehr bearbeitet werden und es können keine neuen Buchungen angelegt werden.",
+    "archiveSuccess": "Tracker archiviert.",
+    "reactivate": "Tracker reaktivieren",
+    "reactivating": "Wird reaktiviert…",
+    "reactivateSuccess": "Tracker reaktiviert.",
     "deleting": "Wird gelöscht…",
     "delete": "Tracker löschen",
     "note": "Diese Aktion kann durch User nicht rückgängig gemacht werden."

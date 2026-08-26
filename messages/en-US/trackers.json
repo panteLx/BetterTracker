@@ -59,8 +59,6 @@
     "optional": "Optional",
     "discordDebug": "Discord debug",
     "discordDebugDescription": "Send extra info along.",
-    "archiveTracker": "Archive tracker",
-    "archiveTrackerDescription": "No new transactions can be created.",
     "weightTracking": "Weight tracking",
     "weightTrackingDescription": "Track the weight in kg for selected payees (e.g. coffee/cacao) and see a yearly chart.",
     "saving": "Saving...",
@@ -68,6 +66,13 @@
   },
   "dangerZone": {
     "title": "Danger zone",
+    "archive": "Archive tracker",
+    "archiving": "Archiving…",
+    "archiveNote": "Archived trackers can no longer be edited and no new transactions can be created.",
+    "archiveSuccess": "Tracker archived.",
+    "reactivate": "Reactivate tracker",
+    "reactivating": "Reactivating…",
+    "reactivateSuccess": "Tracker reactivated.",
     "deleting": "Deleting…",
     "delete": "Delete tracker",
     "note": "This action cannot be undone by users."

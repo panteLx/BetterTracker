@@ -12,6 +12,7 @@ import { workspaceNavItems, isWorkspaceNavItemActive } from "@/components/layout
 
 type CaseWorkspace = {
   id: string;
+  isActive: boolean;
   permission: "owner" | "admin" | "write" | "read";
 };
 
@@ -35,7 +36,9 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
     queryFn: () => fetchJson<{ items: CaseWorkspace[] }>("/api/case-workspaces"),
   });
   const workspace = workspacesQuery.data?.items.find((item) => item.id === workspaceId);
-  const canCreate = workspace ? canWriteWorkspace(workspace.permission) : false;
+  const canCreate = workspace
+    ? canWriteWorkspace(workspace.permission) && workspace.isActive
+    : false;
 
   function renderItem(item: (typeof navItems)[number]) {
     const Icon = item.icon;

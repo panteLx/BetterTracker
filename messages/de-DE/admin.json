@@ -9,6 +9,7 @@
       "overview": "Übersicht",
       "users": "Benutzer",
       "trackers": "Tracker",
+      "caseWorkspaces": "Aktenbereiche",
       "settings": "Einstellungen",
       "logs": "Protokoll"
     }
@@ -102,6 +103,41 @@
       "testError": "Test fehlgeschlagen",
       "selfShared": "Tracker für dich freigegeben",
       "selfShareError": "Freigabe fehlgeschlagen"
+    }
+  },
+  "caseWorkspaces": {
+    "page": {
+      "title": "Aktenbereiche",
+      "description": "Aktenbereiche anlegen, archivieren und dich selbst zu bestehenden hinzufügen."
+    },
+    "title": "Aktenbereiche",
+    "fields": {
+      "name": "Name",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Optional",
+      "color": "Farbe"
+    },
+    "toggles": {
+      "archivedTitle": "Archiviert",
+      "archivedDescription": "Akten deaktiviert",
+      "hiddenTitle": "Ausgeblendet",
+      "hiddenDescription": "Für alle User unsichtbar"
+    },
+    "status": {
+      "active": "Aktiv",
+      "archived": "Archiviert",
+      "hidden": "Ausgeblendet",
+      "visible": "Sichtbar"
+    },
+    "actions": {
+      "save": "Speichern",
+      "selfShare": "Mich hinzufügen"
+    },
+    "toasts": {
+      "saved": "Aktenbereich gespeichert",
+      "saveError": "Speichern fehlgeschlagen",
+      "selfShared": "Du wurdest zum Aktenbereich hinzugefügt",
+      "selfShareError": "Hinzufügen fehlgeschlagen"
     }
   },
   "settings": {

@@ -44,6 +44,7 @@
     "konsil": "Konsil"
   },
   "board": {
+    "archivedBadge": "Archiviert (schreibgeschützt)",
     "newCaseFile": "Neue Akte",
     "searchPlaceholder": "Patient oder Fallnummer suchen…",
     "statusFilterLabel": "Nach Status filtern",
@@ -206,10 +207,23 @@
       "name": "Name",
       "description": "Beschreibung",
       "color": "Farbe",
-      "archive": "Bereich archivieren",
-      "archiveDescription": "Archivierte Bereiche können nicht mehr bearbeitet werden.",
       "save": "Speichern",
       "saving": "Wird gespeichert…"
+    },
+    "dangerZone": {
+      "title": "Gefahrenzone",
+      "archive": "Bereich archivieren",
+      "archiving": "Wird archiviert…",
+      "archiveNote": "Archivierte Bereiche können nicht mehr bearbeitet werden.",
+      "archiveSuccess": "Bereich archiviert.",
+      "reactivate": "Bereich reaktivieren",
+      "reactivating": "Wird reaktiviert…",
+      "reactivateSuccess": "Bereich reaktiviert.",
+      "deleting": "Wird gelöscht…",
+      "delete": "Bereich löschen",
+      "deleteSuccess": "Bereich ausgeblendet.",
+      "deleteFailed": "Bereich konnte nicht ausgeblendet werden.",
+      "note": "Diese Aktion kann durch User nicht rückgängig gemacht werden."
     },
     "members": {
       "title": "Mitglieder",
@@ -224,7 +238,8 @@
       "remove": "Entfernen"
     },
     "confirm": {
-      "removeMember": "{email} wirklich aus dem Bereich entfernen?"
+      "removeMember": "{email} wirklich aus dem Bereich entfernen?",
+      "deleteWorkspace": "Bereich \"{name}\" wirklich löschen? Er kann nur von einem Administrator wiederhergestellt werden."
     },
     "toast": {
       "saved": "Gespeichert.",

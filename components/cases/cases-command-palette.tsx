@@ -32,6 +32,7 @@ import { canWriteTracker as canWriteWorkspace } from "@/lib/auth/permissions";
 
 type CaseWorkspace = {
   id: string;
+  isActive: boolean;
   permission: "owner" | "admin" | "write" | "read";
 };
 
@@ -61,7 +62,9 @@ export function CasesCommandPalette({ workspaceId }: { workspaceId?: string }) {
     enabled: open && Boolean(workspaceId),
   });
   const workspace = workspacesQuery.data?.items.find((item) => item.id === workspaceId);
-  const canCreateCaseFile = workspace ? canWriteWorkspace(workspace.permission) : false;
+  const canCreateCaseFile = workspace
+    ? canWriteWorkspace(workspace.permission) && workspace.isActive
+    : false;
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
