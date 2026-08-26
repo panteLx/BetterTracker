@@ -9,6 +9,7 @@
       "overview": "Overview",
       "users": "Users",
       "trackers": "Trackers",
+      "caseWorkspaces": "Case workspaces",
       "settings": "Settings",
       "logs": "Logs"
     }
@@ -102,6 +103,41 @@
       "testError": "Test failed",
       "selfShared": "Tracker shared with you",
       "selfShareError": "Sharing failed"
+    }
+  },
+  "caseWorkspaces": {
+    "page": {
+      "title": "Case workspaces",
+      "description": "Create and archive case workspaces, and add yourself to existing ones."
+    },
+    "title": "Case workspaces",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional",
+      "color": "Color"
+    },
+    "toggles": {
+      "archivedTitle": "Archived",
+      "archivedDescription": "Case files disabled",
+      "hiddenTitle": "Hidden",
+      "hiddenDescription": "Invisible to all users"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived",
+      "hidden": "Hidden",
+      "visible": "Visible"
+    },
+    "actions": {
+      "save": "Save",
+      "selfShare": "Add me"
+    },
+    "toasts": {
+      "saved": "Case workspace saved",
+      "saveError": "Save failed",
+      "selfShared": "You were added to the case workspace",
+      "selfShareError": "Adding failed"
     }
   },
   "settings": {

@@ -44,6 +44,7 @@
     "konsil": "Consult"
   },
   "board": {
+    "archivedBadge": "Archived (read-only)",
     "newCaseFile": "New case file",
     "searchPlaceholder": "Search patient or file number…",
     "statusFilterLabel": "Filter by status",
@@ -206,10 +207,23 @@
       "name": "Name",
       "description": "Description",
       "color": "Color",
-      "archive": "Archive workspace",
-      "archiveDescription": "Archived workspaces can no longer be edited.",
       "save": "Save",
       "saving": "Saving…"
+    },
+    "dangerZone": {
+      "title": "Danger zone",
+      "archive": "Archive workspace",
+      "archiving": "Archiving…",
+      "archiveNote": "Archived workspaces can no longer be edited.",
+      "archiveSuccess": "Workspace archived.",
+      "reactivate": "Reactivate workspace",
+      "reactivating": "Reactivating…",
+      "reactivateSuccess": "Workspace reactivated.",
+      "deleting": "Deleting…",
+      "delete": "Delete workspace",
+      "deleteSuccess": "Workspace hidden.",
+      "deleteFailed": "Workspace could not be hidden.",
+      "note": "This action cannot be undone by users."
     },
     "members": {
       "title": "Members",
@@ -224,7 +238,8 @@
       "remove": "Remove"
     },
     "confirm": {
-      "removeMember": "Really remove {email} from this workspace?"
+      "removeMember": "Really remove {email} from this workspace?",
+      "deleteWorkspace": "Really delete workspace \"{name}\"? It can only be restored by an administrator."
     },
     "toast": {
       "saved": "Saved.",

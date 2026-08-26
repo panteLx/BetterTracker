@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  FileStack,
   FileText,
   LayoutDashboard,
   Settings,
@@ -24,6 +25,7 @@ const adminGroups = [
       { href: "/admin", labelKey: "overview", icon: LayoutDashboard, exact: true },
       { href: "/admin/users", labelKey: "users", icon: Users, exact: false },
       { href: "/admin/trackers", labelKey: "trackers", icon: Shield, exact: false },
+      { href: "/admin/case-workspaces", labelKey: "caseWorkspaces", icon: FileStack, exact: false },
     ],
   },
   {

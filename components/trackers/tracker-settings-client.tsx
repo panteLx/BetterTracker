@@ -125,7 +125,6 @@ export function TrackerSettingsClient({
     discordPingRoleId?: string;
     discordDebugEnabled?: boolean;
     weightTrackingEnabled?: boolean;
-    isActive?: boolean;
     isPublic?: boolean;
   }>({});
 
@@ -188,7 +187,6 @@ export function TrackerSettingsClient({
       draft.discordDebugEnabled ?? tracker?.discordDebugEnabled ?? false,
     weightTrackingEnabled:
       draft.weightTrackingEnabled ?? tracker?.weightTrackingEnabled ?? false,
-    isActive: draft.isActive ?? tracker?.isActive ?? true,
     isPublic: draft.isPublic ?? tracker?.isPublic ?? false,
   };
 
@@ -218,7 +216,6 @@ export function TrackerSettingsClient({
       discordPingRoleId: string;
       discordDebugEnabled: boolean;
       weightTrackingEnabled: boolean;
-      isActive: boolean;
       isPublic: boolean;
     }) =>
       fetchJson<{ item: Tracker }>(`/api/trackers/${payload.id}`, {
@@ -232,7 +229,6 @@ export function TrackerSettingsClient({
           discordPingRoleId: payload.discordPingRoleId,
           discordDebugEnabled: payload.discordDebugEnabled,
           weightTrackingEnabled: payload.weightTrackingEnabled,
-          isActive: payload.isActive,
           isPublic: payload.isPublic,
         }),
       }),
@@ -279,6 +275,37 @@ export function TrackerSettingsClient({
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : t("toast.trackerHideFailed"),
+      );
+    },
+  });
+
+  const archiveTrackerMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      fetchJson<{ item: Tracker }>(`/api/trackers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
+    onSuccess: ({ item }) => {
+      queryClient.setQueryData<{ items: Tracker[] } | undefined>(
+        ["trackers"],
+        (current) => ({
+          items: sortTrackers(
+            (current?.items || []).map((entry) =>
+              entry.id === item.id ? { ...entry, ...item } : entry,
+            ),
+            locale,
+          ),
+        }),
+      );
+      toast.success(
+        item.isActive
+          ? t("dangerZone.reactivateSuccess")
+          : t("dangerZone.archiveSuccess"),
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("toast.actionFailed"),
       );
     },
   });
@@ -517,7 +544,6 @@ export function TrackerSettingsClient({
       discordPingRoleId: trackerDraft.discordPingRoleId.trim(),
       discordDebugEnabled: trackerDraft.discordDebugEnabled,
       weightTrackingEnabled: trackerDraft.weightTrackingEnabled,
-      isActive: trackerDraft.isActive,
       isPublic: trackerDraft.isPublic,
     });
   }
@@ -700,24 +726,6 @@ export function TrackerSettingsClient({
 
                 <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
                   <div>
-                    <p className="text-sm font-medium">{t("form.archiveTracker")}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("form.archiveTrackerDescription")}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={!trackerDraft.isActive}
-                    onCheckedChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        isActive: !value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border border-border p-3.5">
-                  <div>
                     <p className="text-sm font-medium">{t("form.weightTracking")}</p>
                     <p className="text-xs text-muted-foreground">
                       {t("form.weightTrackingDescription")}
@@ -757,29 +765,64 @@ export function TrackerSettingsClient({
 
             {tracker.permission === "owner" ? (
               <SectionCard title={t("dangerZone.title")}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={hideTrackerMutation.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t("confirm.deleteTracker", { name: tracker.name }),
-                      )
-                    ) {
-                      hideTrackerMutation.mutate(tracker.id);
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {hideTrackerMutation.isPending
-                    ? t("dangerZone.deleting")
-                    : t("dangerZone.delete")}
-                </Button>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  {t("dangerZone.note")}
-                </p>
+                <div className="space-y-3">
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={archiveTrackerMutation.isPending}
+                      onClick={() =>
+                        archiveTrackerMutation.mutate({
+                          id: tracker.id,
+                          isActive: !tracker.isActive,
+                        })
+                      }
+                    >
+                      {tracker.isActive ? (
+                        <Archive className="h-4 w-4" />
+                      ) : (
+                        <RotateCcw className="h-4 w-4" />
+                      )}
+                      {tracker.isActive
+                        ? archiveTrackerMutation.isPending
+                          ? t("dangerZone.archiving")
+                          : t("dangerZone.archive")
+                        : archiveTrackerMutation.isPending
+                          ? t("dangerZone.reactivating")
+                          : t("dangerZone.reactivate")}
+                    </Button>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {t("dangerZone.archiveNote")}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={hideTrackerMutation.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            t("confirm.deleteTracker", { name: tracker.name }),
+                          )
+                        ) {
+                          hideTrackerMutation.mutate(tracker.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {hideTrackerMutation.isPending
+                        ? t("dangerZone.deleting")
+                        : t("dangerZone.delete")}
+                    </Button>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {t("dangerZone.note")}
+                    </p>
+                  </div>
+                </div>
               </SectionCard>
             ) : null}
           </div>

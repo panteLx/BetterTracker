@@ -81,6 +81,7 @@ type CaseWorkspace = {
   id: string;
   name: string;
   description?: string | null;
+  isActive: boolean;
   permission: "owner" | "admin" | "write" | "read";
 };
 
@@ -210,7 +211,9 @@ export function CaseBoardClient({
     queryFn: () => fetchJson<{ items: CaseWorkspace[] }>("/api/case-workspaces"),
   });
   const workspace = workspacesQuery.data?.items.find((item) => item.id === workspaceId);
-  const canCreate = workspace ? canWriteWorkspace(workspace.permission) : false;
+  const canCreate = workspace
+    ? canWriteWorkspace(workspace.permission) && workspace.isActive
+    : false;
 
   function openCreateSheet() {
     setEditingCaseFile(null);
@@ -585,9 +588,14 @@ export function CaseBoardClient({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {workspace?.name ?? ""}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {workspace?.name ?? ""}
+            </h1>
+            {workspace && !workspace.isActive ? (
+              <Badge variant="outline">{t("archivedBadge")}</Badge>
+            ) : null}
+          </div>
           {workspace?.description ? (
             <p className="mt-1 text-sm text-muted-foreground">{workspace.description}</p>
           ) : null}

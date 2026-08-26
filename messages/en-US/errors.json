@@ -9,6 +9,7 @@
     "trackerArchived": "Tracker is archived and cannot be edited",
     "invalidJsonBody": "Invalid JSON body",
     "trackerAlreadyOwned": "You already own this tracker",
+    "caseWorkspaceAlreadyOwned": "You already own this case workspace",
     "importRowsRequired": "rows is required and must not be empty",
     "importRowNoAmount": "Row {rowNum}: No amount",
     "importRowInvalidAmount": "Row {rowNum}: Invalid amount \"{amount}\"",
