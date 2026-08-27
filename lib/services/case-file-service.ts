@@ -507,7 +507,12 @@ export async function deleteCaseFile(
   await db.delete(caseFiles).where(eq(caseFiles.id, caseFileId));
 }
 
-export async function listCaseFileComments(caseFileId: string) {
+export async function listCaseFileComments(workspaceId: string, caseFileId: string) {
+  const caseFile = await getCaseFileById(workspaceId, caseFileId);
+  if (!caseFile) {
+    throw new NotFoundError("Case file not found");
+  }
+
   return db
     .select({
       id: caseFileComments.id,
@@ -523,7 +528,12 @@ export async function listCaseFileComments(caseFileId: string) {
     .orderBy(asc(caseFileComments.createdAt));
 }
 
-export async function listCaseFileStatusHistory(caseFileId: string) {
+export async function listCaseFileStatusHistory(workspaceId: string, caseFileId: string) {
+  const caseFile = await getCaseFileById(workspaceId, caseFileId);
+  if (!caseFile) {
+    throw new NotFoundError("Case file not found");
+  }
+
   return db
     .select({
       id: caseFileStatusHistory.id,
@@ -565,10 +575,16 @@ export async function addCaseFileComment(
 }
 
 export async function deleteCaseFileComment(
+  workspaceId: string,
   caseFileId: string,
   commentId: string,
   permission: TrackerPermission | null
 ) {
+  const caseFile = await getCaseFileById(workspaceId, caseFileId);
+  if (!caseFile) {
+    throw new NotFoundError("Case file not found");
+  }
+
   const rows = await db
     .select()
     .from(caseFileComments)

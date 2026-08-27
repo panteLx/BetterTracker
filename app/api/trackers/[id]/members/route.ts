@@ -1,9 +1,9 @@
 import { requireTrackerMemberAccess } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { listTrackerMembers } from "@/lib/auth/tracker-access";
+import { getTrackerMemberByUser, listTrackerMembers } from "@/lib/auth/tracker-access";
 import { db } from "@/lib/db";
 import { trackerMembers } from "@/lib/db/schema";
-import { badRequest, created, serverError, ok } from "@/lib/http";
+import { badRequest, conflict, created, serverError, ok } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import type { TrackerPermission } from "@/lib/auth/permissions";
 
@@ -45,6 +45,11 @@ export async function POST(
 
     if (!ALLOWED_SHARE_PERMISSIONS.includes(body.permission)) {
       return badRequest("Invalid tracker permission");
+    }
+
+    const existingMember = await getTrackerMemberByUser(id, body.userId);
+    if (existingMember) {
+      return conflict("This user already has access to this tracker");
     }
 
     const [item] = await db

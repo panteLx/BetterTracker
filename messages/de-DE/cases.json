@@ -228,7 +228,7 @@
     "members": {
       "title": "Mitglieder",
       "searchPlaceholder": "Nach Name oder E-Mail suchen…",
-      "searchHint": "Mindestens 2 Zeichen eingeben, um zu suchen.",
+      "searchHint": "Mindestens 3 Zeichen eingeben, um zu suchen.",
       "noResults": "Keine Treffer.",
       "add": "Hinzufügen",
       "owner": "Inhaber",

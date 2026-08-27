@@ -3,8 +3,9 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
-import { ok, parseRequestJson, serverError } from "@/lib/http";
+import { mapServiceError, ok, parseRequestJson } from "@/lib/http";
 import { getSettings, setSetting } from "@/lib/services/admin-settings-service";
+import { parseDiscordWebhookUrl } from "@/lib/validators/discord-webhook";
 
 export async function POST(request: Request) {
   const access = await requireAdmin(request.headers);
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
     }>(request);
 
     if (body.discordWebhookUrl !== undefined) {
-      await setSetting("discordWebhookUrl", body.discordWebhookUrl.trim(), access.user!.id);
+      await setSetting(
+        "discordWebhookUrl",
+        parseDiscordWebhookUrl(body.discordWebhookUrl),
+        access.user!.id
+      );
     }
 
     if (body.discordDebugEnabled !== undefined) {
@@ -52,6 +57,6 @@ export async function POST(request: Request) {
 
     return ok({ success: true, updatedCount: trackerCount.value });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

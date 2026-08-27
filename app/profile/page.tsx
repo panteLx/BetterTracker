@@ -41,6 +41,7 @@ export default async function ProfilePage() {
           initialEmail={userRecord?.email ?? ""}
           role={userRecord?.role ?? null}
           banned={userRecord?.banned ?? false}
+          hasPassword={hasPassword}
         />
 
         <ChangePasswordCard hasPassword={hasPassword} />

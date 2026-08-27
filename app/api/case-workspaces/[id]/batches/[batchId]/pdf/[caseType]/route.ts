@@ -4,6 +4,7 @@ import { getPvsSubmissionBatchDetail } from "@/lib/services/pvs-submission-servi
 import { renderPvsSubmissionPdf } from "@/lib/services/pdf/render-pvs-submission-pdf";
 import { CASE_TYPE_LABELS } from "@/lib/services/pdf/pvs-submission-document";
 import { badRequest, notFound, mapServiceError } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { CaseType } from "@/lib/services/case-file-service";
 
 const VALID_CASE_TYPES: CaseType[] = ["ambulant", "stationaer", "konsil"];
@@ -15,6 +16,9 @@ export async function GET(
   const { id, batchId, caseType } = await context.params;
   const access = await requireCaseWorkspaceReadAccess(request.headers, id);
   if (access.response) return access.response;
+
+  const limited = checkRateLimit(`pdf:${access.user!.id}`, 20, 60_000);
+  if (limited) return limited;
 
   if (!VALID_CASE_TYPES.includes(caseType as CaseType)) {
     return badRequest("Invalid case type");

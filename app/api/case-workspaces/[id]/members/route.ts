@@ -1,9 +1,12 @@
 import { requireCaseWorkspaceMemberAccess } from "@/lib/auth/case-workspace-guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { listCaseWorkspaceMembers } from "@/lib/auth/case-workspace-access";
+import {
+  getCaseWorkspaceMemberByUser,
+  listCaseWorkspaceMembers,
+} from "@/lib/auth/case-workspace-access";
 import { db } from "@/lib/db";
 import { caseWorkspaceMembers } from "@/lib/db/schema";
-import { badRequest, created, serverError, ok, parseRequestJson } from "@/lib/http";
+import { badRequest, conflict, created, serverError, ok, parseRequestJson } from "@/lib/http";
 import type { CaseWorkspacePermission } from "@/lib/auth/case-workspace-access";
 
 const ALLOWED_SHARE_PERMISSIONS: CaseWorkspacePermission[] = ["admin", "write", "read"];
@@ -44,6 +47,11 @@ export async function POST(
 
     if (!ALLOWED_SHARE_PERMISSIONS.includes(body.permission)) {
       return badRequest("Invalid workspace permission");
+    }
+
+    const existingMember = await getCaseWorkspaceMemberByUser(id, body.userId);
+    if (existingMember) {
+      return conflict("This user already has access to this workspace");
     }
 
     const [item] = await db

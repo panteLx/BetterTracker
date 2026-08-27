@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { slugify } from "@/lib/utils";
+import { parseDiscordWebhookUrl } from "@/lib/validators/discord-webhook";
 
 export async function getTrackerById(trackerId: string) {
   const rows = await db.select().from(trackers).where(eq(trackers.id, trackerId)).limit(1);
@@ -36,7 +37,9 @@ export function buildTrackerUpdateValues(body: TrackerUpdateInput) {
     color: body.color,
     currency: body.currency?.trim().toUpperCase(),
     discordWebhookUrl:
-      body.discordWebhookUrl === undefined ? undefined : body.discordWebhookUrl.trim(),
+      body.discordWebhookUrl === undefined
+        ? undefined
+        : parseDiscordWebhookUrl(body.discordWebhookUrl),
     discordDebugEnabled: body.discordDebugEnabled,
     discordPingRoleId:
       body.discordPingRoleId === undefined ? undefined : body.discordPingRoleId.trim(),

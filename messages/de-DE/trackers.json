@@ -85,7 +85,7 @@
     "permissionAdmin": "Admin",
     "grant": "Freigeben",
     "noResults": "Keine passenden Benutzer gefunden.",
-    "searchHint": "Mindestens 2 Zeichen eingeben.",
+    "searchHint": "Mindestens 3 Zeichen eingeben.",
     "owner": "Owner",
     "remove": "Entfernen",
     "removeAriaLabel": "Freigabe für {email} entfernen"

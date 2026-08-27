@@ -11,6 +11,8 @@ import {
   type TrackerPermission,
 } from "@/lib/auth/permissions";
 
+const MIN_CANDIDATE_QUERY_LENGTH = 3;
+
 export type CaseWorkspacePermission = TrackerPermission;
 
 const workspaceSelect = {
@@ -155,7 +157,10 @@ export async function getCaseWorkspaceMemberByUser(workspaceId: string, userId: 
 
 export async function listCaseWorkspaceMemberCandidates(workspaceId: string, query: string) {
   const term = query.trim();
-  if (!term) {
+  // An unanchored substring search over the whole user table doubles as a
+  // directory dump, so require enough of a term that the caller already knows
+  // who they are looking for, and only match an email address from its start.
+  if (term.length < MIN_CANDIDATE_QUERY_LENGTH) {
     return [];
   }
 
@@ -165,9 +170,9 @@ export async function listCaseWorkspaceMemberCandidates(workspaceId: string, que
     .where(eq(caseWorkspaceMembers.workspaceId, workspaceId));
 
   const excludedUserIds = existingMembers.map((item) => item.userId);
-  const matcher = `%${term}%`;
-
-  const conditions = [or(like(user.name, matcher), like(user.email, matcher))!];
+  const conditions = [
+    or(like(user.name, `%${term}%`), like(user.email, `${term}%`))!,
+  ];
 
   if (excludedUserIds.length > 0) {
     conditions.push(notInArray(user.id, excludedUserIds));
@@ -178,7 +183,6 @@ export async function listCaseWorkspaceMemberCandidates(workspaceId: string, que
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
     })
     .from(user)
     .where(and(...conditions))

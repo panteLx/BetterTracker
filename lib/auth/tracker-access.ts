@@ -11,6 +11,8 @@ import {
   type TrackerPermission,
 } from "@/lib/auth/permissions";
 
+const MIN_CANDIDATE_QUERY_LENGTH = 3;
+
 const trackerSelect = {
   id: trackers.id,
   name: trackers.name,
@@ -148,7 +150,10 @@ export async function getTrackerMemberByUser(trackerId: string, userId: string) 
 
 export async function listTrackerMemberCandidates(trackerId: string, query: string) {
   const term = query.trim();
-  if (!term) {
+  // An unanchored substring search over the whole user table doubles as a
+  // directory dump, so require enough of a term that the caller already knows
+  // who they are looking for, and only match an email address from its start.
+  if (term.length < MIN_CANDIDATE_QUERY_LENGTH) {
     return [];
   }
 
@@ -158,10 +163,8 @@ export async function listTrackerMemberCandidates(trackerId: string, query: stri
     .where(eq(trackerMembers.trackerId, trackerId));
 
   const excludedUserIds = existingMembers.map((item) => item.userId);
-  const matcher = `%${term}%`;
-
   const conditions = [
-    or(like(user.name, matcher), like(user.email, matcher))!,
+    or(like(user.name, `%${term}%`), like(user.email, `${term}%`))!,
   ];
 
   if (excludedUserIds.length > 0) {
@@ -173,7 +176,6 @@ export async function listTrackerMemberCandidates(trackerId: string, query: stri
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
     })
     .from(user)
     .where(and(...conditions))

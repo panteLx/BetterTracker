@@ -23,7 +23,8 @@ import {
 import { slugify, toDateInputValue } from "../lib/utils";
 
 const SEED_TAG = "[seed-demo-v2]";
-const DEFAULT_PASSWORD = "demo12345";
+/** Override with `SEED_PASSWORD=… npm run seed` for a non-public credential. */
+const DEFAULT_PASSWORD = process.env.SEED_PASSWORD || "demo12345";
 const TRANSACTION_BATCH_SIZE = 200;
 
 /** File-number prefix that marks a case file as seed-generated, and doubles
@@ -1536,6 +1537,19 @@ async function seedCaseFilesForWorkspace(
 }
 
 async function main() {
+  // These accounts include a superadmin whose password is published in this
+  // repository, so running the script against live data would plant a
+  // known-credential administrator alongside demo trackers and case files.
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_PRODUCTION_SEED !== "true"
+  ) {
+    throw new Error(
+      "Refusing to seed demo accounts against a production database. " +
+        "Set ALLOW_PRODUCTION_SEED=true only if you really mean it."
+    );
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

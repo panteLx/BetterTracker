@@ -4,6 +4,7 @@ import { listCaseFilesByIds } from "@/lib/services/case-file-service";
 import { renderPvsSubmissionPdf } from "@/lib/services/pdf/render-pvs-submission-pdf";
 import { CASE_TYPE_LABELS, type PvsSubmissionDocumentSection } from "@/lib/services/pdf/pvs-submission-document";
 import { badRequest, notFound, mapServiceError, parseRequestJson } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { toDateInputValue } from "@/lib/utils";
 import type { CaseType } from "@/lib/services/case-file-service";
 
@@ -21,6 +22,11 @@ export async function POST(
   const { id } = await context.params;
   const access = await requireCaseWorkspaceReadAccess(request.headers, id);
   if (access.response) return access.response;
+
+  // Rendering a PDF is the most expensive thing a request can ask for here,
+  // and the key is the session user id, which is not spoofable.
+  const limited = checkRateLimit(`pdf:${access.user!.id}`, 20, 60_000);
+  if (limited) return limited;
 
   try {
     const workspace = await getCaseWorkspaceById(id);

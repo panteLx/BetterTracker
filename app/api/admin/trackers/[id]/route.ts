@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { trackers } from "@/lib/db/schema";
-import { notFound, ok, serverError } from "@/lib/http";
+import { notFound, ok, mapServiceError } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { buildTrackerUpdateValues, type TrackerUpdateInput } from "@/lib/trackers";
 
@@ -39,6 +39,6 @@ export async function PATCH(
 
     return ok({ item: updated });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

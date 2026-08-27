@@ -11,6 +11,7 @@
     "trackerAlreadyOwned": "Tracker gehoert dir bereits",
     "caseWorkspaceAlreadyOwned": "Aktenbereich gehört dir bereits",
     "importRowsRequired": "rows ist erforderlich und darf nicht leer sein",
+    "importTooManyRows": "Zu viele Zeilen. Es können höchstens {max} Zeilen auf einmal importiert werden.",
     "importRowNoAmount": "Zeile {rowNum}: Kein Betrag",
     "importRowInvalidAmount": "Zeile {rowNum}: Ungültiger Betrag \"{amount}\"",
     "importRowInvalidDate": "Zeile {rowNum}: Ungültiges Datum \"{date}\"",

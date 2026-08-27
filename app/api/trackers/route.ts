@@ -3,8 +3,10 @@ import { db } from "@/lib/db";
 import { trackerMembers, trackers } from "@/lib/db/schema";
 import { listTrackersForUser } from "@/lib/auth/tracker-access";
 import { requireTrackerModuleApi, requireTrackerReadAccess } from "@/lib/auth/guards";
+import { canManageTracker } from "@/lib/auth/permissions";
+import { parseDiscordWebhookUrl } from "@/lib/validators/discord-webhook";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
-import { badRequest, created, ok, serverError } from "@/lib/http";
+import { badRequest, conflict, created, forbidden, mapServiceError, ok } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 import { getSettings } from "@/lib/services/admin-settings-service";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
     const items = await listTrackersForUser(authResult.user!.id);
     return ok({ items });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 
@@ -43,6 +45,22 @@ export async function POST(request: Request) {
 
     const settings = await getSettings();
     const slug = slugify(body.name);
+
+    const [existingSlug] = await db
+      .select({ id: trackers.id })
+      .from(trackers)
+      .where(eq(trackers.slug, slug))
+      .limit(1);
+
+    if (existingSlug) {
+      return conflict("A tracker with this name already exists");
+    }
+
+    const webhookUrl =
+      body.discordWebhookUrl === undefined
+        ? settings.discordWebhookUrl
+        : parseDiscordWebhookUrl(body.discordWebhookUrl) || settings.discordWebhookUrl;
+
     const [sortOrderRow] = await db
       .select({
         value: sql<number>`coalesce(max(${trackers.sortOrder}), -1) + 1`,
@@ -56,7 +74,7 @@ export async function POST(request: Request) {
         description: body.description?.trim() || null,
         color: body.color || DEFAULT_TRACKER_COLOR,
         currency: body.currency?.trim().toUpperCase() || "EUR",
-        discordWebhookUrl: body.discordWebhookUrl?.trim() || settings.discordWebhookUrl,
+        discordWebhookUrl: webhookUrl,
         discordDebugEnabled: body.discordDebugEnabled ?? settings.discordDebugEnabled,
         discordPingRoleId: body.discordPingRoleId?.trim() || settings.discordPingRoleId,
         sortOrder: sortOrderRow?.value ?? 0,
@@ -80,7 +98,7 @@ export async function POST(request: Request) {
 
     return created({ item: { ...tracker, permission: "owner" as const } });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 
@@ -104,6 +122,12 @@ export async function PATCH(request: Request) {
       const access = await requireTrackerReadAccess(request.headers, trackerId);
       if (access.response) {
         return access.response;
+      }
+
+      // sortOrder is a single column shared by every user of the instance, so
+      // reordering is a management action, not a personal preference.
+      if (!canManageTracker(access.trackerAccess!.permission)) {
+        return forbidden();
       }
     }
 
@@ -135,6 +159,6 @@ export async function PATCH(request: Request) {
     const items = await listTrackersForUser(authResult.user!.id);
     return ok({ items });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

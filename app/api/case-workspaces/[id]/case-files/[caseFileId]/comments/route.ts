@@ -15,7 +15,7 @@ export async function GET(
   if (access.response) return access.response;
 
   try {
-    const items = await listCaseFileComments(caseFileId);
+    const items = await listCaseFileComments(id, caseFileId);
     return ok({ items });
   } catch (error) {
     return mapServiceError(error);

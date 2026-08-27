@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
+import { resolveClientIp } from "@/lib/client-ip";
 
 type LogInput = {
   actorUserId?: string | null;
@@ -30,18 +31,12 @@ export async function logAuditEvent(input: LogInput) {
 
 export async function getRequestAuditContext() {
   const headerStore = await headers();
-  const forwardedFor = headerStore.get("x-forwarded-for");
-  return {
-    ipAddress: forwardedFor?.split(",")[0]?.trim() || null,
-    userAgent: headerStore.get("user-agent"),
-  };
+  return getAuditContextFromHeaders(headerStore);
 }
 
 export function getAuditContextFromHeaders(headerStore: Headers | null | undefined) {
-  const forwardedFor = headerStore?.get("x-forwarded-for") ?? null;
   return {
-    ipAddress:
-      forwardedFor?.split(",")[0]?.trim() || headerStore?.get("x-real-ip") || null,
+    ipAddress: resolveClientIp(headerStore),
     userAgent: headerStore?.get("user-agent") ?? null,
   };
 }

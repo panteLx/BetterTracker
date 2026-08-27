@@ -1,10 +1,10 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { caseWorkspaceMembers, caseWorkspaces } from "@/lib/db/schema";
 import { listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
 import { requireCaseModuleApi } from "@/lib/auth/case-workspace-guards";
 import { logAuditEvent, getRequestAuditContext } from "@/lib/audit-log";
-import { badRequest, created, ok, serverError, parseRequestJson } from "@/lib/http";
+import { badRequest, conflict, created, mapServiceError, ok, parseRequestJson } from "@/lib/http";
 import { DEFAULT_TRACKER_COLOR } from "@/lib/tracker-defaults";
 import { slugify } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const items = await listCaseWorkspacesForUser(authResult.user!.id);
     return ok({ items });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 
@@ -36,6 +36,17 @@ export async function POST(request: Request) {
     }
 
     const slug = slugify(body.name);
+
+    const [existingSlug] = await db
+      .select({ id: caseWorkspaces.id })
+      .from(caseWorkspaces)
+      .where(eq(caseWorkspaces.slug, slug))
+      .limit(1);
+
+    if (existingSlug) {
+      return conflict("A workspace with this name already exists");
+    }
+
     const [sortOrderRow] = await db
       .select({
         value: sql<number>`coalesce(max(${caseWorkspaces.sortOrder}), -1) + 1`,
@@ -69,6 +80,6 @@ export async function POST(request: Request) {
 
     return created({ item: { ...workspace, permission: "owner" as const } });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
