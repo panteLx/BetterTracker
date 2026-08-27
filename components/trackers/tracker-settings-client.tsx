@@ -90,7 +90,6 @@ type TrackerMemberCandidate = {
   id: string;
   name: string;
   email: string;
-  role: "user" | "admin" | "superadmin";
 };
 
 type TrackerSettingsClientProps = {
@@ -171,7 +170,7 @@ export function TrackerSettingsClient({
           candidateSearch,
         )}`,
       ),
-    enabled: Boolean(activeTrackerId && candidateSearch.length >= 2),
+    enabled: Boolean(activeTrackerId && candidateSearch.length >= 3),
   });
 
   const trackerDraft = {
@@ -857,14 +856,14 @@ export function TrackerSettingsClient({
                     </SelectContent>
                   </Select>
                 </div>
-                {candidateSearch.length >= 2 ? (
+                {candidateSearch.length >= 3 ? (
                   <div className="space-y-1.5">
                     {(candidatesQuery.data?.items || []).map((candidate) => (
                       <ListRow
                         key={candidate.id}
                         leading={<EntityIcon icon={UserRound} size="sm" />}
                         title={candidate.name}
-                        subtitle={`${candidate.email} · ${candidate.role}`}
+                        subtitle={candidate.email}
                         trailing={
                           <Button
                             type="button"

@@ -2,6 +2,9 @@ import { db } from "@/lib/db";
 import { notificationEvents, trackers } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/audit-log";
 import { eq } from "drizzle-orm";
+import { isDiscordWebhookUrl } from "@/lib/validators/discord-webhook";
+
+const DISCORD_REQUEST_TIMEOUT_MS = 5000;
 
 type NotifyInput = {
   type: "transaction_created" | "schedule_attention" | "admin_test";
@@ -161,6 +164,29 @@ export async function sendDiscordNotification(input: NotifyInput) {
     return { ok: false };
   }
 
+  // Re-checked here as well as on every write path, so a row stored by older
+  // code cannot be used to make the server dial an arbitrary internal host.
+  if (!isDiscordWebhookUrl(webhookUrl)) {
+    await db
+      .update(notificationEvents)
+      .set({
+        status: "failed",
+        errorMessage: "Discord webhook URL is not a valid Discord endpoint",
+      })
+      .where(eq(notificationEvents.id, event.id));
+
+    await logAuditEvent({
+      actorUserId: input.createdByUserId ?? null,
+      action: "discord_notification_failed",
+      resourceType: "notification_event",
+      resourceId: event.id,
+      severity: "warning",
+      metadata: { reason: "invalid_webhook", trackerId: input.trackerId },
+    });
+
+    return { ok: false };
+  }
+
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
@@ -168,6 +194,10 @@ export async function sendDiscordNotification(input: NotifyInput) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(storedPayload),
+      // A redirect could otherwise walk the request back to an internal host,
+      // and a hung endpoint must not hold the request open indefinitely.
+      redirect: "error",
+      signal: AbortSignal.timeout(DISCORD_REQUEST_TIMEOUT_MS),
     });
 
     await db

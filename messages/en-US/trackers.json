@@ -85,7 +85,7 @@
     "permissionAdmin": "Admin",
     "grant": "Share",
     "noResults": "No matching users found.",
-    "searchHint": "Enter at least 2 characters.",
+    "searchHint": "Enter at least 3 characters.",
     "owner": "Owner",
     "remove": "Remove",
     "removeAriaLabel": "Remove share for {email}"

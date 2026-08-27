@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth/guards";
 import { getSettings, setSetting, DEFAULT_SETTINGS } from "@/lib/services/admin-settings-service";
-import { forbidden, ok, serverError } from "@/lib/http";
+import { parseDiscordWebhookUrl } from "@/lib/validators/discord-webhook";
+import { forbidden, mapServiceError, ok } from "@/lib/http";
 import { parseRequestJson } from "@/lib/http";
 
 const SUPERADMIN_ONLY_KEYS = new Set([
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const settings = await getSettings();
     return ok({ settings });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }
 
@@ -34,12 +35,19 @@ export async function PATCH(request: Request) {
         if (SUPERADMIN_ONLY_KEYS.has(key) && access.user!.role !== "superadmin") {
           return forbidden("Only superadmins can change this setting");
         }
-        await setSetting(key as keyof typeof DEFAULT_SETTINGS, value, access.user!.id);
+        // The webhook URL is dialled by the server, so it is validated on every
+        // write path rather than only where it is entered.
+        const nextValue =
+          key === "discordWebhookUrl" && typeof value === "string"
+            ? parseDiscordWebhookUrl(value)
+            : value;
+
+        await setSetting(key as keyof typeof DEFAULT_SETTINGS, nextValue, access.user!.id);
       }
     }
     const settings = await getSettings();
     return ok({ settings });
   } catch (error) {
-    return serverError(error);
+    return mapServiceError(error);
   }
 }

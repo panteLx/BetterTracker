@@ -1,19 +1,40 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { categories, payees, transactions } from "@/lib/db/schema";
 import { requireTrackerManageAccess } from "@/lib/auth/guards";
 import { badRequest, created, serverError } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-type ImportRow = {
-  date: string;
-  amount: string;
-  account: string;
-  payee: string;
-  notes: string;
-  category: string;
-};
+/**
+ * The CSV is parsed in the browser and posted as JSON, so this is the closest
+ * thing to an upload path in the product and gets the same limits: a hard row
+ * cap, and per-field types so a non-string value cannot throw its way into the
+ * per-row error list.
+ */
+const MAX_IMPORT_ROWS = 5000;
+
+const importRowSchema = z.object({
+  date: z.string().default(""),
+  amount: z.string().default(""),
+  account: z.string().default(""),
+  payee: z.string().default(""),
+  notes: z.string().default(""),
+  category: z.string().default(""),
+});
+
+const importColumnsSchema = z
+  .object({
+    account: z.boolean(),
+    payee: z.boolean(),
+    notes: z.boolean(),
+    category: z.boolean(),
+  })
+  .partial();
+
+type ImportRow = z.infer<typeof importRowSchema>;
 
 type ImportColumns = {
   account: boolean;
@@ -50,6 +71,9 @@ export async function POST(
   const access = await requireTrackerManageAccess(request.headers, trackerId);
   if (access.response) return access.response;
 
+  const limited = checkRateLimit(`import:${access.user!.id}`, 5, 60_000);
+  if (limited) return limited;
+
   const t = await getTranslations("Errors");
 
   if (!access.trackerAccess?.tracker.isActive) {
@@ -70,13 +94,27 @@ export async function POST(
     return badRequest(t("api.importRowsRequired"));
   }
 
-  const rows = body.rows as ImportRow[];
+  if (body.rows.length > MAX_IMPORT_ROWS) {
+    return badRequest(t("api.importTooManyRows", { max: MAX_IMPORT_ROWS }));
+  }
+
+  const parsedRows = z.array(importRowSchema).safeParse(body.rows);
+  if (!parsedRows.success) {
+    return badRequest(t("api.importRowsRequired"));
+  }
+
+  const parsedColumns = importColumnsSchema.safeParse(body.columns ?? {});
+  if (!parsedColumns.success) {
+    return badRequest(t("api.importRowsRequired"));
+  }
+
+  const rows: ImportRow[] = parsedRows.data;
   const cols: ImportColumns = {
     account: true,
     payee: true,
     notes: true,
     category: true,
-    ...((body.columns as Partial<ImportColumns>) || {}),
+    ...parsedColumns.data,
   };
 
   // Determine category type by majority of amounts per category name
@@ -158,9 +196,11 @@ export async function POST(
     }
   }
 
-  // Import transactions
-  let transactionCount = 0;
+  // Import transactions. Rows are validated first and inserted in a single
+  // transaction: SQLite is single-writer, so one statement per row holds the
+  // write lock for the whole instance for the length of the import.
   const errors: string[] = [];
+  const pendingTransactions: Array<typeof transactions.$inferInsert> = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -209,7 +249,7 @@ export async function POST(
         cols.account && row.account?.trim() ? row.account.trim() : "";
       const notes = cols.notes && row.notes?.trim() ? row.notes.trim() : null;
 
-      await db.insert(transactions).values({
+      pendingTransactions.push({
         trackerId,
         accountName,
         date,
@@ -223,8 +263,6 @@ export async function POST(
         scheduleId: null,
         createdByUserId: access.user!.id,
       });
-
-      transactionCount++;
     } catch (err) {
       errors.push(
         t("api.importRowError", {
@@ -236,9 +274,21 @@ export async function POST(
     }
   }
 
+  if (pendingTransactions.length > 0) {
+    try {
+      db.transaction((tx) => {
+        for (const values of pendingTransactions) {
+          tx.insert(transactions).values(values).run();
+        }
+      });
+    } catch (err) {
+      return serverError(err);
+    }
+  }
+
   return created({
     result: {
-      transactions: transactionCount,
+      transactions: pendingTransactions.length,
       categories: newCategoryCount,
       payees: newPayeeCount,
       errors,

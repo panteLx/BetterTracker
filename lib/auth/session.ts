@@ -83,6 +83,25 @@ export async function getCurrentUserRecord(userId: string) {
   return rows[0] ?? null;
 }
 
+/**
+ * Verifies a user's own password against their credential account. Used to
+ * re-authenticate before a credential-level change; returns false for accounts
+ * that sign in through OIDC and have no password at all.
+ */
+export async function verifyUserPassword(userId: string, password: string) {
+  const ctx = await auth.$context;
+  const accounts = await ctx.internalAdapter.findAccounts(userId);
+  const credential = accounts?.find(
+    (item) => item.providerId === "credential" && item.password
+  );
+
+  if (!credential?.password) {
+    return false;
+  }
+
+  return ctx.password.verify({ hash: credential.password, password });
+}
+
 export async function hasCredentialAccount(userId: string) {
   const rows = await db
     .select({ id: accountTable.id })

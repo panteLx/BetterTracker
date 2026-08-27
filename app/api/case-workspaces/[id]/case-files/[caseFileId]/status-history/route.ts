@@ -11,7 +11,7 @@ export async function GET(
   if (access.response) return access.response;
 
   try {
-    const items = await listCaseFileStatusHistory(caseFileId);
+    const items = await listCaseFileStatusHistory(id, caseFileId);
     return ok({ items });
   } catch (error) {
     return mapServiceError(error);

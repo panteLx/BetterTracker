@@ -47,8 +47,29 @@ const oidcPlugin = oidcConfig
     })
   : null;
 
+// `X-Forwarded-For` is only trustworthy when a reverse proxy we control wrote
+// it. With TRUSTED_PROXY_CIDRS set, Better Auth strips the chain down to the
+// first untrusted hop and rate-limit buckets are per client IP. Without it the
+// header is client-supplied — an attacker could rotate it to get a fresh bucket
+// per request — so it is ignored entirely and every caller shares one bucket,
+// which cannot be bypassed but has to be roomier to stay usable for a team.
+const hasTrustedProxies = env.trustedProxies.length > 0;
+
+const ipAddressOptions = hasTrustedProxies
+  ? { trustedProxies: env.trustedProxies }
+  : { ipAddressHeaders: [] };
+
 export const auth = betterAuth({
   secret: env.authSecret,
+  advanced: {
+    ipAddress: ipAddressOptions,
+  },
+  rateLimit: {
+    customRules: {
+      "/sign-in/email": { window: 60, max: hasTrustedProxies ? 5 : 20 },
+      "/sign-up/email": { window: 300, max: hasTrustedProxies ? 3 : 10 },
+    },
+  },
   baseURL: {
     fallback: env.authUrl,
     allowedHosts: env.authAllowedHosts,

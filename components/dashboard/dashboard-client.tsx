@@ -304,6 +304,13 @@ export function DashboardClient() {
   const canManageTracker =
     tracker?.permission === "owner" || tracker?.permission === "admin";
   const canCreateContent = tracker?.permission !== "read";
+  // sortOrder is one shared column, so reordering changes the list for every
+  // user of the instance — offer it only to someone who manages all of them.
+  const canReorderTrackers =
+    hasTrackers &&
+    trackers.every(
+      (item) => item.permission === "owner" || item.permission === "admin",
+    );
 
   const transactionsQuery = useQuery({
     queryKey: ["transactions", activeTrackerId],
@@ -639,13 +646,19 @@ export function DashboardClient() {
             trackers={trackers}
             activeTrackerId={activeTrackerId}
             onSelect={handleTrackerSelect}
-            draggedTrackerId={draggedTrackerId}
-            onDragStart={setDraggedTrackerId}
-            onDragEnd={() => setDraggedTrackerId("")}
-            onDrop={(targetId) => {
-              moveTracker(draggedTrackerId, targetId);
-              setDraggedTrackerId("");
-            }}
+            draggedTrackerId={canReorderTrackers ? draggedTrackerId : undefined}
+            onDragStart={canReorderTrackers ? setDraggedTrackerId : undefined}
+            onDragEnd={
+              canReorderTrackers ? () => setDraggedTrackerId("") : undefined
+            }
+            onDrop={
+              canReorderTrackers
+                ? (targetId) => {
+                    moveTracker(draggedTrackerId, targetId);
+                    setDraggedTrackerId("");
+                  }
+                : undefined
+            }
           />
           <Button
             variant="ghost"

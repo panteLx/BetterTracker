@@ -17,6 +17,8 @@ type AccountDetailsCardProps = {
   initialEmail: string;
   role: string | null;
   banned: boolean;
+  /** Accounts that sign in through OIDC have no password to re-enter. */
+  hasPassword: boolean;
 };
 
 export function AccountDetailsCard({
@@ -24,12 +26,20 @@ export function AccountDetailsCard({
   initialEmail,
   role,
   banned,
+  hasPassword,
 }: AccountDetailsCardProps) {
   const t = useTranslations("Profile");
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // The email address is the login identity, so the server asks for the
+  // current password before it moves an account to a new one.
+  const isEmailChange =
+    email.trim().toLowerCase() !== initialEmail.trim().toLowerCase();
+  const needsPassword = hasPassword && isEmailChange;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -40,9 +50,14 @@ export function AccountDetailsCard({
 
       await fetchJson("/api/account/profile", {
         method: "PATCH",
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail }),
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail,
+          ...(needsPassword ? { currentPassword } : {}),
+        }),
       });
 
+      setCurrentPassword("");
       toast.success(t("account.saveSuccess"));
       router.refresh();
     } catch (error) {
@@ -85,6 +100,25 @@ export function AccountDetailsCard({
             required
           />
         </div>
+        {needsPassword ? (
+          <div className="space-y-2">
+            <Label htmlFor="account-current-password">
+              {t("account.currentPassword")}
+            </Label>
+            <Input
+              id="account-current-password"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder={t("account.currentPasswordPlaceholder")}
+              required
+            />
+            <p className="font-subtext text-xs text-muted-foreground">
+              {t("account.currentPasswordHint")}
+            </p>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-sm">
           <span className="text-muted-foreground">{t("account.status")}</span>
           {banned ? (

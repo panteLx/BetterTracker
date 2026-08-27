@@ -12,7 +12,7 @@ export async function DELETE(
   if (access.response) return access.response;
 
   try {
-    await deleteCaseFileComment(caseFileId, commentId, access.workspaceAccess!.permission);
+    await deleteCaseFileComment(id, caseFileId, commentId, access.workspaceAccess!.permission);
 
     await logAuditEvent({
       actorUserId: access.user!.id,

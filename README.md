@@ -86,9 +86,36 @@ npm run dev
 ```bash
 BETTER_AUTH_SECRET=          # openssl rand -base64 32
 BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_ALLOWED_HOSTS=localhost
-BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
 ```
+
+`BETTER_AUTH_SECRET` must be at least 32 characters. In production the app
+refuses to start without it — every symmetric operation in the auth layer is
+derived from it, so a shared default would be the same known value on every
+install.
+
+### Optional: A second reachable hostname or IP
+
+```bash
+BETTER_AUTH_ALLOWED_HOSTS=192.168.1.50
+BETTER_AUTH_TRUSTED_ORIGINS=http://192.168.1.50:3000
+```
+
+Both default to `BETTER_AUTH_URL`, so a single-domain deployment doesn't need
+to set them. Only add entries here if the app is *also* reachable through
+another hostname or IP (e.g. a raw LAN IP alongside a public domain) —
+anything listed is added on top of the default, not a replacement for it.
+
+### Optional: Behind a reverse proxy
+
+```bash
+TRUSTED_PROXY_CIDRS=172.16.0.0/12   # CIDRs of the proxy in front of the app
+```
+
+`X-Forwarded-For` is only trustworthy when a proxy you control wrote it. Set
+this to your proxy's network to get per-client login rate limiting and real
+client IPs in the audit log. Leave it unset when the app is exposed directly:
+the header is then ignored rather than trusted, login attempts share one
+rate-limit bucket, and audit-log IPs are recorded as unknown.
 
 ### Optional: Custom OIDC
 

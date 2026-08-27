@@ -81,7 +81,7 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
       fetchJson<{ items: CaseWorkspaceMemberCandidate[] }>(
         `/api/case-workspaces/${workspaceId}/members/candidates?q=${encodeURIComponent(candidateSearch)}`
       ),
-    enabled: candidateSearch.length >= 2,
+    enabled: candidateSearch.length >= 3,
   });
 
   const workspaceDraft = {
@@ -343,7 +343,7 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
                   </SelectContent>
                 </Select>
               </div>
-              {candidateSearch.length >= 2 ? (
+              {candidateSearch.length >= 3 ? (
                 <div className="space-y-1.5">
                   {(candidatesQuery.data?.items || []).map((candidate) => (
                     <ListRow

@@ -4,6 +4,7 @@ import { requireTrackerReadAccess } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { categories, payees, transactions } from "@/lib/db/schema";
 import { badRequest, ok, serverError } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 async function queryCategoryBreakdown(
   trackerId: string,
@@ -198,6 +199,10 @@ export async function GET(request: Request) {
 
   const access = await requireTrackerReadAccess(request.headers, trackerId);
   if (access.response) return access.response;
+
+  // Ten aggregate queries per request against a single-writer database.
+  const limited = checkRateLimit(`statistics:${access.user!.id}`, 60, 60_000);
+  if (limited) return limited;
 
   const rawYear = searchParams.get("year");
   const year = parseInt(rawYear || String(new Date().getFullYear()));
