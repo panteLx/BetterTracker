@@ -11,6 +11,7 @@
       "trackers": "Trackers",
       "caseWorkspaces": "Case workspaces",
       "settings": "Settings",
+      "icd10Import": "ICD-10 import",
       "logs": "Logs"
     }
   },
@@ -246,6 +247,64 @@
       "deleteError": "Delete failed",
       "passwordReset": "Password reset",
       "passwordResetError": "Reset failed"
+    }
+  },
+  "icd10Import": {
+    "page": {
+      "title": "ICD-10 import",
+      "description": "Import the BfArM ICD-10-GM classification used by the ICD-10 search in the Cases module."
+    },
+    "card": {
+      "title": "Systematik (ClaML/XML)"
+    },
+    "info": {
+      "title": "Where to get the file",
+      "description": "Download the \"Systematisches Verzeichnis\" for the current ICD-10-GM version as ClaML/XML from bfarm.de (Kodiersysteme → Services → Downloads), accept the usage terms, then upload the zip file here as-is."
+    },
+    "status": {
+      "loading": "Loading current status…",
+      "empty": "No codes imported yet.",
+      "current": "{count} codes currently imported, last updated {date}."
+    },
+    "form": {
+      "fileLabel": "Systematik zip file",
+      "import": "Import",
+      "importing": "Importing…"
+    },
+    "result": {
+      "title": "Import complete",
+      "description": "Imported {count} ambulant-usable codes ({skipped} codes skipped as not usable under §295)."
+    },
+    "toasts": {
+      "success": "Imported {count} codes",
+      "error": "Import failed"
+    }
+  },
+  "icd10AlphaImport": {
+    "card": {
+      "title": "Alphabet (ODT)"
+    },
+    "info": {
+      "title": "Where to get the file",
+      "description": "Download the \"Alphabetisches Verzeichnis\" for the current ICD-10-GM version as ODT from bfarm.de (Kodiersysteme → Services → Downloads), accept the usage terms, then upload the zip file here as-is. Adds German-language synonyms and everyday diagnosis wording on top of the Systematik, so the ICD-10 search returns more than just the official (often Latin) class titles."
+    },
+    "status": {
+      "loading": "Loading current status…",
+      "empty": "No terms imported yet.",
+      "current": "{count} terms currently imported, last updated {date}."
+    },
+    "form": {
+      "fileLabel": "Alphabet zip file",
+      "import": "Import",
+      "importing": "Importing…"
+    },
+    "result": {
+      "title": "Import complete",
+      "description": "Imported {count} terms covering {distinctCodes} codes."
+    },
+    "toasts": {
+      "success": "Imported {count} terms",
+      "error": "Import failed"
     }
   },
   "errors": {
