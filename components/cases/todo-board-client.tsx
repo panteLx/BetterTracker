@@ -7,8 +7,11 @@ import { toast } from "sonner";
 import {
   Archive,
   ArchiveRestore,
+  ArrowDown,
+  CalendarClock,
   Eye,
   EyeOff,
+  Flame,
   GripVertical,
   ListChecks,
   MessageSquare,
@@ -103,6 +106,13 @@ function isOverdue(item: TodoItem) {
   return new Date(`${item.dueDate}T00:00:00`) < today;
 }
 
+function isDueToday(item: TodoItem) {
+  if (!item.dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(`${item.dueDate}T00:00:00`).getTime() === today.getTime();
+}
+
 function TodoCard({
   workspaceId,
   list,
@@ -143,6 +153,7 @@ function TodoCard({
   });
 
   const overdue = isOverdue(item);
+  const dueToday = !overdue && isDueToday(item);
   const hasMeta = item.dueDate || item.priority !== "normal" || item.assigneeName || item.commentCount > 0;
 
   return (
@@ -196,26 +207,38 @@ function TodoCard({
       {hasMeta ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {item.dueDate ? (
-            <Badge variant={overdue ? "destructive" : "outline"}>
+            <Badge
+              variant={overdue ? "destructive" : dueToday ? "warning" : "info"}
+              className="gap-1"
+            >
+              <CalendarClock className="h-3 w-3" />
               {overdue ? `${t("overdue")} · ` : ""}
               {formatDateShort(item.dueDate, locale)}
             </Badge>
           ) : null}
           {item.priority === "high" ? (
-            <Badge variant="destructive">{t("priorityHigh")}</Badge>
+            <Badge variant="destructive" className="gap-1">
+              <Flame className="h-3 w-3" />
+              {t("priorityHigh")}
+            </Badge>
           ) : null}
-          {item.priority === "low" ? <Badge variant="outline">{t("priorityLow")}</Badge> : null}
+          {item.priority === "low" ? (
+            <Badge variant="secondary" className="gap-1">
+              <ArrowDown className="h-3 w-3" />
+              {t("priorityLow")}
+            </Badge>
+          ) : null}
           {item.assigneeName ? (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <Badge variant="outline" className="gap-1 text-muted-foreground">
               <UserRound className="h-3 w-3" />
               {item.assigneeName}
-            </span>
+            </Badge>
           ) : null}
           {item.commentCount > 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <Badge variant="outline" className="gap-1 text-muted-foreground">
               <MessageSquare className="h-3 w-3" />
               {item.commentCount}
-            </span>
+            </Badge>
           ) : null}
         </div>
       ) : null}
@@ -388,7 +411,7 @@ function KanbanColumn({
       // for cards above.
       data-todo-column={isColumnDragging ? undefined : ""}
       className={cn(
-        "flex w-[300px] shrink-0 flex-col rounded-xl border border-border bg-card",
+        "flex max-h-[70vh] w-[300px] shrink-0 flex-col rounded-xl border border-border bg-card",
         archived && "opacity-75",
         isColumnDragging && "opacity-40"
       )}
@@ -494,7 +517,7 @@ function KanbanColumn({
         ) : null}
       </div>
 
-      <div ref={itemsRef} className="flex-1 space-y-1 p-2">
+      <div ref={itemsRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
         {list.items.length === 0 ? (
           // A single node that stays mounted the whole time, whether or not a
           // card is being dragged over it: swapping this element out for a
