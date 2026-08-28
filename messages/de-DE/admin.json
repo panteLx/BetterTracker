@@ -11,7 +11,6 @@
       "trackers": "Tracker",
       "caseWorkspaces": "Aktenbereiche",
       "settings": "Einstellungen",
-      "icd10Import": "ICD-10-Import",
       "logs": "Protokoll"
     }
   },
@@ -247,64 +246,6 @@
       "deleteError": "Löschen fehlgeschlagen",
       "passwordReset": "Passwort zurückgesetzt",
       "passwordResetError": "Zurücksetzen fehlgeschlagen"
-    }
-  },
-  "icd10Import": {
-    "page": {
-      "title": "ICD-10-Import",
-      "description": "Importiert die BfArM-ICD-10-GM-Klassifikation für die ICD-10-Suche im Akten-Modul."
-    },
-    "card": {
-      "title": "Systematik (ClaML/XML)"
-    },
-    "info": {
-      "title": "Wo bekomme ich die Datei her",
-      "description": "Das \"Systematische Verzeichnis\" der aktuellen ICD-10-GM-Version als ClaML/XML auf bfarm.de herunterladen (Kodiersysteme → Services → Downloads), Nutzungsbedingungen bestätigen und die Zip-Datei unverändert hier hochladen."
-    },
-    "status": {
-      "loading": "Aktueller Status wird geladen…",
-      "empty": "Noch keine Codes importiert.",
-      "current": "{count} Codes aktuell importiert, zuletzt aktualisiert am {date}."
-    },
-    "form": {
-      "fileLabel": "Systematik-Zip-Datei",
-      "import": "Importieren",
-      "importing": "Wird importiert…"
-    },
-    "result": {
-      "title": "Import abgeschlossen",
-      "description": "{count} ambulant nutzbare Codes importiert ({skipped} Codes wegen §295 übersprungen)."
-    },
-    "toasts": {
-      "success": "{count} Codes importiert",
-      "error": "Import fehlgeschlagen"
-    }
-  },
-  "icd10AlphaImport": {
-    "card": {
-      "title": "Alphabet (ODT)"
-    },
-    "info": {
-      "title": "Wo bekomme ich die Datei her",
-      "description": "Das \"Alphabetische Verzeichnis\" der aktuellen ICD-10-GM-Version als ODT auf bfarm.de herunterladen (Kodiersysteme → Services → Downloads), Nutzungsbedingungen bestätigen und die Zip-Datei unverändert hier hochladen. Ergänzt die Systematik um deutschsprachige Synonyme und Diagnosenbegriffe, sodass die ICD-10-Suche mehr Treffer liefert als nur die offiziellen (oft lateinischen) Klassentitel."
-    },
-    "status": {
-      "loading": "Aktueller Status wird geladen…",
-      "empty": "Noch keine Begriffe importiert.",
-      "current": "{count} Begriffe aktuell importiert, zuletzt aktualisiert am {date}."
-    },
-    "form": {
-      "fileLabel": "Alphabet-Zip-Datei",
-      "import": "Importieren",
-      "importing": "Wird importiert…"
-    },
-    "result": {
-      "title": "Import abgeschlossen",
-      "description": "{count} Begriffe zu {distinctCodes} Codes importiert."
-    },
-    "toasts": {
-      "success": "{count} Begriffe importiert",
-      "error": "Import fehlgeschlagen"
     }
   },
   "errors": {

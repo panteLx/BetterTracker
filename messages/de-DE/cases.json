@@ -272,18 +272,6 @@
       "settings": "Einstellungen"
     }
   },
-  "icd10Search": {
-    "openAria": "ICD-10-Suche öffnen",
-    "trigger": "ICD-10",
-    "title": "ICD-10-Suche",
-    "description": "Diagnose oder Code eingeben, um den passenden ICD-10-GM-Code zu finden.",
-    "placeholder": "Diagnose oder Code suchen…",
-    "minChars": "Mindestens 2 Zeichen eingeben, um zu suchen.",
-    "noResults": "Keine Treffer.",
-    "copiedCode": "{code} in die Zwischenablage kopiert.",
-    "copyFailed": "Kopieren fehlgeschlagen.",
-    "footnote": "Nur zur Orientierung – verbindlich ist das amtliche Systematische Verzeichnis des BfArM."
-  },
   "todos": {
     "title": "Aufgaben",
     "newListPlaceholder": "Name der Spalte…",

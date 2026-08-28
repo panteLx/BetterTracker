@@ -12,7 +12,6 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { CasesCommandPalette } from "@/components/cases/cases-command-palette";
-import { Icd10SearchDialog } from "@/components/cases/icd10-search-dialog";
 
 type CasesHeaderProps = {
   user?: {
@@ -96,7 +95,6 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
           {user ? (
             <>
               <CasesCommandPalette workspaceId={workspaceId} />
-              <Icd10SearchDialog />
               <ModuleSwitcher
                 canAccessTrackers={user.canAccessTrackers ?? true}
                 canAccessCases={user.canAccessCases ?? true}

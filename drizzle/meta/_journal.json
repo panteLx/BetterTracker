@@ -113,20 +113,6 @@
       "when": 1787768192688,
       "tag": "0015_windy_blackheart",
       "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "6",
-      "when": 1787856843965,
-      "tag": "0016_tricky_whistler",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "6",
-      "when": 1787860766738,
-      "tag": "0017_needy_smasher",
-      "breakpoints": true
     }
   ]
 }

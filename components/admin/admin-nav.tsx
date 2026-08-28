@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  Database,
   FileStack,
   FileText,
   LayoutDashboard,
@@ -38,7 +37,6 @@ const adminGroups = [
         icon: Settings,
         exact: false,
       },
-      { href: "/admin/icd10-import", labelKey: "icd10Import", icon: Database, exact: false },
       { href: "/admin/logs", labelKey: "logs", icon: FileText, exact: false },
     ],
   },

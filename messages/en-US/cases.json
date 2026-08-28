@@ -272,18 +272,6 @@
       "settings": "Settings"
     }
   },
-  "icd10Search": {
-    "openAria": "Open ICD-10 search",
-    "trigger": "ICD-10",
-    "title": "ICD-10 search",
-    "description": "Enter a diagnosis or code to find the matching ICD-10-GM code.",
-    "placeholder": "Search diagnosis or code…",
-    "minChars": "Enter at least 2 characters to search.",
-    "noResults": "No matches.",
-    "copiedCode": "Copied {code} to clipboard.",
-    "copyFailed": "Couldn't copy to clipboard.",
-    "footnote": "For orientation only — the BfArM's official Systematisches Verzeichnis is the binding reference."
-  },
   "todos": {
     "title": "To-dos",
     "newListPlaceholder": "Column name…",

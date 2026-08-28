@@ -582,50 +582,6 @@ export const notificationEvents = sqliteTable("notification_events", {
   createdAt: timestamps.createdAt,
 });
 
-/**
- * Static reference catalog (ICD-10-GM), rebuilt wholesale via the admin
- * ICD-10 import page (`lib/services/icd10-import-service.ts`) rather than
- * mutated through the app. Only codes usable for ambulant billing (Para295 in
- * {P,O,Z} in the source ClaML) are imported — see the import service for the
- * BfArM ClaML field meanings.
- */
-export const icd10Codes = sqliteTable(
-  "icd10_codes",
-  {
-    code: text("code").primaryKey(),
-    title: text("title").notNull(),
-    groupTitle: text("group_title"),
-    ...timestamps,
-  },
-  (table) => [index("icd10_codes_title_idx").on(table.title)]
-);
-
-/**
- * German-language synonym/lay-term lookup (ICD-10-GM "Alphabetisches
- * Verzeichnis"), rebuilt wholesale via the admin ICD-10 import page
- * (`lib/services/icd10-alpha-import-service.ts`). Complements `icd10Codes`,
- * whose titles are the official (often Latin/technical) class texts — this
- * table lets the same code be found by colloquial German terms. A code can
- * have many rows (one per indexed term chain), and a chain can point to a
- * code that isn't in `icd10Codes` (e.g. excluded from ambulant billing), so
- * there's no foreign key to it.
- */
-export const icd10AlphaTerms = sqliteTable(
-  "icd10_alpha_terms",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    code: text("code").notNull(),
-    term: text("term").notNull(),
-    ...timestamps,
-  },
-  (table) => [
-    index("icd10_alpha_terms_term_idx").on(table.term),
-    index("icd10_alpha_terms_code_idx").on(table.code),
-  ]
-);
-
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   trackerMemberships: many(trackerMembers),
