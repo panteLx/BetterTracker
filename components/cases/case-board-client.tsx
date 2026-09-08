@@ -508,6 +508,38 @@ export function CaseBoardClient({
     },
   });
 
+  const returnToProcessingMutation = useMutation({
+    mutationFn: (caseFileIds: string[]) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/return-to-processing`, {
+        method: "POST",
+        body: JSON.stringify({ caseFileIds }),
+      }),
+    onSuccess: () => {
+      invalidateAndClear();
+      toast.success(t("toast.markedReturned"));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.markReturnedFailed"));
+    },
+  });
+
+  const returnToMedizinControllingMutation = useMutation({
+    mutationFn: (caseFileIds: string[]) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/return-to-medizin-controlling`, {
+        method: "POST",
+        body: JSON.stringify({ caseFileIds }),
+      }),
+    onSuccess: () => {
+      invalidateAndClear();
+      toast.success(t("toast.returnedToMedizinControlling"));
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("toast.returnToMedizinControllingFailed")
+      );
+    },
+  });
+
   const markDoneMutation = useMutation({
     mutationFn: (caseFileIds: string[]) =>
       fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-done`, {
@@ -528,6 +560,8 @@ export function CaseBoardClient({
     queueForPvsMutation.isPending ||
     sendToPvsMutation.isPending ||
     markReturnedMutation.isPending ||
+    returnToProcessingMutation.isPending ||
+    returnToMedizinControllingMutation.isPending ||
     markDoneMutation.isPending;
 
   function withCount(label: string, count: number) {
@@ -901,6 +935,10 @@ export function CaseBoardClient({
         onQueueForPvs={() => queueForPvsMutation.mutate([...selectedIds])}
         onSendToPvs={() => sendToPvsMutation.mutate([...selectedIds])}
         onMarkReturned={() => markReturnedMutation.mutate([...selectedIds])}
+        onReturnToProcessing={() => returnToProcessingMutation.mutate([...selectedIds])}
+        onReturnToMedizinControlling={() =>
+          returnToMedizinControllingMutation.mutate([...selectedIds])
+        }
         onMarkDone={() => markDoneMutation.mutate([...selectedIds])}
         exportableCount={exportableCount}
         isExporting={exportPdfMutation.isPending}

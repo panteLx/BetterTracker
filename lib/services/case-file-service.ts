@@ -434,6 +434,32 @@ export async function bulkMarkQueuedForPvs(
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
 
+export async function bulkReturnToMedizinControlling(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
+  const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
+
+  const notReady = candidates.filter((row) => row.status !== "queued_for_pvs");
+  if (notReady.length > 0) {
+    throw new ValidationError(
+      "Only case files with status 'queued_for_pvs' can be returned to Medizin-Controlling"
+    );
+  }
+
+  await db
+    .update(caseFiles)
+    .set({ status: "medizin_controlling", updatedAt: new Date() })
+    .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
+
+  await Promise.all(
+    uniqueIds.map((id) => recordStatusHistory(id, "medizin_controlling", actorUserId))
+  );
+
+  return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
+}
+
 export async function bulkMarkDone(
   workspaceId: string,
   caseFileIds: string[],
@@ -481,6 +507,38 @@ export async function bulkMarkReturned(
       lastReturnedAt: now,
       updatedAt: now,
     })
+    .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
+
+  await Promise.all(
+    uniqueIds.map((id) => recordStatusHistory(id, "needs_processing", actorUserId))
+  );
+
+  return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
+}
+
+/**
+ * Manually pulling a case file back to "needs_processing" from a later stage.
+ * Unlike bulkMarkReturned, this does NOT touch returnCount/lastReturnedAt —
+ * those track actual PVS returns, not internal reprocessing decisions.
+ */
+export async function bulkReturnToProcessing(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
+  const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
+
+  const returnableStatuses: CaseFileStatus[] = ["medizin_controlling", "queued_for_pvs"];
+  const notReady = candidates.filter((row) => !returnableStatuses.includes(row.status));
+  if (notReady.length > 0) {
+    throw new ValidationError(
+      "Only case files with status 'medizin_controlling' or 'queued_for_pvs' can be returned to processing"
+    );
+  }
+
+  await db
+    .update(caseFiles)
+    .set({ status: "needs_processing", updatedAt: new Date() })
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
 
   await Promise.all(
