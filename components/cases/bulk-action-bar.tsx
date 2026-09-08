@@ -20,6 +20,8 @@ type BulkActionBarProps = {
   onQueueForPvs: () => void;
   onSendToPvs: () => void;
   onMarkReturned: () => void;
+  onReturnToProcessing: () => void;
+  onReturnToMedizinControlling: () => void;
   onMarkDone: () => void;
   /** Count of the selection eligible for the manual PDF export (0 hides the button). */
   exportableCount?: number;
@@ -36,6 +38,8 @@ export function BulkActionBar({
   onQueueForPvs,
   onSendToPvs,
   onMarkReturned,
+  onReturnToProcessing,
+  onReturnToMedizinControlling,
   onMarkDone,
   exportableCount = 0,
   isExporting = false,
@@ -74,6 +78,10 @@ export function BulkActionBar({
         ) : null}
         {mode === "medizinControlling" ? (
           <>
+            <Button variant="outline" size="sm" onClick={onReturnToProcessing} disabled={isPending}>
+              <RotateCcw className="h-4 w-4" />
+              {isPending ? t("markingReturned") : t("returnToProcessing")}
+            </Button>
             <Button variant="outline" size="sm" onClick={onQueueForPvs} disabled={isPending}>
               <Clock className="h-4 w-4" />
               {isPending ? t("queuing") : t("queueForPvs")}
@@ -85,10 +93,25 @@ export function BulkActionBar({
           </>
         ) : null}
         {mode === "queuedForPvs" ? (
-          <Button size="sm" onClick={onSendToPvs} disabled={isPending}>
-            <Send className="h-4 w-4" />
-            {isPending ? t("sending") : t("sendToPvs")}
-          </Button>
+          <>
+            <Button variant="outline" size="sm" onClick={onReturnToProcessing} disabled={isPending}>
+              <RotateCcw className="h-4 w-4" />
+              {isPending ? t("markingReturned") : t("returnToProcessing")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReturnToMedizinControlling}
+              disabled={isPending}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {isPending ? t("returningToMedizinControlling") : t("returnToMedizinControlling")}
+            </Button>
+            <Button size="sm" onClick={onSendToPvs} disabled={isPending}>
+              <Send className="h-4 w-4" />
+              {isPending ? t("sending") : t("sendToPvs")}
+            </Button>
+          </>
         ) : null}
         {mode === "sentToPvs" ? (
           <>
