@@ -1,0 +1,72 @@
+version: 2
+updates:
+  # npm dependencies (root)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # 1.7 removes genericOAuthClient (lib/auth/client.ts fails to build) and
+      # changes the OIDC callback URL from /api/auth/oauth2/callback/:id to
+      # /api/auth/callback/:id, which would silently break every self-hoster's
+      # identity-provider configuration. That upgrade needs a deliberate
+      # migration with release notes, not an automatic PR.
+      - dependency-name: "better-auth"
+        versions:
+          - ">= 1.7.0"
+      # better-auth declares peerOptional better-sqlite3 "^12.0.0" — still true
+      # in 1.7.4 — so any bump to 13 fails to resolve with ERESOLVE. Revisit
+      # once better-auth widens that range.
+      - dependency-name: "better-sqlite3"
+        versions:
+          - ">= 13.0.0"
+      # 10 removes the deprecated rule-context methods, which eslint-plugin-react
+      # still calls (`contextOrFilename.getFilename is not a function`). Its
+      # newest release, 7.37.5, caps its peer range at eslint ^9.7, and
+      # eslint-config-next pins ^7.37.0 even on canary — so there is no override
+      # that fixes this. eslint-config-next's own peer range of ">=9.0.0" is what
+      # lets npm install 10 in the first place. Revisit once that chain supports 10.
+      - dependency-name: "eslint"
+        versions:
+          - ">= 10.0.0"
+      # 7 is the native port and no longer exposes the compiler API: `next build`
+      # aborts with "TypeScript 7.0.2 does not provide the compiler API required
+      # by Next.js", and typescript-eslint refuses to load at all. There is no
+      # stable 6.x to move to yet, so we stay on 5.x.
+      - dependency-name: "typescript"
+        versions:
+          - ">= 7.0.0"
+
+  # GitHub Actions workflows (root)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base image (picks up node:22-bookworm-slim)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Stay on an LTS line: 25 is a non-LTS current release, and 26 on top of
+      # that reproducibly dies with SQLITE_BUSY while collecting page data
+      # during `next build` (22 and 24 both build clean).
+      - dependency-name: "node"
+        versions:
+          - ">= 25.0.0"
