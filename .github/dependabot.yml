@@ -41,12 +41,6 @@ updates:
       - dependency-name: "typescript"
         versions:
           - ">= 7.0.0"
-      # Keep the type definitions on the same LTS line as the runtime and the
-      # base image; types ahead of the runtime let code compile against APIs
-      # the container does not have.
-      - dependency-name: "@types/node"
-        versions:
-          - ">= 25.0.0"
 
   # GitHub Actions workflows (root)
   - package-ecosystem: "github-actions"
