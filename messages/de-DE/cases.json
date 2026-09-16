@@ -172,7 +172,9 @@
     "unknownAuthor": "Unbekannt",
     "placeholder": "Kommentar hinzufügen…",
     "send": "Senden",
-    "addFailed": "Kommentar konnte nicht gespeichert werden."
+    "addFailed": "Kommentar konnte nicht gespeichert werden.",
+    "delete": "Kommentar löschen",
+    "deleteFailed": "Kommentar konnte nicht gelöscht werden."
   },
   "statusHistory": {
     "empty": "Noch keine Statusänderungen.",

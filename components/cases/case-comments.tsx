@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchJson } from "@/lib/client-fetch";
@@ -61,6 +61,20 @@ export function CaseComments({
     },
   });
 
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) =>
+      fetchJson(
+        `/api/case-workspaces/${workspaceId}/case-files/${caseFileId}/comments/${commentId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["case-file-comments", caseFileId] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("deleteFailed"));
+    },
+  });
+
   const comments = commentsQuery.data?.items || [];
 
   return (
@@ -70,12 +84,27 @@ export function CaseComments({
           <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           comments.map((comment) => (
-            <div key={comment.id} className="rounded-xl border border-border bg-surface-muted p-3">
+            <div key={comment.id} className="group rounded-xl border border-border bg-surface-muted p-3">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium">{comment.authorName || t("unknownAuthor")}</span>
-                <span className="text-xs text-muted-foreground">
-                  {formatDateTime(comment.createdAt, locale)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {formatDateTime(comment.createdAt, locale)}
+                  </span>
+                  {canComment ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                      disabled={deleteCommentMutation.isPending}
+                      onClick={() => deleteCommentMutation.mutate(comment.id)}
+                      aria-label={t("delete")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
               <p className="whitespace-pre-wrap text-sm">{comment.body}</p>
             </div>
