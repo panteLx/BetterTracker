@@ -10,7 +10,7 @@ _BetterTracker is a self-hosted, multi-user expense and income tracker. Manage m
 ![Build](https://img.shields.io/github/check-runs/pantelx/bettertracker/main?style=flat-square&label=build)
 ![License](https://img.shields.io/github/license/pantelx/bettertracker?style=flat-square)
 
-[Quick Start](#quick-start) · [Demo](https://bettertracker.pantelx.com) · [GitHub Issues](https://github.com/panteLx/BetterTracker/issues) · [Discord](https://discord.gg/Ma4SnagqwE)
+[Quick Start](#quick-start) · [GitHub Issues](https://github.com/panteLx/BetterTracker/issues) · [Discord](https://discord.gg/Ma4SnagqwE)
 
 <details>
 <summary>Show Screenshots</summary>
