@@ -172,7 +172,9 @@
     "unknownAuthor": "Unknown",
     "placeholder": "Add a comment…",
     "send": "Send",
-    "addFailed": "Could not save comment."
+    "addFailed": "Could not save comment.",
+    "delete": "Delete comment",
+    "deleteFailed": "Could not delete comment."
   },
   "statusHistory": {
     "empty": "No status changes yet.",
