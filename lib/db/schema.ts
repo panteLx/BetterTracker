@@ -337,6 +337,25 @@ export const pvsSubmissionBatches = sqliteTable(
   ]
 );
 
+export const caseInvoices = sqliteTable(
+  "case_invoices",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    originalFileName: text("original_file_name").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [index("case_invoices_workspace_idx").on(table.workspaceId)]
+);
+
 export const caseFiles = sqliteTable(
   "case_files",
   {
@@ -368,6 +387,9 @@ export const caseFiles = sqliteTable(
       () => pvsSubmissionBatches.id,
       { onDelete: "set null" }
     ),
+    invoiceId: text("invoice_id").references(() => caseInvoices.id, {
+      onDelete: "set null",
+    }),
     returnCount: integer("return_count").default(0).notNull(),
     lastReturnedAt: integer("last_returned_at", { mode: "timestamp_ms" }),
     isArchived: integer("is_archived", { mode: "boolean" }).default(false).notNull(),
@@ -380,6 +402,7 @@ export const caseFiles = sqliteTable(
     index("case_files_workspace_idx").on(table.workspaceId),
     index("case_files_status_idx").on(table.status),
     index("case_files_batch_idx").on(table.submissionBatchId),
+    index("case_files_invoice_idx").on(table.invoiceId),
     index("case_files_file_number_idx").on(table.fileNumber),
     uniqueIndex("case_files_workspace_file_number_idx").on(
       table.workspaceId,

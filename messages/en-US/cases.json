@@ -3,6 +3,7 @@
     "board": "Overview",
     "todos": "To-dos",
     "batches": "Submissions",
+    "invoices": "Invoices",
     "settings": "Settings",
     "newCaseFileAria": "Add new case file"
   },
@@ -92,8 +93,7 @@
       "returnToMedizinControlling": "Back to Medizin-Controlling",
       "returningToMedizinControlling": "Moving…",
       "markingReturned": "Marking…",
-      "markDone": "Mark as done",
-      "markingDone": "Marking…",
+      "assignInvoice": "Assign invoice",
       "mixedHint": "Please select case files with the same status",
       "exportPdf": "Create PDF ({count})",
       "exportingPdf": "Creating…",
@@ -111,8 +111,6 @@
       "markReturnedFailed": "Could not mark as returned.",
       "returnedToMedizinControlling": "Moved back to medical controlling.",
       "returnToMedizinControllingFailed": "Could not move back to medical controlling.",
-      "markedDone": "Marked as done.",
-      "markDoneFailed": "Could not mark as done.",
       "exportFailed": "Could not create PDF.",
       "selectAllFailed": "Could not load selection.",
       "markedAwaitingInvoice": "Marked as awaiting invoice.",
@@ -134,6 +132,8 @@
     }
   },
   "caseFileForm": {
+    "invoiceLabel": "Invoice",
+    "invoiceOpen": "Open PDF",
     "createTitle": "New case file",
     "editTitle": "Edit case file",
     "description": "Enter the patient case file details.",
@@ -360,6 +360,44 @@
       "collapse": "Collapse",
       "expand": "Expand",
       "progress": "{done} of 5 sent"
+    }
+  },
+  "invoices": {
+    "title": "Outgoing invoices",
+    "upload": "Upload invoice",
+    "uploadTitle": "Upload outgoing invoice",
+    "uploadDescription": "Choose the PDF and the patients it covers. Selected cases are marked as done.",
+    "fileLabel": "PDF file",
+    "patientsLabel": "Patients waiting for an invoice",
+    "noAssignable": "No case files are waiting for an invoice.",
+    "uploadSubmit": "Upload",
+    "uploading": "Uploading…",
+    "assignTitle": "Add patients",
+    "assignDescription": "Selected cases are marked as done.",
+    "assignSubmit": "Assign",
+    "assigning": "Assigning…",
+    "cancel": "Cancel",
+    "addPatients": "Add patients",
+    "delete": "Delete",
+    "deleteTitle": "Delete invoice?",
+    "deleteDescription": "The PDF is removed and {count} case file(s) go back to \"Awaiting invoice\".",
+    "deleteConfirm": "Delete",
+    "noPatients": "No patients assigned yet.",
+    "removePatientAria": "Remove {name} from this invoice",
+    "empty": {
+      "title": "No invoices yet",
+      "description": "Upload an outgoing invoice and assign the patients it covers."
+    },
+    "toast": {
+      "noFile": "Please choose a PDF file.",
+      "uploaded": "Invoice uploaded.",
+      "uploadFailed": "Could not upload the invoice.",
+      "assigned": "Patients assigned.",
+      "assignFailed": "Could not assign patients.",
+      "removed": "Patient removed from invoice.",
+      "removeFailed": "Could not remove the patient.",
+      "deleted": "Invoice deleted.",
+      "deleteFailed": "Could not delete the invoice."
     }
   }
 }

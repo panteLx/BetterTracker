@@ -4,6 +4,7 @@ import {
   caseFileComments,
   caseFiles,
   caseFileStatusHistory,
+  caseInvoices,
   pvsSubmissionBatches,
   user,
 } from "@/lib/db/schema";
@@ -59,6 +60,7 @@ const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
 const PAGE_SIZE = 25;
 
 type CaseFileRow = typeof caseFiles.$inferSelect & {
+  invoiceFileName: string | null;
   commentCount: number;
   lastStatusChangeAt: string;
 };
@@ -185,6 +187,8 @@ export async function listCaseFiles(
       caseType: caseFiles.caseType,
       status: caseFiles.status,
       submissionBatchId: caseFiles.submissionBatchId,
+      invoiceId: caseFiles.invoiceId,
+      invoiceFileName: caseInvoices.originalFileName,
       returnCount: caseFiles.returnCount,
       lastReturnedAt: caseFiles.lastReturnedAt,
       isArchived: caseFiles.isArchived,
@@ -196,6 +200,7 @@ export async function listCaseFiles(
     })
     .from(caseFiles)
     .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
+    .leftJoin(caseInvoices, eq(caseInvoices.id, caseFiles.invoiceId))
     .where(and(...conditions))
     .orderBy(resolveOrderBy(filters.sortKey, filters.sortDir))
     .limit(PAGE_SIZE)
@@ -483,30 +488,6 @@ export async function bulkMarkAwaitingInvoice(
     .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
 
   await Promise.all(uniqueIds.map((id) => recordStatusHistory(id, "awaiting_invoice", actorUserId)));
-
-  return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
-}
-
-export async function bulkMarkDone(
-  workspaceId: string,
-  caseFileIds: string[],
-  actorUserId: string
-) {
-  const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
-
-  const notReady = candidates.filter((row) => row.status !== "awaiting_invoice");
-  if (notReady.length > 0) {
-    throw new ValidationError(
-      "Only case files with status 'awaiting_invoice' can be marked as done"
-    );
-  }
-
-  await db
-    .update(caseFiles)
-    .set({ status: "done", updatedAt: new Date() })
-    .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
-
-  await Promise.all(uniqueIds.map((id) => recordStatusHistory(id, "done", actorUserId)));
 
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }

@@ -67,6 +67,8 @@ export type CaseFile = {
   caseType: CaseType;
   status: CaseFileStatus;
   submissionBatchId: string | null;
+  invoiceId: string | null;
+  invoiceFileName: string | null;
   commentCount: number;
   lastStatusChangeAt: string;
   returnCount: number;
@@ -565,21 +567,6 @@ export function CaseBoardClient({
     },
   });
 
-  const markDoneMutation = useMutation({
-    mutationFn: (caseFileIds: string[]) =>
-      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-done`, {
-        method: "POST",
-        body: JSON.stringify({ caseFileIds }),
-      }),
-    onSuccess: () => {
-      invalidateAndClear();
-      toast.success(t("toast.markedDone"));
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t("toast.markDoneFailed"));
-    },
-  });
-
   const bulkActionPending =
     advanceMutation.isPending ||
     queueForPvsMutation.isPending ||
@@ -587,8 +574,7 @@ export function CaseBoardClient({
     markReturnedMutation.isPending ||
     returnToProcessingMutation.isPending ||
     returnToMedizinControllingMutation.isPending ||
-    markAwaitingInvoiceMutation.isPending ||
-    markDoneMutation.isPending;
+    markAwaitingInvoiceMutation.isPending;
 
   function withCount(label: string, count: number) {
     return (
@@ -955,6 +941,7 @@ export function CaseBoardClient({
       ) : null}
 
       <BulkActionBar
+        workspaceId={workspaceId}
         selectedCount={selectedIds.size}
         mode={bulkMode}
         isPending={bulkActionPending}
@@ -971,7 +958,6 @@ export function CaseBoardClient({
           returnToMedizinControllingMutation.mutate([...selectedIds])
         }
         onMarkAwaitingInvoice={() => markAwaitingInvoiceMutation.mutate([...selectedIds])}
-        onMarkDone={() => markDoneMutation.mutate([...selectedIds])}
         exportableCount={exportableCount}
         isExporting={exportPdfMutation.isPending}
         onExportPdf={() =>

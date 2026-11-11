@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   ArrowRightCircle,
-  CheckCircle2,
   Clock,
   FileDown,
   Receipt,
@@ -22,6 +22,7 @@ export type BulkActionMode =
   | "mixed";
 
 type BulkActionBarProps = {
+  workspaceId: string;
   selectedCount: number;
   mode: BulkActionMode | null;
   isPending: boolean;
@@ -33,7 +34,6 @@ type BulkActionBarProps = {
   onReturnToProcessing: () => void;
   onReturnToMedizinControlling: () => void;
   onMarkAwaitingInvoice: () => void;
-  onMarkDone: () => void;
   /** Count of the selection eligible for the manual PDF export (0 hides the button). */
   exportableCount?: number;
   isExporting?: boolean;
@@ -41,6 +41,7 @@ type BulkActionBarProps = {
 };
 
 export function BulkActionBar({
+  workspaceId,
   selectedCount,
   mode,
   isPending,
@@ -52,7 +53,6 @@ export function BulkActionBar({
   onReturnToProcessing,
   onReturnToMedizinControlling,
   onMarkAwaitingInvoice,
-  onMarkDone,
   exportableCount = 0,
   isExporting = false,
   onExportPdf,
@@ -138,9 +138,11 @@ export function BulkActionBar({
           </>
         ) : null}
         {mode === "awaitingInvoice" ? (
-          <Button size="sm" onClick={onMarkDone} disabled={isPending}>
-            <CheckCircle2 className="h-4 w-4" />
-            {isPending ? t("markingDone") : t("markDone")}
+          <Button size="sm" asChild>
+            <Link href={`/cases/${workspaceId}/invoices`}>
+              <Receipt className="h-4 w-4" />
+              {t("assignInvoice")}
+            </Link>
           </Button>
         ) : null}
       </div>

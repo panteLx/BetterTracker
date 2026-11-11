@@ -1,14 +1,14 @@
 import { requireCaseWorkspaceContentCreateAccess } from "@/lib/auth/case-workspace-guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { bulkMarkDone } from "@/lib/services/case-file-service";
+import { unassignCaseFiles } from "@/lib/services/case-invoice-service";
 import { caseFileIdsInputSchema } from "@/lib/validators/case-file-bulk";
-import { ok, mapServiceError, parseRequestJson } from "@/lib/http";
+import { mapServiceError, ok, parseRequestJson } from "@/lib/http";
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string; invoiceId: string }> }
 ) {
-  const { id } = await context.params;
+  const { id, invoiceId } = await context.params;
   const access = await requireCaseWorkspaceContentCreateAccess(request.headers, id);
   if (access.response) return access.response;
 
@@ -16,17 +16,18 @@ export async function POST(
     const body = await parseRequestJson<unknown>(request);
     const { caseFileIds } = caseFileIdsInputSchema.parse(body);
 
-    const items = await bulkMarkDone(id, caseFileIds, access.user!.id);
+    const item = await unassignCaseFiles(id, invoiceId, caseFileIds, access.user!.id);
 
     await logAuditEvent({
       actorUserId: access.user!.id,
-      action: "case_files_marked_done",
-      resourceType: "case_file",
+      action: "case_invoice_unassigned",
+      resourceType: "case_invoice",
+      resourceId: invoiceId,
       metadata: { caseFileIds },
       ...(await getRequestAuditContext()),
     });
 
-    return ok({ items });
+    return ok({ item });
   } catch (error) {
     return mapServiceError(error);
   }

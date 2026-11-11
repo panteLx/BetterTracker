@@ -1,3 +1,4 @@
+import { deleteWorkspaceInvoiceFiles } from "@/lib/storage/invoice-files";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { caseWorkspaces } from "@/lib/db/schema";
@@ -60,6 +61,8 @@ export async function DELETE(
   try {
     const [deleted] = await db.delete(caseWorkspaces).where(eq(caseWorkspaces.id, id)).returning();
     if (!deleted) return notFound("Workspace not found");
+
+    await deleteWorkspaceInvoiceFiles(id).catch(() => {});
 
     await logAuditEvent({
       actorUserId: access.user!.id,
