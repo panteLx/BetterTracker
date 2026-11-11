@@ -92,7 +92,7 @@
       "returnToMedizinControlling": "Back to Medizin-Controlling",
       "returningToMedizinControlling": "Moving…",
       "markingReturned": "Marking…",
-      "markDone": "Invoice received – mark as done",
+      "markDone": "Mark as done",
       "markingDone": "Marking…",
       "mixedHint": "Please select case files with the same status",
       "exportPdf": "Create PDF ({count})",

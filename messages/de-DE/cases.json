@@ -92,7 +92,7 @@
       "returnToMedizinControlling": "Zurück zum Medizin-Controlling",
       "returningToMedizinControlling": "Wird verschoben…",
       "markingReturned": "Wird markiert…",
-      "markDone": "Rechnung da – als fertig markieren",
+      "markDone": "Als fertig markieren",
       "markingDone": "Wird markiert…",
       "mixedHint": "Bitte nur Akten mit demselben Status auswählen",
       "exportPdf": "PDF erstellen ({count})",

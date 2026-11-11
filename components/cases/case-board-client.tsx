@@ -687,13 +687,13 @@ export function CaseBoardClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
         <StatTile
           label={t("stats.total")}
           tone="inverse"
           icon={FileStack}
           value={statusCounts.all}
-          className="col-span-2 sm:col-span-1"
+          className="col-span-2 lg:col-span-3 xl:col-span-1 xl:row-span-2 xl:[&>div:nth-child(2)]:text-5xl"
         />
         <StatTile label={tStatus("needs_processing")} icon={Clock} value={statusCounts.needs_processing} />
         <StatTile
