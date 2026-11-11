@@ -197,6 +197,19 @@ export function CaseFileSheet({ workspaceId, open, onOpenChange, caseFile }: Cas
               })}
             </p>
           ) : null}
+          {isEdit && caseFile?.invoiceId ? (
+            <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+              {t("invoiceLabel")}:{" "}
+              <a
+                href={`/api/case-workspaces/${workspaceId}/invoices/${caseFile.invoiceId}/file`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground underline underline-offset-2"
+              >
+                {caseFile.invoiceFileName ?? t("invoiceOpen")}
+              </a>
+            </p>
+          ) : null}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="case-patient-name">{t("patientName")}</Label>

@@ -92,8 +92,7 @@
       "returnToMedizinControlling": "Back to Medizin-Controlling",
       "returningToMedizinControlling": "Moving…",
       "markingReturned": "Marking…",
-      "markDone": "Mark as done",
-      "markingDone": "Marking…",
+      "assignInvoice": "Assign invoice",
       "mixedHint": "Please select case files with the same status",
       "exportPdf": "Create PDF ({count})",
       "exportingPdf": "Creating…",
@@ -111,8 +110,6 @@
       "markReturnedFailed": "Could not mark as returned.",
       "returnedToMedizinControlling": "Moved back to medical controlling.",
       "returnToMedizinControllingFailed": "Could not move back to medical controlling.",
-      "markedDone": "Marked as done.",
-      "markDoneFailed": "Could not mark as done.",
       "exportFailed": "Could not create PDF.",
       "selectAllFailed": "Could not load selection.",
       "markedAwaitingInvoice": "Marked as awaiting invoice.",
@@ -134,6 +131,8 @@
     }
   },
   "caseFileForm": {
+    "invoiceLabel": "Invoice",
+    "invoiceOpen": "Open PDF",
     "createTitle": "New case file",
     "editTitle": "Edit case file",
     "description": "Enter the patient case file details.",

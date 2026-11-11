@@ -92,8 +92,7 @@
       "returnToMedizinControlling": "Zurück zum Medizin-Controlling",
       "returningToMedizinControlling": "Wird verschoben…",
       "markingReturned": "Wird markiert…",
-      "markDone": "Als fertig markieren",
-      "markingDone": "Wird markiert…",
+      "assignInvoice": "Rechnung zuordnen",
       "mixedHint": "Bitte nur Akten mit demselben Status auswählen",
       "exportPdf": "PDF erstellen ({count})",
       "exportingPdf": "Wird erstellt…",
@@ -111,8 +110,6 @@
       "markReturnedFailed": "Konnte nicht als zurückgekommen markiert werden.",
       "returnedToMedizinControlling": "Zurück zum Medizin-Controlling verschoben.",
       "returnToMedizinControllingFailed": "Konnte nicht zum Medizin-Controlling zurückverschoben werden.",
-      "markedDone": "Als erledigt markiert.",
-      "markDoneFailed": "Konnte nicht als erledigt markiert werden.",
       "exportFailed": "PDF konnte nicht erstellt werden.",
       "selectAllFailed": "Auswahl konnte nicht geladen werden.",
       "markedAwaitingInvoice": "Als „Warten auf Ausgangsrechnung“ markiert.",
@@ -134,6 +131,8 @@
     }
   },
   "caseFileForm": {
+    "invoiceLabel": "Ausgangsrechnung",
+    "invoiceOpen": "PDF öffnen",
     "createTitle": "Neue Akte",
     "editTitle": "Akte bearbeiten",
     "description": "Angaben zur Patientenakte erfassen.",
