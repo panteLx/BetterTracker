@@ -4,6 +4,7 @@ import {
   caseFileComments,
   caseFiles,
   caseFileStatusHistory,
+  caseInvoices,
   pvsSubmissionBatches,
   user,
 } from "@/lib/db/schema";
@@ -59,6 +60,7 @@ const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
 const PAGE_SIZE = 25;
 
 type CaseFileRow = typeof caseFiles.$inferSelect & {
+  invoiceFileName: string | null;
   commentCount: number;
   lastStatusChangeAt: string;
 };
@@ -185,6 +187,8 @@ export async function listCaseFiles(
       caseType: caseFiles.caseType,
       status: caseFiles.status,
       submissionBatchId: caseFiles.submissionBatchId,
+      invoiceId: caseFiles.invoiceId,
+      invoiceFileName: caseInvoices.originalFileName,
       returnCount: caseFiles.returnCount,
       lastReturnedAt: caseFiles.lastReturnedAt,
       isArchived: caseFiles.isArchived,
@@ -196,6 +200,7 @@ export async function listCaseFiles(
     })
     .from(caseFiles)
     .leftJoin(pvsSubmissionBatches, eq(pvsSubmissionBatches.id, caseFiles.submissionBatchId))
+    .leftJoin(caseInvoices, eq(caseInvoices.id, caseFiles.invoiceId))
     .where(and(...conditions))
     .orderBy(resolveOrderBy(filters.sortKey, filters.sortDir))
     .limit(PAGE_SIZE)
