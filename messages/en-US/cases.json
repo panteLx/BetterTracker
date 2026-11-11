@@ -339,6 +339,22 @@
       "reorderListsFailed": "Could not save the column order.",
       "addCommentFailed": "Could not add comment.",
       "deleteCommentFailed": "Could not delete comment."
+    },
+    "letterChecks": {
+      "title": "Letters from consultation hours sent",
+      "subtitle": "Tick off each weekday once the letters are sent.",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "thisWeek": "This week",
+      "open": "Open",
+      "today": "Today",
+      "checkedBy": "Sent by {name}",
+      "dayAria": "Letters sent on {date}",
+      "toastFailed": "Could not update the letter status",
+      "weekLabel": "Week of {date}",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "progress": "{done} of 5 sent"
     }
   }
 }

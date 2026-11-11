@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { LetterCheckStrip } from "@/components/cases/letter-check-strip";
 import { TodoItemDetailDialog } from "@/components/cases/todo-item-detail-dialog";
 import { fetchJson } from "@/lib/client-fetch";
 import { cn, formatDateShort } from "@/lib/utils";
@@ -975,6 +976,8 @@ export function TodoBoardClient({ workspaceId }: { workspaceId: string }) {
           ) : null}
         </div>
       </div>
+
+      <LetterCheckStrip workspaceId={workspaceId} canEdit={canEdit} />
 
       {!listsQuery.isLoading && lists.length === 0 && !canEdit ? (
         <EmptyState icon={ListChecks} title={t("empty.title")} description={t("empty.description")} />

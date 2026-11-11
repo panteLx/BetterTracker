@@ -339,6 +339,22 @@
       "reorderListsFailed": "Reihenfolge der Spalten konnte nicht gespeichert werden.",
       "addCommentFailed": "Kommentar konnte nicht hinzugefügt werden.",
       "deleteCommentFailed": "Kommentar konnte nicht gelöscht werden."
+    },
+    "letterChecks": {
+      "title": "Arztbriefe der Sprechstunde verschickt",
+      "subtitle": "Hake jeden Wochentag ab, sobald die Briefe raus sind.",
+      "prevWeek": "Vorherige Woche",
+      "nextWeek": "Nächste Woche",
+      "thisWeek": "Diese Woche",
+      "open": "Offen",
+      "today": "Heute",
+      "checkedBy": "Verschickt von {name}",
+      "dayAria": "Briefe verschickt am {date}",
+      "toastFailed": "Briefstatus konnte nicht aktualisiert werden",
+      "weekLabel": "Woche ab {date}",
+      "collapse": "Einklappen",
+      "expand": "Ausklappen",
+      "progress": "{done} von 5 verschickt"
     }
   }
 }
