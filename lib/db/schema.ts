@@ -358,6 +358,7 @@ export const caseFiles = sqliteTable(
         "medizin_controlling",
         "queued_for_pvs",
         "sent_to_pvs",
+        "awaiting_invoice",
         "done",
       ],
     })
@@ -444,6 +445,7 @@ export const caseFileStatusHistory = sqliteTable(
         "medizin_controlling",
         "queued_for_pvs",
         "sent_to_pvs",
+        "awaiting_invoice",
         "done",
       ],
     }).notNull(),

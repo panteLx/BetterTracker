@@ -135,6 +135,7 @@ type CaseFileStatus =
   | "medizin_controlling"
   | "queued_for_pvs"
   | "sent_to_pvs"
+  | "awaiting_invoice"
   | "done";
 
 type SeedCaseWorkspaceConfig = {
@@ -993,8 +994,9 @@ const CASE_STATUS_WEIGHTS: Array<{ value: CaseFileStatus; weight: number }> = [
   { value: "needs_processing", weight: 25 },
   { value: "medizin_controlling", weight: 15 },
   { value: "queued_for_pvs", weight: 15 },
-  { value: "sent_to_pvs", weight: 20 },
-  { value: "done", weight: 25 },
+  { value: "sent_to_pvs", weight: 15 },
+  { value: "awaiting_invoice", weight: 10 },
+  { value: "done", weight: 20 },
 ];
 
 const CASE_FILE_COMMENT_POOL = [
@@ -1443,7 +1445,7 @@ async function seedCaseFilesForWorkspace(
     const birthMonth = randomInt(rng, 1, 12);
     const birthDay = randomInt(rng, 1, daysInMonth(birthYear, birthMonth - 1));
     const status = weightedPick(rng, CASE_STATUS_WEIGHTS);
-    const wasReturned = (status === "sent_to_pvs" || status === "done") && rng() < 0.12;
+    const wasReturned = (status === "sent_to_pvs" || status === "awaiting_invoice" || status === "done") && rng() < 0.12;
 
     return {
       patientName: `${pick(rng, CASE_FILE_FIRST_NAMES)} ${pick(rng, CASE_FILE_LAST_NAMES)}`,
@@ -1486,7 +1488,7 @@ async function seedCaseFilesForWorkspace(
   // submissions page shows real, mixed-case-type batches instead of one
   // batch per case file.
   const submitted = insertedCaseFiles.filter(
-    (row) => row.status === "sent_to_pvs" || row.status === "done"
+    (row) => row.status === "sent_to_pvs" || row.status === "awaiting_invoice" || row.status === "done"
   );
   const batchGroups = new Map<string, typeof insertedCaseFiles>();
   for (const row of submitted) {

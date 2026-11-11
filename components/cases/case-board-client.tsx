@@ -10,6 +10,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   CheckCircle2,
+  Receipt,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -53,6 +54,7 @@ export type CaseFileStatus =
   | "medizin_controlling"
   | "queued_for_pvs"
   | "sent_to_pvs"
+  | "awaiting_invoice"
   | "done";
 export type CaseType = "ambulant" | "stationaer" | "konsil";
 
@@ -90,10 +92,16 @@ const STATUS_VALUES: CaseFileStatus[] = [
   "medizin_controlling",
   "queued_for_pvs",
   "sent_to_pvs",
+  "awaiting_invoice",
   "done",
 ];
 const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
-const PDF_EXPORTABLE_STATUSES: CaseFileStatus[] = ["queued_for_pvs", "sent_to_pvs", "done"];
+const PDF_EXPORTABLE_STATUSES: CaseFileStatus[] = [
+  "queued_for_pvs",
+  "sent_to_pvs",
+  "awaiting_invoice",
+  "done",
+];
 
 type SortKey =
   | "createdAt"
@@ -391,6 +399,7 @@ export function CaseBoardClient({
       if (statusFilter === "medizin_controlling") return "medizinControlling";
       if (statusFilter === "queued_for_pvs") return "queuedForPvs";
       if (statusFilter === "sent_to_pvs") return "sentToPvs";
+      if (statusFilter === "awaiting_invoice") return "awaitingInvoice";
       return "mixed";
     }
     const statuses = new Set(selectedCaseFiles.map((item) => item.status));
@@ -400,6 +409,7 @@ export function CaseBoardClient({
     if (status === "medizin_controlling") return "medizinControlling";
     if (status === "queued_for_pvs") return "queuedForPvs";
     if (status === "sent_to_pvs") return "sentToPvs";
+    if (status === "awaiting_invoice") return "awaitingInvoice";
     return "mixed";
   }, [selectedIds, selectionSpansAllPages, statusFilter, selectedCaseFiles]);
 
@@ -540,6 +550,21 @@ export function CaseBoardClient({
     },
   });
 
+  const markAwaitingInvoiceMutation = useMutation({
+    mutationFn: (caseFileIds: string[]) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-awaiting-invoice`, {
+        method: "POST",
+        body: JSON.stringify({ caseFileIds }),
+      }),
+    onSuccess: () => {
+      invalidateAndClear();
+      toast.success(t("toast.markedAwaitingInvoice"));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t("toast.markAwaitingInvoiceFailed"));
+    },
+  });
+
   const markDoneMutation = useMutation({
     mutationFn: (caseFileIds: string[]) =>
       fetchJson(`/api/case-workspaces/${workspaceId}/case-files/mark-done`, {
@@ -562,6 +587,7 @@ export function CaseBoardClient({
     markReturnedMutation.isPending ||
     returnToProcessingMutation.isPending ||
     returnToMedizinControllingMutation.isPending ||
+    markAwaitingInvoiceMutation.isPending ||
     markDoneMutation.isPending;
 
   function withCount(label: string, count: number) {
@@ -661,7 +687,7 @@ export function CaseBoardClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         <StatTile
           label={t("stats.total")}
           tone="inverse"
@@ -677,6 +703,11 @@ export function CaseBoardClient({
         />
         <StatTile label={tStatus("queued_for_pvs")} icon={ListChecks} value={statusCounts.queued_for_pvs} />
         <StatTile label={tStatus("sent_to_pvs")} icon={Send} value={statusCounts.sent_to_pvs} />
+        <StatTile
+          label={tStatus("awaiting_invoice")}
+          icon={Receipt}
+          value={statusCounts.awaiting_invoice}
+        />
         <StatTile label={tStatus("done")} icon={CheckCircle2} value={statusCounts.done} />
       </div>
 
@@ -939,6 +970,7 @@ export function CaseBoardClient({
         onReturnToMedizinControlling={() =>
           returnToMedizinControllingMutation.mutate([...selectedIds])
         }
+        onMarkAwaitingInvoice={() => markAwaitingInvoiceMutation.mutate([...selectedIds])}
         onMarkDone={() => markDoneMutation.mutate([...selectedIds])}
         exportableCount={exportableCount}
         isExporting={exportPdfMutation.isPending}
