@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ClipboardList, FileStack, FolderClock, ListChecks, Settings } from "lucide-react";
+import { ClipboardList, FileStack, FileText, FolderClock, ListChecks, Settings } from "lucide-react";
 import {
   segmentedItemClass,
   segmentedTrackClass,
@@ -29,6 +29,7 @@ export function workspaceNavItems(workspaceId: string) {
     { href: `/cases/${workspaceId}`, key: "board" as const, icon: ClipboardList, exact: true },
     { href: `/cases/${workspaceId}/todos`, key: "todos" as const, icon: ListChecks, exact: false },
     { href: `/cases/${workspaceId}/batches`, key: "batches" as const, icon: FolderClock, exact: false },
+    { href: `/cases/${workspaceId}/invoices`, key: "invoices" as const, icon: FileText, exact: false },
     { href: `/cases/${workspaceId}/settings`, key: "settings" as const, icon: Settings, exact: false },
   ];
 }

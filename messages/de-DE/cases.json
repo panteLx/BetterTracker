@@ -3,6 +3,7 @@
     "board": "Übersicht",
     "todos": "Aufgaben",
     "batches": "Übermittlungen",
+    "invoices": "Rechnungen",
     "settings": "Einstellungen",
     "newCaseFileAria": "Neue Akte hinzufügen"
   },
@@ -359,6 +360,44 @@
       "collapse": "Einklappen",
       "expand": "Ausklappen",
       "progress": "{done} von 5 verschickt"
+    }
+  },
+  "invoices": {
+    "title": "Ausgangsrechnungen",
+    "upload": "Rechnung hochladen",
+    "uploadTitle": "Ausgangsrechnung hochladen",
+    "uploadDescription": "Wähle das PDF und die Patienten, die darauf stehen. Die gewählten Akten werden auf „Fertig“ gesetzt.",
+    "fileLabel": "PDF-Datei",
+    "patientsLabel": "Patienten, die auf eine Rechnung warten",
+    "noAssignable": "Keine Akten warten auf eine Ausgangsrechnung.",
+    "uploadSubmit": "Hochladen",
+    "uploading": "Wird hochgeladen…",
+    "assignTitle": "Patienten hinzufügen",
+    "assignDescription": "Die gewählten Akten werden auf „Fertig“ gesetzt.",
+    "assignSubmit": "Zuordnen",
+    "assigning": "Wird zugeordnet…",
+    "cancel": "Abbrechen",
+    "addPatients": "Patienten hinzufügen",
+    "delete": "Löschen",
+    "deleteTitle": "Rechnung löschen?",
+    "deleteDescription": "Das PDF wird entfernt und {count} Akte(n) gehen zurück auf „Warten auf Ausgangsrechnung“.",
+    "deleteConfirm": "Löschen",
+    "noPatients": "Noch keine Patienten zugeordnet.",
+    "removePatientAria": "{name} von dieser Rechnung entfernen",
+    "empty": {
+      "title": "Noch keine Rechnungen",
+      "description": "Lade eine Ausgangsrechnung hoch und ordne die Patienten zu, die darauf stehen."
+    },
+    "toast": {
+      "noFile": "Bitte wähle eine PDF-Datei.",
+      "uploaded": "Rechnung hochgeladen.",
+      "uploadFailed": "Rechnung konnte nicht hochgeladen werden.",
+      "assigned": "Patienten zugeordnet.",
+      "assignFailed": "Patienten konnten nicht zugeordnet werden.",
+      "removed": "Patient von der Rechnung entfernt.",
+      "removeFailed": "Patient konnte nicht entfernt werden.",
+      "deleted": "Rechnung gelöscht.",
+      "deleteFailed": "Rechnung konnte nicht gelöscht werden."
     }
   }
 }
