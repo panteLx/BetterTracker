@@ -520,6 +520,24 @@ export const todoComments = sqliteTable(
   (table) => [index("todo_comments_item_idx").on(table.itemId)]
 );
 
+export const letterChecks = sqliteTable(
+  "letter_checks",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    checkedByUserId: text("checked_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [uniqueIndex("letter_checks_workspace_date_idx").on(table.workspaceId, table.date)]
+);
+
 export const appSettings = sqliteTable("app_settings", {
   id: text("id")
     .primaryKey()
@@ -728,5 +746,6 @@ export type TodoList = typeof todoLists.$inferSelect;
 export type NewTodoList = typeof todoLists.$inferInsert;
 export type TodoItem = typeof todoItems.$inferSelect;
 export type NewTodoItem = typeof todoItems.$inferInsert;
+export type LetterCheck = typeof letterChecks.$inferSelect;
 export type TodoComment = typeof todoComments.$inferSelect;
 export type NewTodoComment = typeof todoComments.$inferInsert;
