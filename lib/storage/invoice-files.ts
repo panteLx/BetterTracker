@@ -36,3 +36,11 @@ export async function readInvoiceFile(workspaceId: string, invoiceId: string) {
 export async function deleteInvoiceFile(workspaceId: string, invoiceId: string) {
   await fs.rm(invoiceFilePath(workspaceId, invoiceId), { force: true });
 }
+
+// The DB cascade removes invoice rows with the workspace, but not their PDFs.
+export async function deleteWorkspaceInvoiceFiles(workspaceId: string) {
+  if (!SAFE_ID.test(workspaceId)) {
+    throw new Error("Invalid invoice file identifier");
+  }
+  await fs.rm(path.join(baseDir, workspaceId), { recursive: true, force: true });
+}
