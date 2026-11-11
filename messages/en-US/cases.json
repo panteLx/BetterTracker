@@ -35,6 +35,7 @@
     "medizin_controlling": "Medical controlling",
     "queued_for_pvs": "Queued for PVS",
     "sent_to_pvs": "Sent to PVS",
+    "awaiting_invoice": "Awaiting invoice",
     "done": "Done"
   },
   "caseType": {
@@ -95,7 +96,9 @@
       "markingDone": "Marking…",
       "mixedHint": "Please select case files with the same status",
       "exportPdf": "Create PDF ({count})",
-      "exportingPdf": "Creating…"
+      "exportingPdf": "Creating…",
+      "markAwaitingInvoice": "Awaiting invoice",
+      "markingAwaitingInvoice": "Marking…"
     },
     "toast": {
       "advanced": "Sent to medical controlling.",
@@ -111,7 +114,9 @@
       "markedDone": "Marked as done.",
       "markDoneFailed": "Could not mark as done.",
       "exportFailed": "Could not create PDF.",
-      "selectAllFailed": "Could not load selection."
+      "selectAllFailed": "Could not load selection.",
+      "markedAwaitingInvoice": "Marked as awaiting invoice.",
+      "markAwaitingInvoiceFailed": "Could not mark as awaiting invoice."
     },
     "pagination": {
       "summary": "{count} case files",

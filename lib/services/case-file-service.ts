@@ -17,6 +17,7 @@ export type CaseFileStatus =
   | "medizin_controlling"
   | "queued_for_pvs"
   | "sent_to_pvs"
+  | "awaiting_invoice"
   | "done";
 export type CaseType = "ambulant" | "stationaer" | "konsil";
 
@@ -51,6 +52,7 @@ const STATUS_VALUES: CaseFileStatus[] = [
   "medizin_controlling",
   "queued_for_pvs",
   "sent_to_pvs",
+  "awaiting_invoice",
   "done",
 ];
 const CASE_TYPE_VALUES: CaseType[] = ["ambulant", "stationaer", "konsil"];
@@ -129,8 +131,9 @@ function resolveOrderBy(
         when 'medizin_controlling' then 1
         when 'queued_for_pvs' then 2
         when 'sent_to_pvs' then 3
-        when 'done' then 4
-        else 5 end`);
+        when 'awaiting_invoice' then 4
+        when 'done' then 5
+        else 6 end`);
     case "lastStatusChangeAt":
       return dir(
         sql`(select max(${caseFileStatusHistory.createdAt}) from ${caseFileStatusHistory} where ${caseFileStatusHistory.caseFileId} = ${caseFiles.id})`
@@ -460,7 +463,7 @@ export async function bulkReturnToMedizinControlling(
   return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
 }
 
-export async function bulkMarkDone(
+export async function bulkMarkAwaitingInvoice(
   workspaceId: string,
   caseFileIds: string[],
   actorUserId: string
@@ -470,7 +473,31 @@ export async function bulkMarkDone(
   const notReady = candidates.filter((row) => row.status !== "sent_to_pvs");
   if (notReady.length > 0) {
     throw new ValidationError(
-      "Only case files with status 'sent_to_pvs' can be marked as done"
+      "Only case files with status 'sent_to_pvs' can be marked as awaiting invoice"
+    );
+  }
+
+  await db
+    .update(caseFiles)
+    .set({ status: "awaiting_invoice", updatedAt: new Date() })
+    .where(and(eq(caseFiles.workspaceId, workspaceId), inArray(caseFiles.id, uniqueIds)));
+
+  await Promise.all(uniqueIds.map((id) => recordStatusHistory(id, "awaiting_invoice", actorUserId)));
+
+  return db.select().from(caseFiles).where(inArray(caseFiles.id, uniqueIds));
+}
+
+export async function bulkMarkDone(
+  workspaceId: string,
+  caseFileIds: string[],
+  actorUserId: string
+) {
+  const { uniqueIds, candidates } = await loadCandidates(workspaceId, caseFileIds);
+
+  const notReady = candidates.filter((row) => row.status !== "awaiting_invoice");
+  if (notReady.length > 0) {
+    throw new ValidationError(
+      "Only case files with status 'awaiting_invoice' can be marked as done"
     );
   }
 

@@ -35,6 +35,7 @@
     "medizin_controlling": "Medizin-Controlling",
     "queued_for_pvs": "Bereit für PVS",
     "sent_to_pvs": "Zur PVS geschickt",
+    "awaiting_invoice": "Warten auf Ausgangsrechnung",
     "done": "Fertig"
   },
   "caseType": {
@@ -91,11 +92,13 @@
       "returnToMedizinControlling": "Zurück zum Medizin-Controlling",
       "returningToMedizinControlling": "Wird verschoben…",
       "markingReturned": "Wird markiert…",
-      "markDone": "Als erledigt markieren",
+      "markDone": "Als fertig markieren",
       "markingDone": "Wird markiert…",
       "mixedHint": "Bitte nur Akten mit demselben Status auswählen",
       "exportPdf": "PDF erstellen ({count})",
-      "exportingPdf": "Wird erstellt…"
+      "exportingPdf": "Wird erstellt…",
+      "markAwaitingInvoice": "Warten auf Ausgangsrechnung",
+      "markingAwaitingInvoice": "Wird markiert…"
     },
     "toast": {
       "advanced": "Zum Medizin-Controlling verschoben.",
@@ -111,7 +114,9 @@
       "markedDone": "Als erledigt markiert.",
       "markDoneFailed": "Konnte nicht als erledigt markiert werden.",
       "exportFailed": "PDF konnte nicht erstellt werden.",
-      "selectAllFailed": "Auswahl konnte nicht geladen werden."
+      "selectAllFailed": "Auswahl konnte nicht geladen werden.",
+      "markedAwaitingInvoice": "Als „Warten auf Ausgangsrechnung“ markiert.",
+      "markAwaitingInvoiceFailed": "Konnte nicht als „Warten auf Ausgangsrechnung“ markiert werden."
     },
     "pagination": {
       "summary": "{count} Akten",

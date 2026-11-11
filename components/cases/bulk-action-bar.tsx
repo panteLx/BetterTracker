@@ -1,7 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowRightCircle, CheckCircle2, Clock, FileDown, RotateCcw, Send, X } from "lucide-react";
+import {
+  ArrowRightCircle,
+  CheckCircle2,
+  Clock,
+  FileDown,
+  Receipt,
+  RotateCcw,
+  Send,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type BulkActionMode =
@@ -9,6 +18,7 @@ export type BulkActionMode =
   | "medizinControlling"
   | "queuedForPvs"
   | "sentToPvs"
+  | "awaitingInvoice"
   | "mixed";
 
 type BulkActionBarProps = {
@@ -22,6 +32,7 @@ type BulkActionBarProps = {
   onMarkReturned: () => void;
   onReturnToProcessing: () => void;
   onReturnToMedizinControlling: () => void;
+  onMarkAwaitingInvoice: () => void;
   onMarkDone: () => void;
   /** Count of the selection eligible for the manual PDF export (0 hides the button). */
   exportableCount?: number;
@@ -40,6 +51,7 @@ export function BulkActionBar({
   onMarkReturned,
   onReturnToProcessing,
   onReturnToMedizinControlling,
+  onMarkAwaitingInvoice,
   onMarkDone,
   exportableCount = 0,
   isExporting = false,
@@ -119,11 +131,17 @@ export function BulkActionBar({
               <RotateCcw className="h-4 w-4" />
               {isPending ? t("markingReturned") : t("markReturned")}
             </Button>
-            <Button size="sm" onClick={onMarkDone} disabled={isPending}>
-              <CheckCircle2 className="h-4 w-4" />
-              {isPending ? t("markingDone") : t("markDone")}
+            <Button size="sm" onClick={onMarkAwaitingInvoice} disabled={isPending}>
+              <Receipt className="h-4 w-4" />
+              {isPending ? t("markingAwaitingInvoice") : t("markAwaitingInvoice")}
             </Button>
           </>
+        ) : null}
+        {mode === "awaitingInvoice" ? (
+          <Button size="sm" onClick={onMarkDone} disabled={isPending}>
+            <CheckCircle2 className="h-4 w-4" />
+            {isPending ? t("markingDone") : t("markDone")}
+          </Button>
         ) : null}
       </div>
     </div>
