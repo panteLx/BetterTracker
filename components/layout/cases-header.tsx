@@ -55,7 +55,7 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
-      <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
         <Link href="/cases" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <FileStack className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
             aria-label={t("ariaMainNav")}
             className={segmentedTrackClass(
               "track",
-              "absolute left-1/2 hidden -translate-x-1/2 md:inline-flex",
+              "hidden justify-self-center md:inline-flex",
             )}
           >
             {navItems.map((item) => {
@@ -82,17 +82,19 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
+                  title={navT(item.key)}
                   className={segmentedItemClass({ variant: "track", size: "sm", active })}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {navT(item.key)}
+                  {/* Inactive labels collapse below xl so five items never collide with the right-hand controls. */}
+                  <span className={active ? undefined : "sr-only xl:not-sr-only"}>{navT(item.key)}</span>
                 </Link>
               );
             })}
           </nav>
         ) : null}
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5 col-start-3">
           {user ? (
             <>
               <CasesCommandPalette workspaceId={workspaceId} />
