@@ -270,9 +270,8 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
-        {canHide ? (
+      {canHide ? (
+        <div className="flex justify-end">
           <Button
             type="button"
             variant="outline"
@@ -282,8 +281,8 @@ export function BatchesClient({ workspaceId }: { workspaceId: string }) {
             {showHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showHidden ? t("hideHiddenToggle") : t("showHiddenToggle")}
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {!batchesQuery.isLoading && batches.length === 0 ? (
         <EmptyState icon={FolderClock} title={t("empty.title")} description={t("empty.description")} />

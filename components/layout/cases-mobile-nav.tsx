@@ -18,7 +18,7 @@ type CaseWorkspace = {
 
 /**
  * Bottom bar for phones, parallel to the finance module's MobileNav: same
- * four destinations as the desktop header nav, split 2/2 around a center
+ * destinations as the desktop header nav (minus settings, which lives in the user menu on mobile), split 2/2 around a center
  * "new case file" button. That deep-links to the board with `?new=case`,
  * the same query param the desktop command palette uses to pop the create
  * sheet open (see case-board-client.tsx) — so this works from any tab. The
@@ -29,7 +29,7 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const t = useTranslations("Cases.nav");
   const navItemsAria = useTranslations("Nav")("ariaMainNav");
-  const navItems = workspaceNavItems(workspaceId);
+  const navItems = workspaceNavItems(workspaceId).filter((item) => item.key !== "settings");
 
   const workspacesQuery = useQuery({
     queryKey: ["case-workspaces"],
@@ -73,8 +73,8 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid h-16 grid-cols-[repeat(3,minmax(0,1fr))_4rem_repeat(3,minmax(0,1fr))] items-center">
-        {navItems.slice(0, 3).map(renderItem)}
+      <div className="grid h-16 grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center">
+        <div className="grid grid-cols-2">{navItems.slice(0, 2).map(renderItem)}</div>
 
         <div className="flex items-center justify-center">
           {canCreate ? (
@@ -88,7 +88,7 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
           ) : null}
         </div>
 
-        {navItems.slice(3).map(renderItem)}
+        <div className="grid grid-cols-2">{navItems.slice(2).map(renderItem)}</div>
       </div>
     </nav>
   );

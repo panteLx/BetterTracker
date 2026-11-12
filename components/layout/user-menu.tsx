@@ -18,9 +18,11 @@ type UserMenuProps = {
   name: string;
   email: string;
   role?: string | null;
+  /** Extra entry shown on mobile only, for destinations missing from the bottom bar. */
+  mobileLink?: { href: string; label: string };
 };
 
-export function UserMenu({ name, email, role }: UserMenuProps) {
+export function UserMenu({ name, email, role, mobileLink }: UserMenuProps) {
   const t = useTranslations("Nav.userMenu");
 
   return (
@@ -46,6 +48,14 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
             {t("profile")}
           </Link>
         </DropdownMenuItem>
+        {mobileLink ? (
+          <DropdownMenuItem asChild className="md:hidden">
+            <Link href={mobileLink.href}>
+              <Settings className="mr-2 h-4 w-4" />
+              {mobileLink.label}
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         {(role === "admin" || role === "superadmin") && (
           <DropdownMenuItem asChild>
             <Link href="/admin">
