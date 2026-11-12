@@ -4,6 +4,7 @@
     "todos": "To-dos",
     "batches": "Submissions",
     "invoices": "Invoices",
+    "ops": "OPS",
     "settings": "Settings",
     "newCaseFileAria": "Add new case file"
   },
@@ -399,5 +400,100 @@
       "deleted": "Invoice deleted.",
       "deleteFailed": "Could not delete the invoice."
     }
+  },
+  "ops": {
+    "title": "OPS lookup",
+    "description": "Billing codes, §115b and Hybrid-DRG status for an OPS code.",
+    "searchPlaceholder": "OPS code or description",
+    "searchAria": "Search OPS codes",
+    "resultCount": "{shown} of {total} results",
+    "noResults": "No results.",
+    "noData": {
+      "title": "No data uploaded yet",
+      "description": "An admin needs to upload Anhang 2 and the Hybrid-DRG list first."
+    },
+    "noHybridList": "The Hybrid-DRG list is missing, so Hybrid-DRG status cannot be checked.",
+    "aop": {
+      "allowed": "AOP billing possible",
+      "blocked": "AOP billing not possible",
+      "reason": {
+        "no115b": "No §115b entry for this code.",
+        "hybridDrg": "Hybrid-DRG case, must not be billed as AOP."
+      }
+    },
+    "fields": {
+      "aop115b": "AOP §115b",
+      "hybrid": "Hybrid-DRG eligible",
+      "yes": "Yes",
+      "no": "No",
+      "operation": "Operation",
+      "monitoring": "Monitoring complex",
+      "funding": "AOP funding surcharge",
+      "hygiene": "Hygiene surcharge",
+      "anesthesia": "Anesthesia",
+      "letterPost": "Doctor's letter by post",
+      "letterFax": "Doctor's letter by fax",
+      "flatUnder60": "Flat fee up to 59 years",
+      "flatFrom60": "Flat fee from 59 years",
+      "none": "–"
+    },
+    "groups": {
+      "billing": "Billing",
+      "letters": "Doctor's letter and flat fee",
+      "anesthesia": "Anesthesia"
+    },
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyAria": "Copy {value}",
+    "dataset": {
+      "anhang2": "Anhang 2",
+      "hybrid": "Hybrid-DRG list",
+      "info": "{rows} rows · {date}",
+      "none": "Not uploaded"
+    },
+    "admin": {
+      "title": "Data and fixed codes",
+      "upload": "Upload new file",
+      "uploading": "Uploading…",
+      "uploaded": "File uploaded.",
+      "uploadFailed": "Upload failed.",
+      "fixedTitle": "Fixed codes",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Fixed codes saved.",
+      "saveFailed": "Could not save fixed codes.",
+      "digitsOnly": "Digits only, 1 to 10 characters."
+    },
+    "filters": {
+      "label": "Show:",
+      "showHybrid": "Hybrid-DRG cases",
+      "showNo115b": "Without §115b"
+    },
+    "favorites": {
+      "title": "Frequent AOP / Hybrid-DRG VCH procedures",
+      "hybridBadge": "Hybrid-DRG",
+      "add": "Add entry",
+      "addTitle": "Add entry",
+      "editTitle": "Edit entry",
+      "code": "OPS code",
+      "description": "Description",
+      "hybrid": "Hybrid-DRG case",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteTitle": "Delete entry?",
+      "deleteDescription": "{code} is removed from this list.",
+      "empty": "No entries yet.",
+      "added": "Entry added.",
+      "saved": "Entry saved.",
+      "deleted": "Entry deleted.",
+      "saveFailed": "Could not save the entry.",
+      "deleteFailed": "Could not delete the entry.",
+      "pickAria": "Search {code}",
+      "editAria": "Edit {code}",
+      "deleteAria": "Delete {code}"
+    },
+    "showAll": "Show all"
   }
 }

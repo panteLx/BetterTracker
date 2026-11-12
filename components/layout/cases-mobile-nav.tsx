@@ -49,16 +49,19 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
         key={item.href}
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className="flex flex-col items-center justify-center py-2"
+        aria-label={t(item.key)}
+        className="flex min-w-0 items-center justify-center py-2"
       >
         <span
           className={cn(
-            "flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors duration-(--motion-duration-fast)",
+            "flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 transition-colors duration-(--motion-duration-fast)",
             active ? "bg-primary-subtle text-primary-on" : "text-muted-foreground",
           )}
         >
           <Icon className={cn("h-5 w-5", active ? "stroke-[2.5]" : "stroke-[1.75]")} />
-          <span className="font-subtext text-[10px] font-medium">{t(item.key)}</span>
+          <span className={cn("font-subtext text-[10px] font-medium", active ? "whitespace-nowrap" : "sr-only")}>
+            {t(item.key)}
+          </span>
         </span>
       </Link>
     );
@@ -70,8 +73,8 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid h-16 grid-cols-5 items-center">
-        {navItems.slice(0, 2).map(renderItem)}
+      <div className="grid h-16 grid-cols-[repeat(3,minmax(0,1fr))_4rem_repeat(3,minmax(0,1fr))] items-center">
+        {navItems.slice(0, 3).map(renderItem)}
 
         <div className="flex items-center justify-center">
           {canCreate ? (
@@ -85,7 +88,7 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
           ) : null}
         </div>
 
-        {navItems.slice(2).map(renderItem)}
+        {navItems.slice(3).map(renderItem)}
       </div>
     </nav>
   );
