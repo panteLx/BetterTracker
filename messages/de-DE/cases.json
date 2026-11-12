@@ -467,6 +467,10 @@
       "saved": "Feste Ziffern gespeichert.",
       "saveFailed": "Feste Ziffern konnten nicht gespeichert werden.",
       "digitsOnly": "Nur Ziffern, 1 bis 10 Zeichen."
+    },
+    "filters": {
+      "showHybrid": "Hybrid-DRG-Fälle anzeigen",
+      "showNo115b": "Fälle ohne §115b anzeigen"
     }
   }
 }

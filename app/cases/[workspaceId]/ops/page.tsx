@@ -27,7 +27,7 @@ export default async function CaseWorkspaceOpsPage({
     queryFn: () => listCaseWorkspacesForUser(user.id).then((items) => ({ items })),
   });
   await queryClient.prefetchQuery({
-    queryKey: ["ops", ""],
+    queryKey: ["ops", "", false, false],
     queryFn: async () => ({ ...(await searchOps("")), ...(await getOpsOverview()) }),
   });
 

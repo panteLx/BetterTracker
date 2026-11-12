@@ -467,6 +467,10 @@
       "saved": "Fixed codes saved.",
       "saveFailed": "Could not save fixed codes.",
       "digitsOnly": "Digits only, 1 to 10 characters."
+    },
+    "filters": {
+      "showHybrid": "Show Hybrid-DRG cases",
+      "showNo115b": "Show cases without §115b"
     }
   }
 }

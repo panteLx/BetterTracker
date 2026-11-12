@@ -6,7 +6,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { Check, CircleAlert, CircleCheck, Copy, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SectionCard } from "@/components/ui/section-card";
 import { OpsAdminPanel } from "@/components/cases/ops-admin-panel";
 import { fetchJson } from "@/lib/client-fetch";
@@ -183,6 +185,8 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [showHybrid, setShowHybrid] = useState(true);
+  const [showNo115b, setShowNo115b] = useState(true);
 
   useEffect(() => {
     const id = setTimeout(() => setQuery(input.trim()), 250);
@@ -190,8 +194,11 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
   }, [input]);
 
   const { data } = useQuery({
-    queryKey: ["ops", query],
-    queryFn: () => fetchJson<OpsResponse>(`/api/ops?q=${encodeURIComponent(query)}`),
+    queryKey: ["ops", query, !showHybrid, !showNo115b],
+    queryFn: () =>
+      fetchJson<OpsResponse>(
+        `/api/ops?q=${encodeURIComponent(query)}&hideHybrid=${showHybrid ? 0 : 1}&hideNo115b=${showNo115b ? 0 : 1}`
+      ),
     placeholderData: keepPreviousData,
   });
 
@@ -242,6 +249,17 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
               autoComplete="off"
               className="h-12 pl-10 text-base"
             />
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox id="ops-show-hybrid" checked={showHybrid} onCheckedChange={(v) => setShowHybrid(v === true)} />
+              <Label htmlFor="ops-show-hybrid" className="font-normal">{t("filters.showHybrid")}</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="ops-show-no115b" checked={showNo115b} onCheckedChange={(v) => setShowNo115b(v === true)} />
+              <Label htmlFor="ops-show-no115b" className="font-normal">{t("filters.showNo115b")}</Label>
+            </div>
           </div>
 
           {query === "" ? (

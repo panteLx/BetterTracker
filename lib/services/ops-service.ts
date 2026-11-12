@@ -21,7 +21,7 @@ export type OpsDatasetInfo = { anhang2: DatasetFile | null; hybrid: DatasetFile 
 
 const DATASET_KEY = "opsDatasetInfo";
 const FIXED_CODES_KEY = "opsFixedCodes";
-const SEARCH_LIMIT = 50;
+const SEARCH_LIMIT = 100;
 const INSERT_CHUNK = 500;
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -54,7 +54,12 @@ export async function getOpsOverview(): Promise<{ fixedCodes: OpsFixedCodes; dat
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`);
 
-export async function searchOps(query: string): Promise<{ items: OpsResult[]; total: number }> {
+export type OpsSearchFilters = { hideHybrid?: boolean; hideNo115b?: boolean };
+
+export async function searchOps(
+  query: string,
+  filters: OpsSearchFilters = {}
+): Promise<{ items: OpsResult[]; total: number }> {
   const terms = query.trim().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return { items: [], total: 0 };
 
@@ -64,6 +69,10 @@ export async function searchOps(query: string): Promise<{ items: OpsResult[]; to
     const codeLike = `%${escapeLike(term.replace(/[-.]/g, ""))}%`;
     return sql`(${codeExpr} like ${codeLike} escape '\\' or ${opsCodes.description} like ${plain} escape '\\')`;
   });
+  if (filters.hideHybrid) {
+    conditions.push(sql`not exists (select 1 from ops_hybrid_codes h where h.ops_code = ops_codes.ops_code)`);
+  }
+  if (filters.hideNo115b) conditions.push(sql`ops_codes.aop_115b = 1`);
   const where = sql.join(conditions, sql` and `);
 
   const total = db.select({ n: sql<number>`count(*)` }).from(opsCodes).where(where).all()[0].n;
