@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Archive, RotateCcw, Trash2, UserRound } from "lucide-react";
+import { Archive, Download, RotateCcw, Trash2, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EntityIcon } from "@/components/ui/entity-icon";
@@ -264,6 +264,20 @@ export function CaseWorkspaceSettingsClient({ workspaceId }: { workspaceId: stri
               </Button>
             </form>
           </SectionCard>
+
+          {workspace && (workspace.permission === "owner" || workspace.permission === "admin") ? (
+            <SectionCard title={t("export.title")}>
+              <div>
+                <Button asChild variant="outline" className="w-full">
+                  <a href={`/api/case-workspaces/${workspaceId}/export`} download>
+                    <Download className="h-4 w-4" />
+                    {t("export.button")}
+                  </a>
+                </Button>
+                <p className="mt-1.5 text-xs text-muted-foreground">{t("export.note")}</p>
+              </div>
+            </SectionCard>
+          ) : null}
 
           {workspace && workspace.permission === "owner" ? (
             <SectionCard title={t("dangerZone.title")}>
