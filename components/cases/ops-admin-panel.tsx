@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { SectionCard } from "@/components/ui/section-card";
 import { fetchJson } from "@/lib/client-fetch";
 import type { OpsFixedCodes } from "@/components/cases/ops-client";
@@ -60,6 +61,7 @@ function UploadButton({ kind }: { kind: "anhang2" | "hybrid" }) {
 export function OpsAdminPanel({ fixedCodes }: { fixedCodes: OpsFixedCodes }) {
   const t = useTranslations("Cases.ops");
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<OpsFixedCodes>(fixedCodes);
   const valid = FIXED_KEYS.every((k) => /^\d{1,10}$/.test(draft[k].trim()));
 
@@ -74,8 +76,18 @@ export function OpsAdminPanel({ fixedCodes }: { fixedCodes: OpsFixedCodes }) {
   });
 
   return (
-    <SectionCard title={t("admin.title")}>
-      <div className="grid gap-6 md:grid-cols-2">
+    <SectionCard>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="ops-admin-content"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
+      >
+        {t("admin.title")}
+        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+      </button>
+      <div id="ops-admin-content" hidden={!open} className="mt-4 grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <UploadButton kind="anhang2" />
           <UploadButton kind="hybrid" />
