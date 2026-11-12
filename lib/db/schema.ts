@@ -563,6 +563,22 @@ export const letterChecks = sqliteTable(
   (table) => [uniqueIndex("letter_checks_workspace_date_idx").on(table.workspaceId, table.date)]
 );
 
+export const opsCodes = sqliteTable("ops_codes", {
+  opsCode: text("ops_code").primaryKey(),
+  description: text("description").notNull(),
+  operation: text("operation"),
+  monitoring: text("monitoring"),
+  anesthesia: text("anesthesia"),
+  funding: text("funding"),
+  hygiene: text("hygiene"),
+  aop115b: integer("aop_115b", { mode: "boolean" }).notNull(),
+});
+
+export const opsHybridCodes = sqliteTable("ops_hybrid_codes", {
+  opsCode: text("ops_code").primaryKey(),
+  description: text("description").notNull(),
+});
+
 export const appSettings = sqliteTable("app_settings", {
   id: text("id")
     .primaryKey()
