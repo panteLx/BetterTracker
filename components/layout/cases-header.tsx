@@ -103,7 +103,16 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
                 canAccessCases={user.canAccessCases ?? true}
               />
               <ThemeToggleButton />
-              <UserMenu name={user.name} email={user.email} role={user.role} />
+              <UserMenu
+                name={user.name}
+                email={user.email}
+                role={user.role}
+                mobileLink={
+                  workspaceId
+                    ? { href: `/cases/${workspaceId}/settings`, label: navT("settings") }
+                    : undefined
+                }
+              />
             </>
           ) : (
             <ThemeToggleButton />
