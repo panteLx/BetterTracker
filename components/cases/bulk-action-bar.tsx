@@ -139,7 +139,7 @@ export function BulkActionBar({
         ) : null}
         {mode === "awaitingInvoice" ? (
           <Button size="sm" asChild>
-            <Link href={`/cases/${workspaceId}/invoices`}>
+            <Link href={`/cases/${workspaceId}/submissions?tab=invoices`}>
               <Receipt className="h-4 w-4" />
               {t("assignInvoice")}
             </Link>

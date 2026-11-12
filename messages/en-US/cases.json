@@ -2,8 +2,7 @@
   "nav": {
     "board": "Overview",
     "todos": "To-dos",
-    "batches": "Submissions",
-    "invoices": "Invoices",
+    "submissions": "Submissions",
     "ops": "OPS",
     "settings": "Settings",
     "newCaseFileAria": "Add new case file"
@@ -186,6 +185,13 @@
     "empty": "No status changes yet.",
     "unknownActor": "Unknown"
   },
+  "submissions": {
+    "title": "Submissions",
+    "tabs": {
+      "batches": "PVS submissions",
+      "invoices": "Invoices"
+    }
+  },
   "batches": {
     "title": "PVS submissions",
     "empty": {
@@ -281,7 +287,7 @@
       "allWorkspaces": "All case workspaces",
       "board": "Overview",
       "todos": "To-dos",
-      "batches": "PVS submissions",
+      "submissions": "Submissions",
       "settings": "Settings"
     }
   },

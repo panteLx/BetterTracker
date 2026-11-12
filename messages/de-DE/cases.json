@@ -2,8 +2,7 @@
   "nav": {
     "board": "Übersicht",
     "todos": "Aufgaben",
-    "batches": "Übermittlungen",
-    "invoices": "Rechnungen",
+    "submissions": "Einsendungen",
     "ops": "OPS",
     "settings": "Einstellungen",
     "newCaseFileAria": "Neue Akte hinzufügen"
@@ -186,6 +185,13 @@
     "empty": "Noch keine Statusänderungen.",
     "unknownActor": "Unbekannt"
   },
+  "submissions": {
+    "title": "Einsendungen",
+    "tabs": {
+      "batches": "PVS-Übermittlungen",
+      "invoices": "Rechnungen"
+    }
+  },
   "batches": {
     "title": "PVS-Übermittlungen",
     "empty": {
@@ -281,7 +287,7 @@
       "allWorkspaces": "Alle Akten-Bereiche",
       "board": "Übersicht",
       "todos": "Aufgaben",
-      "batches": "PVS-Übermittlungen",
+      "submissions": "Einsendungen",
       "settings": "Einstellungen"
     }
   },

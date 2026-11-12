@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ClipboardList, FileStack, FileText, FolderClock, ListChecks, Search, Settings } from "lucide-react";
+import { ClipboardList, FileStack, FolderClock, ListChecks, Search, Settings } from "lucide-react";
 import {
   segmentedItemClass,
   segmentedTrackClass,
@@ -28,8 +28,7 @@ export function workspaceNavItems(workspaceId: string) {
   return [
     { href: `/cases/${workspaceId}`, key: "board" as const, icon: ClipboardList, exact: true },
     { href: `/cases/${workspaceId}/todos`, key: "todos" as const, icon: ListChecks, exact: false },
-    { href: `/cases/${workspaceId}/batches`, key: "batches" as const, icon: FolderClock, exact: false },
-    { href: `/cases/${workspaceId}/invoices`, key: "invoices" as const, icon: FileText, exact: false },
+    { href: `/cases/${workspaceId}/submissions`, key: "submissions" as const, icon: FolderClock, exact: false },
     { href: `/cases/${workspaceId}/ops`, key: "ops" as const, icon: Search, exact: false },
     { href: `/cases/${workspaceId}/settings`, key: "settings" as const, icon: Settings, exact: false },
   ];
@@ -87,7 +86,7 @@ export function CasesHeader({ user, workspaceId }: CasesHeaderProps) {
                   className={segmentedItemClass({ variant: "track", size: "sm", active })}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {/* Inactive labels collapse below xl so five items never collide with the right-hand controls. */}
+                  {/* Inactive labels collapse below xl so four items never collide with the right-hand controls. */}
                   <span className={active ? undefined : "sr-only xl:not-sr-only"}>{navT(item.key)}</span>
                 </Link>
               );

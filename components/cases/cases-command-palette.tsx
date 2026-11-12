@@ -93,7 +93,7 @@ export function CasesCommandPalette({ workspaceId }: { workspaceId?: string }) {
       ? [
           { href: `/cases/${workspaceId}`, key: "board" as const, icon: ClipboardList },
           { href: `/cases/${workspaceId}/todos`, key: "todos" as const, icon: ListChecks },
-          { href: `/cases/${workspaceId}/batches`, key: "batches" as const, icon: FolderClock },
+          { href: `/cases/${workspaceId}/submissions`, key: "submissions" as const, icon: FolderClock },
           { href: `/cases/${workspaceId}/settings`, key: "settings" as const, icon: Settings },
         ]
       : []),
