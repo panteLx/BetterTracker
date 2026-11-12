@@ -77,7 +77,8 @@ export async function searchOps(query: string): Promise<{ items: OpsResult[]; to
       funding: opsCodes.funding,
       hygiene: opsCodes.hygiene,
       aop115b: opsCodes.aop115b,
-      hybridDrg: sql<number>`exists (select 1 from ${opsHybridCodes} h where h.ops_code = ${opsCodes.opsCode})`,
+      // Qualified by hand: drizzle omits the table name in single-table selects, which would self-compare `h.ops_code`.
+      hybridDrg: sql<number>`exists (select 1 from ops_hybrid_codes h where h.ops_code = ops_codes.ops_code)`,
     })
     .from(opsCodes)
     .where(where)

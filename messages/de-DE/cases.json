@@ -4,6 +4,7 @@
     "todos": "Aufgaben",
     "batches": "Übermittlungen",
     "invoices": "Rechnungen",
+    "ops": "OPS",
     "settings": "Einstellungen",
     "newCaseFileAria": "Neue Akte hinzufügen"
   },
@@ -398,6 +399,74 @@
       "removeFailed": "Patient konnte nicht entfernt werden.",
       "deleted": "Rechnung gelöscht.",
       "deleteFailed": "Rechnung konnte nicht gelöscht werden."
+    }
+  },
+  "ops": {
+    "title": "OPS-Suche",
+    "description": "Ziffern, §115b und Hybrid-DRG-Status zu einem OPS-Code.",
+    "searchPlaceholder": "OPS-Code oder Bezeichnung, z. B. 5-530 oder Hernia inguinalis",
+    "searchAria": "OPS-Codes durchsuchen",
+    "resultCount": "{shown} von {total} Treffern",
+    "emptyPrompt": {
+      "title": "OPS-Code suchen",
+      "description": "Gib einen Code oder Wörter aus der Bezeichnung ein."
+    },
+    "noResults": "Keine Treffer.",
+    "noData": {
+      "title": "Noch keine Daten hochgeladen",
+      "description": "Ein Admin muss zuerst Anhang 2 und die Hybrid-DRG-Liste hochladen."
+    },
+    "noHybridList": "Die Hybrid-DRG-Liste fehlt, der Hybrid-DRG-Status kann deshalb nicht geprüft werden.",
+    "aop": {
+      "allowed": "AOP abrechenbar",
+      "blocked": "AOP-Abrechnung nicht möglich",
+      "reason": {
+        "no115b": "Kein §115b-Eintrag für diesen Code.",
+        "hybridDrg": "Hybrid-DRG-Fall, darf nicht als AOP abgerechnet werden."
+      }
+    },
+    "fields": {
+      "aop115b": "AOP §115b",
+      "hybrid": "Hybrid-DRG fähig",
+      "yes": "Ja",
+      "no": "Nein",
+      "operation": "Operation",
+      "monitoring": "Überwachungskomplex",
+      "funding": "Zuschlag Förderung AOP",
+      "hygiene": "Hygienezuschlag",
+      "anesthesia": "Anästhesie",
+      "letterPost": "Arztbrief per Post",
+      "letterFax": "Arztbrief per Fax",
+      "flatUnder60": "Pauschale bis 59 Jahre",
+      "flatFrom60": "Pauschale ab 59 Jahre",
+      "none": "–"
+    },
+    "groups": {
+      "billing": "Abrechnung",
+      "letters": "Arztbrief und Pauschale",
+      "anesthesia": "Anästhesie"
+    },
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyAria": "{value} kopieren",
+    "dataset": {
+      "anhang2": "Anhang 2",
+      "hybrid": "Hybrid-DRG-Liste",
+      "info": "{file} · {rows} Zeilen · {date}",
+      "none": "Nicht hochgeladen"
+    },
+    "admin": {
+      "title": "Daten und feste Ziffern",
+      "upload": "Neue Datei hochladen",
+      "uploading": "Wird hochgeladen…",
+      "uploaded": "Datei hochgeladen.",
+      "uploadFailed": "Upload fehlgeschlagen.",
+      "fixedTitle": "Feste Ziffern",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "saved": "Feste Ziffern gespeichert.",
+      "saveFailed": "Feste Ziffern konnten nicht gespeichert werden.",
+      "digitsOnly": "Nur Ziffern, 1 bis 10 Zeichen."
     }
   }
 }
