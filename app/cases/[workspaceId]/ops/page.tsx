@@ -6,6 +6,7 @@ import { requireCaseModuleUser } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/permissions";
 import { getCaseWorkspaceAccessForUser, listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
 import { getOpsOverview, searchOps } from "@/lib/services/ops-service";
+import { listFavorites } from "@/lib/services/ops-favorite-service";
 import { makeQueryClient } from "@/lib/query-client";
 
 export default async function CaseWorkspaceOpsPage({
@@ -29,6 +30,11 @@ export default async function CaseWorkspaceOpsPage({
   await queryClient.prefetchQuery({
     queryKey: ["ops", "", false, false],
     queryFn: async () => ({ ...(await searchOps("")), ...(await getOpsOverview()) }),
+  });
+
+  await queryClient.prefetchQuery({
+    queryKey: ["ops-favorites"],
+    queryFn: () => listFavorites().then((items) => ({ items })),
   });
 
   return (

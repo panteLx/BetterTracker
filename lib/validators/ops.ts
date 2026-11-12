@@ -16,3 +16,13 @@ export const opsFixedCodesSchema = z
     flatFrom60: code,
   })
   .strict();
+
+export const opsFavoriteSchema = z
+  .object({
+    opsCode: z.string().trim().min(1).max(20),
+    description: z.string().trim().min(1).max(200),
+    isHybrid: z.boolean(),
+  })
+  .strict();
+
+export type OpsFavoriteInput = z.infer<typeof opsFavoriteSchema>;

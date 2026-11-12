@@ -579,6 +579,17 @@ export const opsHybridCodes = sqliteTable("ops_hybrid_codes", {
   description: text("description").notNull(),
 });
 
+export const opsFavorites = sqliteTable("ops_favorites", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  opsCode: text("ops_code").notNull(),
+  description: text("description").notNull(),
+  isHybrid: integer("is_hybrid", { mode: "boolean" }).default(false).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  ...timestamps,
+});
+
 export const appSettings = sqliteTable("app_settings", {
   id: text("id")
     .primaryKey()

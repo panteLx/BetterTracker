@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionCard } from "@/components/ui/section-card";
+import { OpsFavorites } from "@/components/cases/ops-favorites";
 import { OpsAdminPanel } from "@/components/cases/ops-admin-panel";
 import { fetchJson } from "@/lib/client-fetch";
 import { getAopEligibility } from "@/lib/ops/aop-rule";
@@ -262,9 +263,7 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
             </div>
           </div>
 
-          {query === "" ? (
-            <EmptyState icon={Search} title={t("emptyPrompt.title")} description={t("emptyPrompt.description")} />
-          ) : items.length === 0 ? (
+          {query === "" ? null : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noResults")}</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -303,6 +302,16 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
           )}
         </>
       )}
+
+      <OpsFavorites
+        isAdmin={isAdmin}
+        onPick={(code) => {
+          setInput(code);
+          setQuery(code);
+          setSelected(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
 
       {isAdmin && data ? <OpsAdminPanel key={JSON.stringify(data.fixedCodes)} fixedCodes={data.fixedCodes} /> : null}
     </div>

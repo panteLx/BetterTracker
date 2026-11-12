@@ -407,10 +407,6 @@
     "searchPlaceholder": "OPS code or description, e.g. 5-530 or Hernia inguinalis",
     "searchAria": "Search OPS codes",
     "resultCount": "{shown} of {total} results",
-    "emptyPrompt": {
-      "title": "Search an OPS code",
-      "description": "Type a code or words from the description."
-    },
     "noResults": "No results.",
     "noData": {
       "title": "No data uploaded yet",
@@ -471,6 +467,31 @@
     "filters": {
       "showHybrid": "Show Hybrid-DRG cases",
       "showNo115b": "Show cases without §115b"
+    },
+    "favorites": {
+      "title": "Frequent AOP / Hybrid-DRG VCH procedures",
+      "hybridBadge": "Hybrid-DRG",
+      "add": "Add entry",
+      "addTitle": "Add entry",
+      "editTitle": "Edit entry",
+      "code": "OPS code",
+      "description": "Description",
+      "hybrid": "Hybrid-DRG case",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteTitle": "Delete entry?",
+      "deleteDescription": "{code} is removed from this list.",
+      "empty": "No entries yet.",
+      "added": "Entry added.",
+      "saved": "Entry saved.",
+      "deleted": "Entry deleted.",
+      "saveFailed": "Could not save the entry.",
+      "deleteFailed": "Could not delete the entry.",
+      "pickAria": "Search {code}",
+      "editAria": "Edit {code}",
+      "deleteAria": "Delete {code}"
     }
   }
 }
