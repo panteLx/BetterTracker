@@ -14,7 +14,10 @@ import { OpsFavorites } from "@/components/cases/ops-favorites";
 import { OpsAdminPanel } from "@/components/cases/ops-admin-panel";
 import { fetchJson } from "@/lib/client-fetch";
 import { getAopEligibility } from "@/lib/ops/aop-rule";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+
+const formatDate = (value: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "Europe/Berlin" }).format(new Date(value));
 
 export type OpsFixedCodes = {
   letterPost: string;
@@ -212,23 +215,24 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
+        <p className="mt-1 hidden text-sm text-muted-foreground sm:block">{t("description")}</p>
       </div>
 
       {dataset ? (
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-xs text-muted-foreground">
           {(["anhang2", "hybrid"] as const).map((kind) => {
             const f = dataset[kind];
             return (
               <span key={kind}>
                 <span className="font-medium">{t(`dataset.${kind}`)}: </span>
-                {f
-                  ? t("dataset.info", {
-                      file: f.fileName,
-                      rows: f.rowCount,
-                      date: formatDateTime(f.uploadedAt, locale),
-                    })
-                  : t("dataset.none")}
+                {f ? (
+                  <>
+                    <span className="hidden sm:inline">{f.fileName} · </span>
+                    {t("dataset.info", { rows: f.rowCount, date: formatDate(f.uploadedAt, locale) })}
+                  </>
+                ) : (
+                  t("dataset.none")
+                )}
               </span>
             );
           })}
@@ -248,11 +252,12 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
               placeholder={t("searchPlaceholder")}
               aria-label={t("searchAria")}
               autoComplete="off"
-              className="h-12 pl-10 text-base"
+              className="h-11 pl-10 text-base"
             />
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span className="hidden text-xs text-muted-foreground sm:inline">{t("filters.label")}</span>
             <div className="flex items-center gap-2">
               <Checkbox id="ops-show-hybrid" checked={showHybrid} onCheckedChange={(v) => setShowHybrid(v === true)} />
               <Label htmlFor="ops-show-hybrid" className="font-normal">{t("filters.showHybrid")}</Label>
@@ -266,9 +271,9 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
           {query === "" ? null : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noResults")}</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-              <div className="min-w-0 space-y-2">
-                <p className="text-xs text-muted-foreground">
+            <div className="grid gap-4 md:items-start md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <div id="ops-results" className="min-w-0 scroll-mt-20 space-y-2 md:order-first">
+                <p className="hidden text-xs text-muted-foreground md:block">
                   {t("resultCount", { shown: items.length, total: data?.total ?? items.length })}
                 </p>
                 <div className="space-y-1.5">
@@ -277,20 +282,36 @@ export function OpsClient({ isAdmin }: { isAdmin: boolean }) {
                       key={item.opsCode}
                       type="button"
                       aria-pressed={item.opsCode === current?.opsCode}
-                      onClick={() => setSelected(item.opsCode)}
+                      onClick={() => {
+                        setSelected(item.opsCode);
+                        if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
                       className={cn(
                         "flex w-full flex-col gap-0.5 rounded-lg border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
                         item.opsCode === current?.opsCode && "border-primary bg-primary-subtle"
                       )}
                     >
                       <span className="font-mono text-sm font-semibold">{item.opsCode}</span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">{item.description}</span>
+                      <span className="line-clamp-2 text-sm">{item.description.split(": ").slice(-1)[0]}</span>
+                      {item.description.includes(": ") ? (
+                        <span className="line-clamp-1 text-xs text-muted-foreground">
+                          {item.description.slice(0, item.description.lastIndexOf(": "))}
+                        </span>
+                      ) : null}
                     </button>
                   ))}
                 </div>
               </div>
               {current && data ? (
-                <div className="min-w-0">
+                <div className="order-first min-w-0 md:order-none">
+                  <p className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground md:hidden">
+                    <span>{t("resultCount", { shown: items.length, total: data?.total ?? items.length })}</span>
+                    {items.length > 1 ? (
+                      <a href="#ops-results" className="font-medium text-primary">
+                        {t("showAll")}
+                      </a>
+                    ) : null}
+                  </p>
                   <ResultDetail
                     item={current}
                     fixedCodes={data.fixedCodes}

@@ -404,7 +404,7 @@
   "ops": {
     "title": "OPS lookup",
     "description": "Billing codes, §115b and Hybrid-DRG status for an OPS code.",
-    "searchPlaceholder": "OPS code or description, e.g. 5-530 or Hernia inguinalis",
+    "searchPlaceholder": "OPS code or description",
     "searchAria": "Search OPS codes",
     "resultCount": "{shown} of {total} results",
     "noResults": "No results.",
@@ -448,7 +448,7 @@
     "dataset": {
       "anhang2": "Anhang 2",
       "hybrid": "Hybrid-DRG list",
-      "info": "{file} · {rows} rows · {date}",
+      "info": "{rows} rows · {date}",
       "none": "Not uploaded"
     },
     "admin": {
@@ -465,8 +465,9 @@
       "digitsOnly": "Digits only, 1 to 10 characters."
     },
     "filters": {
-      "showHybrid": "Show Hybrid-DRG cases",
-      "showNo115b": "Show cases without §115b"
+      "label": "Show:",
+      "showHybrid": "Hybrid-DRG cases",
+      "showNo115b": "Without §115b"
     },
     "favorites": {
       "title": "Frequent AOP / Hybrid-DRG VCH procedures",
@@ -492,6 +493,7 @@
       "pickAria": "Search {code}",
       "editAria": "Edit {code}",
       "deleteAria": "Delete {code}"
-    }
+    },
+    "showAll": "Show all"
   }
 }

@@ -176,21 +176,24 @@ export function OpsFavorites({
                 type="button"
                 onClick={() => onPick(item.opsCode)}
                 aria-label={t("pickAria", { code: item.opsCode })}
-                className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-lg px-3 py-2 text-left hover:bg-muted/60"
+                className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg px-3 py-2 text-left hover:bg-muted/60 sm:flex-row sm:items-baseline sm:gap-3"
               >
-                <span className="font-mono text-sm font-semibold">{item.opsCode}</span>
-                <span className="min-w-0 flex-1 text-sm text-muted-foreground">{item.description}</span>
-                {item.isHybrid ? (
-                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                    {t("hybridBadge")}
-                  </span>
-                ) : null}
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono text-sm font-semibold">{item.opsCode}</span>
+                  {item.isHybrid ? (
+                    <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                      {t("hybridBadge")}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="min-w-0 text-sm text-muted-foreground">{item.description}</span>
               </button>
               {isAdmin ? (
                 <span className="flex shrink-0 pr-1">
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="h-8 w-8"
                     aria-label={t("editAria", { code: item.opsCode })}
                     onClick={() => setEditing(item)}
                   >
@@ -199,6 +202,7 @@ export function OpsFavorites({
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="h-8 w-8"
                     aria-label={t("deleteAria", { code: item.opsCode })}
                     onClick={() => setDeleting(item)}
                   >

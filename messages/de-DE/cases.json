@@ -404,7 +404,7 @@
   "ops": {
     "title": "OPS-Suche",
     "description": "Ziffern, §115b und Hybrid-DRG-Status zu einem OPS-Code.",
-    "searchPlaceholder": "OPS-Code oder Bezeichnung, z. B. 5-530 oder Hernia inguinalis",
+    "searchPlaceholder": "OPS-Code oder Bezeichnung",
     "searchAria": "OPS-Codes durchsuchen",
     "resultCount": "{shown} von {total} Treffern",
     "noResults": "Keine Treffer.",
@@ -448,7 +448,7 @@
     "dataset": {
       "anhang2": "Anhang 2",
       "hybrid": "Hybrid-DRG-Liste",
-      "info": "{file} · {rows} Zeilen · {date}",
+      "info": "{rows} Zeilen · {date}",
       "none": "Nicht hochgeladen"
     },
     "admin": {
@@ -465,8 +465,9 @@
       "digitsOnly": "Nur Ziffern, 1 bis 10 Zeichen."
     },
     "filters": {
-      "showHybrid": "Hybrid-DRG-Fälle anzeigen",
-      "showNo115b": "Fälle ohne §115b anzeigen"
+      "label": "Anzeigen:",
+      "showHybrid": "Hybrid-DRG-Fälle",
+      "showNo115b": "Ohne §115b"
     },
     "favorites": {
       "title": "Häufige AOP/Hybrid-DRG VCH Eingriffe",
@@ -492,6 +493,7 @@
       "pickAria": "{code} suchen",
       "editAria": "{code} bearbeiten",
       "deleteAria": "{code} löschen"
-    }
+    },
+    "showAll": "Alle anzeigen"
   }
 }
