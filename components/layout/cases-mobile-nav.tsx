@@ -50,16 +50,16 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
         href={item.href}
         aria-current={active ? "page" : undefined}
         aria-label={t(item.key)}
-        className={cn("flex min-w-0 items-center justify-center py-2", active ? "flex-[2.2]" : "flex-1")}
+        className="flex min-w-0 items-center justify-center py-2"
       >
         <span
           className={cn(
-            "flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors duration-(--motion-duration-fast)",
+            "flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 transition-colors duration-(--motion-duration-fast)",
             active ? "bg-primary-subtle text-primary-on" : "text-muted-foreground",
           )}
         >
           <Icon className={cn("h-5 w-5", active ? "stroke-[2.5]" : "stroke-[1.75]")} />
-          <span className={cn("font-subtext text-[10px] font-medium", active ? "max-w-full truncate" : "sr-only")}>
+          <span className={cn("font-subtext text-[10px] font-medium", active ? "whitespace-nowrap" : "sr-only")}>
             {t(item.key)}
           </span>
         </span>
@@ -73,10 +73,10 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex h-16 items-center px-1">
+      <div className="grid h-16 grid-cols-[repeat(3,minmax(0,1fr))_4rem_repeat(3,minmax(0,1fr))] items-center">
         {navItems.slice(0, 3).map(renderItem)}
 
-        <div className="flex w-16 shrink-0 items-center justify-center">
+        <div className="flex items-center justify-center">
           {canCreate ? (
             <Link
               href={`/cases/${workspaceId}?new=case`}
