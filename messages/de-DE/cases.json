@@ -232,7 +232,7 @@
     "export": {
       "title": "Export",
       "button": "Alle Cases exportieren (ZIP)",
-      "note": "Ein ZIP mit Gesamtübersicht sowie pro Case einem Ordner mit Akte (Stammdaten, Statusverlauf, Notizen, Einsendungen) und der Ausgangsrechnung. Archivierte Cases sind enthalten. Die Erstellung kann bei vielen Cases etwas dauern."
+      "note": "Ein ZIP mit Gesamtübersicht sowie pro Case einem Ordner (sortiert nach Jahr und Monat der letzten Einsendung) mit Akte (Stammdaten, Statusverlauf, Notizen, Einsendungen) und der Ausgangsrechnung. Archivierte Cases sind enthalten. Die Erstellung kann bei vielen Cases etwas dauern."
     },
     "dangerZone": {
       "title": "Gefahrenzone",

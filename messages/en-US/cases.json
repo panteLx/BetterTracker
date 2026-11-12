@@ -232,7 +232,7 @@
     "export": {
       "title": "Export",
       "button": "Export all cases (ZIP)",
-      "note": "A ZIP with an overview plus one folder per case containing the case file (master data, status history, notes, submissions) and the outgoing invoice. Archived cases are included. Large workspaces may take a moment."
+      "note": "A ZIP with an overview plus one folder per case (grouped by year and month of the last submission) containing the case file (master data, status history, notes, submissions) and the outgoing invoice. Archived cases are included. Large workspaces may take a moment."
     },
     "dangerZone": {
       "title": "Danger zone",

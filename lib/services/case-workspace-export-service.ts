@@ -25,7 +25,11 @@ function safeSegment(value: string) {
   return value.replace(UNSAFE_NAME_CHARS, "_").replace(/\s+/g, " ").trim().slice(0, 100);
 }
 
-type ExportEntry = { caseFile: typeof caseFiles.$inferSelect; folder: string };
+type ExportEntry = {
+  caseFile: typeof caseFiles.$inferSelect;
+  folder: string;
+  submittedOn: string | null;
+};
 
 function groupBy<T, K>(rows: T[], key: (row: T) => K) {
   const map = new Map<K, T[]>();
@@ -126,14 +130,36 @@ export async function createWorkspaceExportStream(workspaceId: string, workspace
   const data = await loadWorkspaceExportData(workspaceId);
   const generatedAt = new Date();
 
+  // Latest submission date (YYYY-MM-DD) per case; never-submitted cases get no date.
+  const lastSubmittedOn = (id: string) =>
+    (data.submissionsByCase.get(id) ?? []).reduce<string | null>(
+      (max, row) => (max === null || row.submittedOn > max ? row.submittedOn : max),
+      null
+    );
+
   const usedFolders = new Set<string>();
-  const entries: ExportEntry[] = data.files.map((caseFile) => {
-    const base = safeSegment(`${caseFile.fileNumber} ${caseFile.patientName}`) || caseFile.id;
-    let folder = base;
-    for (let n = 2; usedFolders.has(folder.toLowerCase()); n += 1) folder = `${base} (${n})`;
-    usedFolders.add(folder.toLowerCase());
-    return { caseFile, folder };
-  });
+  const entries: ExportEntry[] = data.files
+    .map((caseFile) => ({ caseFile, submittedOn: lastSubmittedOn(caseFile.id) }))
+    .sort((a, b) => {
+      if (a.submittedOn !== b.submittedOn) {
+        if (a.submittedOn === null) return 1;
+        if (b.submittedOn === null) return -1;
+        return a.submittedOn < b.submittedOn ? -1 : 1;
+      }
+      return a.caseFile.fileNumber.localeCompare(b.caseFile.fileNumber, "de");
+    })
+    .map(({ caseFile, submittedOn }) => {
+      const [year, month] = submittedOn ? submittedOn.split("-") : [];
+      const parent = year && month ? `${year}/${month}` : "Ohne Einsendung";
+      const name =
+        safeSegment(`${caseFile.fileNumber}-${caseFile.patientName}`) || caseFile.id;
+      let folder = `${parent}/${name}`;
+      for (let n = 2; usedFolders.has(folder.toLowerCase()); n += 1) {
+        folder = `${parent}/${name} (${n})`;
+      }
+      usedFolders.add(folder.toLowerCase());
+      return { caseFile, folder, submittedOn };
+    });
 
   let controller!: ReadableStreamDefaultController<Uint8Array>;
   const zip = new Zip((error, chunk, final) => {
@@ -157,7 +183,8 @@ export async function createWorkspaceExportStream(workspaceId: string, workspace
       WorkspaceOverviewDocument({
         workspaceName,
         generatedAt,
-        cases: data.files.map((file) => ({
+        cases: entries.map(({ caseFile: file, submittedOn }) => ({
+          lastSubmittedOn: submittedOn,
           patientName: file.patientName,
           fileNumber: file.fileNumber,
           dateOfBirth: file.dateOfBirth,
@@ -171,12 +198,13 @@ export async function createWorkspaceExportStream(workspaceId: string, workspace
     addFile("Uebersicht.pdf", buffer);
   }
 
-  async function addCase({ caseFile, folder }: ExportEntry) {
+  async function addCase({ caseFile, folder, submittedOn }: ExportEntry) {
     const invoice = caseFile.invoiceId ? data.invoicesById.get(caseFile.invoiceId) : undefined;
     const invoiceBytes = invoice ? await readInvoiceFile(workspaceId, invoice.id) : null;
 
     const exportData: CaseExportData = {
       workspaceName,
+      lastSubmittedOn: submittedOn,
       patientName: caseFile.patientName,
       fileNumber: caseFile.fileNumber,
       dateOfBirth: caseFile.dateOfBirth,

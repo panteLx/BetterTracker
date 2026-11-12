@@ -69,6 +69,7 @@ export type ExportCaseSummary = {
   status: CaseFileStatus;
   isArchived: boolean;
   hasInvoice: boolean;
+  lastSubmittedOn: string | null;
 };
 
 export function WorkspaceOverviewDocument({
@@ -81,13 +82,14 @@ export function WorkspaceOverviewDocument({
   generatedAt: Date;
 }) {
   const cols = [
-    { label: "Aktennummer", width: "15%" },
-    { label: "Patientenname", width: "24%" },
-    { label: "Geburtsdatum", width: "13%" },
-    { label: "Falltyp", width: "11%" },
-    { label: "Status", width: "21%" },
-    { label: "Archiv", width: "7%" },
-    { label: "Rechnung", width: "9%" },
+    { label: "Einsendung", width: "11%" },
+    { label: "Aktennummer", width: "14%" },
+    { label: "Patientenname", width: "21%" },
+    { label: "Geburtsdatum", width: "12%" },
+    { label: "Falltyp", width: "10%" },
+    { label: "Status", width: "18%" },
+    { label: "Archiv", width: "6%" },
+    { label: "Rechnung", width: "8%" },
   ];
   return (
     <Document>
@@ -106,6 +108,7 @@ export function WorkspaceOverviewDocument({
           </View>
           {cases.map((item, index) => {
             const values = [
+              formatDate(item.lastSubmittedOn),
               item.fileNumber,
               item.patientName,
               formatDate(item.dateOfBirth),
