@@ -1,4 +1,4 @@
-import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
+import type { PDFPageProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { isHttpError, ValidationError } from "@/lib/errors";
 
 export type ParsedPathologyEntry = {
@@ -33,6 +33,19 @@ const COLUMNS = ["Proben-Nr", "Patient", "Eingang", "Liq", "Einsender", "Materia
 type Column = (typeof COLUMNS)[number];
 type Header = { left: Record<Column, number>; materialRight: number; headerY: number };
 
+type Pdfjs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
+let pdfjsPromise: Promise<Pdfjs> | null = null;
+
+// pdfjs touches these globals while loading; text extraction never uses them, and the
+// optional canvas package that normally provides them is missing in slim images.
+function loadPdfjs() {
+  const scope = globalThis as Record<string, unknown>;
+  for (const name of ["DOMMatrix", "ImageData", "Path2D"]) {
+    if (typeof scope[name] === "undefined") scope[name] = class {};
+  }
+  return (pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs"));
+}
+
 function multiply(m: Matrix, n: Matrix): Matrix {
   return [
     m[0] * n[0] + m[2] * n[1],
@@ -58,7 +71,7 @@ function isWarmFill(fill: string | null) {
   return r >= 0xd0 && g <= 0xa0 && b <= 0x80;
 }
 
-async function readRects(page: Awaited<ReturnType<Awaited<ReturnType<typeof loadDoc>>["getPage"]>>) {
+async function readRects(page: PDFPageProxy, OPS: Pdfjs["OPS"]) {
   const list = await page.getOperatorList();
   const rects: Rect[] = [];
   let ctm: Matrix = [1, 0, 0, 1, 0, 0];
@@ -88,8 +101,8 @@ async function readRects(page: Awaited<ReturnType<Awaited<ReturnType<typeof load
   return rects;
 }
 
-function loadDoc(bytes: Uint8Array) {
-  return getDocument({
+function loadDoc(pdfjs: Pdfjs, bytes: Uint8Array) {
+  return pdfjs.getDocument({
     data: bytes,
     useSystemFonts: true,
     isEvalSupported: false,
@@ -210,7 +223,8 @@ function parsePage(items: TextItem[], rects: Rect[], header: Header): ParsedPath
 
 export async function parsePathologyPdf(bytes: Uint8Array): Promise<ParsedPathologyList> {
   try {
-    const doc = await loadDoc(bytes);
+    const pdfjs = await loadPdfjs();
+    const doc = await loadDoc(pdfjs, bytes);
     if (doc.numPages > MAX_PAGES) {
       throw new ValidationError(`PDF has more than ${MAX_PAGES} pages`);
     }
@@ -226,7 +240,7 @@ export async function parsePathologyPdf(bytes: Uint8Array): Promise<ParsedPathol
           ? [{ str: item.str, x: item.transform[4], y: item.transform[5] }]
           : []
       );
-      const rects = await readRects(page);
+      const rects = await readRects(page, pdfjs.OPS);
 
       if (pageNumber === 1) {
         const text = items.map((item) => item.str).join(" ");
