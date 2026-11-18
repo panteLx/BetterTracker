@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { BookSearch, Plus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { fetchJson } from "@/lib/client-fetch";
 import { canWriteTracker as canWriteWorkspace } from "@/lib/auth/permissions";
@@ -29,7 +31,14 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const t = useTranslations("Cases.nav");
   const navItemsAria = useTranslations("Nav")("ariaMainNav");
-  const navItems = workspaceNavItems(workspaceId).filter((item) => item.key !== "settings");
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const allItems = workspaceNavItems(workspaceId);
+  const navItems = allItems.filter(
+    (item) => item.key !== "settings" && item.key !== "ops" && item.key !== "pathology",
+  );
+  // OPS and pathology share one slot so the bar stays 2 + FAB + 2.
+  const lookupItems = allItems.filter((item) => item.key === "ops" || item.key === "pathology");
+  const lookupActive = lookupItems.some((item) => isWorkspaceNavItemActive(pathname, item));
 
   const workspacesQuery = useQuery({
     queryKey: ["case-workspaces"],
@@ -67,6 +76,50 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
     );
   }
 
+  function renderLookup() {
+    return (
+      <Popover open={lookupOpen} onOpenChange={setLookupOpen}>
+        <PopoverTrigger
+          aria-label={t("lookup")}
+          className="flex min-w-0 items-center justify-center py-2"
+        >
+          <span
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 transition-colors duration-(--motion-duration-fast)",
+              lookupActive ? "bg-primary-subtle text-primary-on" : "text-muted-foreground",
+            )}
+          >
+            <BookSearch className={cn("h-5 w-5", lookupActive ? "stroke-[2.5]" : "stroke-[1.75]")} />
+            <span className={cn("font-subtext text-[10px] font-medium", lookupActive ? "whitespace-nowrap" : "sr-only")}>
+              {t("lookup")}
+            </span>
+          </span>
+        </PopoverTrigger>
+        <PopoverContent side="top" align="end" className="w-44 p-1">
+          {lookupItems.map((item) => {
+            const Icon = item.icon;
+            const active = isWorkspaceNavItemActive(pathname, item);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setLookupOpen(false)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-2 rounded-sm px-3 py-2.5 text-sm",
+                  active ? "bg-primary-subtle text-primary-on" : "text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {t(item.key)}
+              </Link>
+            );
+          })}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <nav
       aria-label={navItemsAria}
@@ -88,7 +141,10 @@ export function CasesMobileNav({ workspaceId }: { workspaceId: string }) {
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2">{navItems.slice(2).map(renderItem)}</div>
+        <div className="grid grid-cols-2">
+          {navItems.slice(2).map(renderItem)}
+          {renderLookup()}
+        </div>
       </div>
     </nav>
   );
