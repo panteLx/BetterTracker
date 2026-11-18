@@ -484,6 +484,66 @@ export const caseFileStatusHistory = sqliteTable(
   (table) => [index("case_file_status_history_case_file_idx").on(table.caseFileId)]
 );
 
+// Pathology lab patient lists — intentionally unrelated to case files/PVS.
+export const pathologyLists = sqliteTable(
+  "pathology_lists",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    periodStart: text("period_start").notNull(),
+    periodEnd: text("period_end").notNull(),
+    sourceFileName: text("source_file_name").notNull(),
+    isArchived: integer("is_archived", { mode: "boolean" }).default(false).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [index("pathology_lists_workspace_idx").on(table.workspaceId)]
+);
+
+export const pathologyListEntries = sqliteTable(
+  "pathology_list_entries",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
+    listId: text("list_id")
+      .notNull()
+      .references(() => pathologyLists.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    sampleNumber: text("sample_number").notNull(),
+    patientName: text("patient_name").notNull(),
+    dateOfBirth: text("date_of_birth"),
+    receivedDate: text("received_date"),
+    liquid: text("liquid"),
+    sender: text("sender"),
+    material: text("material"),
+    isCancerRegistry: integer("is_cancer_registry", { mode: "boolean" })
+      .default(false)
+      .notNull(),
+    treatmentType: text("treatment_type", { enum: ["stat", "hybrid", "aop"] }),
+    insurer: text("insurer"),
+    insuranceNumber: text("insurance_number"),
+    note: text("note"),
+    ...timestamps,
+  },
+  (table) => [
+    index("pathology_entries_list_idx").on(table.listId),
+    uniqueIndex("pathology_entries_workspace_sample_idx").on(
+      table.workspaceId,
+      table.sampleNumber
+    ),
+  ]
+);
+
 export const todoLists = sqliteTable(
   "todo_lists",
   {
