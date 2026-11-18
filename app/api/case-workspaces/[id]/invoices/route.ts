@@ -45,11 +45,15 @@ export async function POST(
         return badRequest("caseFileIds must be a JSON array");
       }
     }
-    const { caseFileIds } = invoiceUploadFieldsSchema.parse({ caseFileIds: parsedIds });
+    const { caseFileIds, invoiceType } = invoiceUploadFieldsSchema.parse({
+      invoiceType: form.get("invoiceType"),
+      caseFileIds: parsedIds,
+    });
 
     const item = await uploadInvoice(
       id,
       { name: file.name, bytes: Buffer.from(await file.arrayBuffer()) },
+      invoiceType,
       caseFileIds,
       access.user!.id
     );
@@ -59,7 +63,7 @@ export async function POST(
       action: "case_invoice_uploaded",
       resourceType: "case_invoice",
       resourceId: item.id,
-      metadata: { caseFileIds },
+      metadata: { invoiceType, caseFileIds },
       ...(await getRequestAuditContext()),
     });
 

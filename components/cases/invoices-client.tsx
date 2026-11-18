@@ -19,7 +19,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { InvoiceAssignDialog, InvoiceUploadDialog } from "@/components/cases/invoice-dialogs";
+import {
+  INVOICE_TYPES,
+  InvoiceAssignDialog,
+  InvoiceUploadDialog,
+} from "@/components/cases/invoice-dialogs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { InvoiceType } from "@/lib/validators/case-invoice";
 import { fetchJson } from "@/lib/client-fetch";
 import { formatDateTime } from "@/lib/utils";
 import { canWriteTracker as canWriteWorkspace } from "@/lib/auth/permissions";
@@ -30,6 +42,7 @@ type CaseInvoice = {
   id: string;
   originalFileName: string;
   sizeBytes: number;
+  invoiceType: InvoiceType | null;
   createdAt: string;
   caseFiles: InvoiceCaseFile[];
 };
@@ -54,6 +67,7 @@ function InvoiceRow({
   canEdit: boolean;
 }) {
   const t = useTranslations("Cases.invoices");
+  const tCaseType = useTranslations("Cases.caseType");
   const locale = useLocale();
   const queryClient = useQueryClient();
   const [assignOpen, setAssignOpen] = useState(false);
@@ -76,6 +90,19 @@ function InvoiceRow({
       toast.success(t("toast.removed"));
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : t("toast.removeFailed")),
+  });
+
+  const setType = useMutation({
+    mutationFn: (invoiceType: InvoiceType) =>
+      fetchJson(`/api/case-workspaces/${workspaceId}/invoices/${invoice.id}/type`, {
+        method: "PUT",
+        body: JSON.stringify({ invoiceType }),
+      }),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t("toast.typeSet"));
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("toast.typeSetFailed")),
   });
 
   const remove = useMutation({
@@ -102,13 +129,42 @@ function InvoiceRow({
             <span className="truncate">{invoice.originalFileName}</span>
             <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           </a>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {formatSize(invoice.sizeBytes)} · {formatDateTime(invoice.createdAt, locale)}
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {invoice.invoiceType ? (
+              <Badge variant="outline">{tCaseType(invoice.invoiceType)}</Badge>
+            ) : canEdit ? (
+              <Select
+                value=""
+                onValueChange={(value) => setType.mutate(value as InvoiceType)}
+                disabled={setType.isPending}
+              >
+                <SelectTrigger size="sm" aria-label={t("setType")} className="h-7 w-auto text-xs">
+                  <SelectValue placeholder={t("setType")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVOICE_TYPES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tCaseType(value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge variant="outline">{t("noType")}</Badge>
+            )}
+            <span>
+              {formatSize(invoice.sizeBytes)} · {formatDateTime(invoice.createdAt, locale)}
+            </span>
           </p>
         </div>
         {canEdit ? (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setAssignOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!invoice.invoiceType}
+              onClick={() => setAssignOpen(true)}
+            >
               <UserPlus className="h-4 w-4" />
               {t("addPatients")}
             </Button>
@@ -146,6 +202,7 @@ function InvoiceRow({
       <InvoiceAssignDialog
         workspaceId={workspaceId}
         invoiceId={invoice.id}
+        invoiceType={invoice.invoiceType}
         open={assignOpen}
         onOpenChange={setAssignOpen}
       />

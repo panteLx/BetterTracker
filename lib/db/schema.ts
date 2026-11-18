@@ -348,6 +348,10 @@ export const caseInvoices = sqliteTable(
       .references(() => caseWorkspaces.id, { onDelete: "cascade" }),
     originalFileName: text("original_file_name").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
+    // Null only for invoices uploaded before types existed.
+    invoiceType: text("invoice_type", {
+      enum: ["ambulant", "stationaer", "konsil"],
+    }),
     uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),

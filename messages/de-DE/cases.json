@@ -381,7 +381,7 @@
     "uploadDescription": "Wähle das PDF und die Patienten, die darauf stehen. Die gewählten Akten werden auf „Fertig“ gesetzt.",
     "fileLabel": "PDF-Datei",
     "patientsLabel": "Patienten, die auf eine Rechnung warten",
-    "noAssignable": "Keine Akten warten auf eine Ausgangsrechnung.",
+    "noAssignable": "Keine Akten dieses Typs warten auf eine Ausgangsrechnung.",
     "uploadSubmit": "Hochladen",
     "uploading": "Wird hochgeladen…",
     "assignTitle": "Patienten hinzufügen",
@@ -409,8 +409,15 @@
       "removed": "Patient von der Rechnung entfernt.",
       "removeFailed": "Patient konnte nicht entfernt werden.",
       "deleted": "Rechnung gelöscht.",
-      "deleteFailed": "Rechnung konnte nicht gelöscht werden."
-    }
+      "deleteFailed": "Rechnung konnte nicht gelöscht werden.",
+      "typeSet": "Typ gesetzt.",
+      "typeSetFailed": "Typ konnte nicht gesetzt werden."
+    },
+    "typeLabel": "Rechnungstyp",
+    "typePlaceholder": "Typ wählen",
+    "pickTypeFirst": "Wähle zuerst den Rechnungstyp, dann erscheinen die passenden Patienten.",
+    "noType": "Kein Typ",
+    "setType": "Typ setzen"
   },
   "ops": {
     "title": "OPS-Suche",

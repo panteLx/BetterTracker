@@ -5,7 +5,7 @@ import { SubmissionsClient } from "@/components/cases/submissions-client";
 import { requireCaseModuleUser } from "@/lib/auth/session";
 import { getCaseWorkspaceAccessForUser, listCaseWorkspacesForUser } from "@/lib/auth/case-workspace-access";
 import { listPvsSubmissionBatches } from "@/lib/services/pvs-submission-service";
-import { listAssignableCaseFiles, listInvoices } from "@/lib/services/case-invoice-service";
+import { listInvoices } from "@/lib/services/case-invoice-service";
 import { makeQueryClient } from "@/lib/query-client";
 
 export default async function CaseWorkspaceSubmissionsPage({
@@ -34,10 +34,6 @@ export default async function CaseWorkspaceSubmissionsPage({
   await queryClient.prefetchQuery({
     queryKey: ["case-invoices", workspaceId],
     queryFn: () => listInvoices(workspaceId).then((items) => ({ items })),
-  });
-  await queryClient.prefetchQuery({
-    queryKey: ["case-invoices-assignable", workspaceId],
-    queryFn: () => listAssignableCaseFiles(workspaceId).then((items) => ({ items })),
   });
 
   return (

@@ -381,7 +381,7 @@
     "uploadDescription": "Choose the PDF and the patients it covers. Selected cases are marked as done.",
     "fileLabel": "PDF file",
     "patientsLabel": "Patients waiting for an invoice",
-    "noAssignable": "No case files are waiting for an invoice.",
+    "noAssignable": "No case files of this type are waiting for an invoice.",
     "uploadSubmit": "Upload",
     "uploading": "Uploading…",
     "assignTitle": "Add patients",
@@ -409,8 +409,15 @@
       "removed": "Patient removed from invoice.",
       "removeFailed": "Could not remove the patient.",
       "deleted": "Invoice deleted.",
-      "deleteFailed": "Could not delete the invoice."
-    }
+      "deleteFailed": "Could not delete the invoice.",
+      "typeSet": "Type set.",
+      "typeSetFailed": "Could not set the type."
+    },
+    "typeLabel": "Invoice type",
+    "typePlaceholder": "Choose type",
+    "pickTypeFirst": "Choose the invoice type first, then matching patients appear.",
+    "noType": "No type",
+    "setType": "Set type"
   },
   "ops": {
     "title": "OPS lookup",
