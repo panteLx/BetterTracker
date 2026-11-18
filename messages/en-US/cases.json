@@ -4,6 +4,7 @@
     "todos": "To-dos",
     "submissions": "Submissions",
     "ops": "OPS",
+    "pathology": "Pathology",
     "settings": "Settings",
     "newCaseFileAria": "Add new case file"
   },
@@ -513,5 +514,82 @@
       "deleteAria": "Delete {code}"
     },
     "showAll": "Show all"
+  },
+  "pathology": {
+    "title": "Pathology lists",
+    "description": "Import the pathology lab's patient lists, add insurer and insurance number, and send them back as PDF.",
+    "import": "Import list",
+    "showArchived": "Show archived",
+    "empty": {
+      "title": "No lists yet",
+      "description": "Upload the lab's PDF to create a list."
+    },
+    "card": {
+      "period": "{start} – {end}",
+      "progress": "{filled} of {total} completed",
+      "openCancer": "{count} cancer registry open",
+      "archived": "Archived"
+    },
+    "importDialog": {
+      "title": "Import pathology list",
+      "description": "Upload the PDF, check the preview, then save.",
+      "fileLabel": "Pathology PDF",
+      "analyze": "Read file",
+      "analyzing": "Reading …",
+      "periodStart": "Period from",
+      "periodEnd": "Period to",
+      "summary": "{count} rows · {cancer} cancer registry · {duplicates} already present",
+      "duplicate": "Already present",
+      "cancerBadge": "Cancer registry",
+      "confirm": "Import {count} rows",
+      "back": "Other file",
+      "cancel": "Cancel",
+      "nothingNew": "All rows of this list already exist.",
+      "noFile": "Please select a PDF file."
+    },
+    "list": {
+      "back": "All lists",
+      "export": "Export as PDF",
+      "archive": "Archive",
+      "unarchive": "Restore",
+      "archivedNotice": "This list is archived and cannot be edited.",
+      "progress": "{filled} of {total} completed",
+      "columns": {
+        "sample": "Sample no.",
+        "patient": "Patient",
+        "received": "Received",
+        "material": "Material",
+        "cancerRegistry": "Cancer registry",
+        "treatment": "Treatment",
+        "insuranceNumber": "Insurance no.",
+        "insurer": "Insurer",
+        "note": "Note"
+      },
+      "treatment": {
+        "none": "–",
+        "stat": "Inpatient",
+        "hybrid": "Hybrid",
+        "aop": "AOP"
+      },
+      "missing": "Missing",
+      "insurerPlaceholder": "e.g. AOK Rhld.",
+      "numberPlaceholder": "Insurance number",
+      "notePlaceholder": "optional"
+    },
+    "exportWarning": {
+      "title": "Cancer registry rows incomplete",
+      "description": "{count} cancer registry rows are missing insurer or insurance number:",
+      "confirm": "Export anyway",
+      "cancel": "Cancel"
+    },
+    "toast": {
+      "imported": "{count} rows imported",
+      "importFailed": "Import failed",
+      "previewFailed": "Could not read the PDF",
+      "saveFailed": "Saving failed",
+      "archived": "List archived",
+      "unarchived": "List restored",
+      "archiveFailed": "Archiving failed"
+    }
   }
 }

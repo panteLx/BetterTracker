@@ -4,6 +4,7 @@
     "todos": "Aufgaben",
     "submissions": "Einsendungen",
     "ops": "OPS",
+    "pathology": "Pathologie",
     "settings": "Einstellungen",
     "newCaseFileAria": "Neue Akte hinzufügen"
   },
@@ -513,5 +514,82 @@
       "deleteAria": "{code} löschen"
     },
     "showAll": "Alle anzeigen"
+  },
+  "pathology": {
+    "title": "Pathologie-Listen",
+    "description": "Patientenlisten der Pathologie importieren, Kasse und Versichertennummer ergänzen und als PDF zurücksenden.",
+    "import": "Liste importieren",
+    "showArchived": "Archivierte anzeigen",
+    "empty": {
+      "title": "Noch keine Listen",
+      "description": "Lade die PDF der Pathologie hoch, um eine Liste anzulegen."
+    },
+    "card": {
+      "period": "{start} – {end}",
+      "progress": "{filled} von {total} ausgefüllt",
+      "openCancer": "{count} Krebsregister offen",
+      "archived": "Archiviert"
+    },
+    "importDialog": {
+      "title": "Pathologie-Liste importieren",
+      "description": "PDF hochladen, Vorschau prüfen und anschließend speichern.",
+      "fileLabel": "PDF der Pathologie",
+      "analyze": "Einlesen",
+      "analyzing": "Wird eingelesen …",
+      "periodStart": "Zeitraum von",
+      "periodEnd": "Zeitraum bis",
+      "summary": "{count} Zeilen · {cancer} Krebsregister · {duplicates} bereits vorhanden",
+      "duplicate": "Bereits vorhanden",
+      "cancerBadge": "Krebsregister",
+      "confirm": "{count} Zeilen importieren",
+      "back": "Andere Datei",
+      "cancel": "Abbrechen",
+      "nothingNew": "Alle Zeilen dieser Liste sind bereits vorhanden.",
+      "noFile": "Bitte eine PDF-Datei auswählen."
+    },
+    "list": {
+      "back": "Alle Listen",
+      "export": "Als PDF exportieren",
+      "archive": "Archivieren",
+      "unarchive": "Wiederherstellen",
+      "archivedNotice": "Diese Liste ist archiviert und kann nicht bearbeitet werden.",
+      "progress": "{filled} von {total} ausgefüllt",
+      "columns": {
+        "sample": "Proben-Nr",
+        "patient": "Patient",
+        "received": "Eingang",
+        "material": "Material",
+        "cancerRegistry": "Krebsregister",
+        "treatment": "Behandlung",
+        "insuranceNumber": "Vers-Nr.",
+        "insurer": "Kasse",
+        "note": "Bemerkung"
+      },
+      "treatment": {
+        "none": "–",
+        "stat": "Stat.",
+        "hybrid": "Hybrid",
+        "aop": "AOP"
+      },
+      "missing": "Fehlt",
+      "insurerPlaceholder": "z. B. AOK Rhld.",
+      "numberPlaceholder": "Versichertennummer",
+      "notePlaceholder": "optional"
+    },
+    "exportWarning": {
+      "title": "Krebsregister-Zeilen unvollständig",
+      "description": "Bei {count} Krebsregister-Zeilen fehlen Kasse oder Versichertennummer:",
+      "confirm": "Trotzdem exportieren",
+      "cancel": "Abbrechen"
+    },
+    "toast": {
+      "imported": "{count} Zeilen importiert",
+      "importFailed": "Import fehlgeschlagen",
+      "previewFailed": "PDF konnte nicht eingelesen werden",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "archived": "Liste archiviert",
+      "unarchived": "Liste wiederhergestellt",
+      "archiveFailed": "Archivieren fehlgeschlagen"
+    }
   }
 }

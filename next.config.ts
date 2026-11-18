@@ -58,8 +58,12 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/*": ["./drizzle/**/*"],
+    // pdfjs loads its worker dynamically, so the file tracer cannot see it.
+    "/api/case-workspaces/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
   },
   reactCompiler: false,
+  // Loaded from node_modules at runtime so pdfjs can resolve its worker file.
+  serverExternalPackages: ["pdfjs-dist"],
   allowedDevOrigins: ["192.168.*.*"],
   images: {
     qualities: [75],
