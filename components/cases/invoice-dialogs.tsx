@@ -16,7 +16,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { fetchJson } from "@/lib/client-fetch";
+import type { InvoiceType } from "@/lib/validators/case-invoice";
+
+export const INVOICE_TYPES: InvoiceType[] = ["ambulant", "stationaer", "konsil"];
 
 export type AssignableCaseFile = { id: string; patientName: string; fileNumber: string };
 
@@ -31,22 +41,29 @@ function useInvoiceInvalidation(workspaceId: string) {
 
 function CaseFilePicker({
   workspaceId,
+  invoiceType,
   selected,
   onChange,
 }: {
   workspaceId: string;
+  invoiceType: InvoiceType | null;
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
 }) {
   const t = useTranslations("Cases.invoices");
   const query = useQuery({
-    queryKey: ["case-invoices-assignable", workspaceId],
+    queryKey: ["case-invoices-assignable", workspaceId, invoiceType],
     queryFn: () =>
       fetchJson<{ items: AssignableCaseFile[] }>(
-        `/api/case-workspaces/${workspaceId}/invoices/assignable`
+        `/api/case-workspaces/${workspaceId}/invoices/assignable?invoiceType=${invoiceType}`
       ),
+    enabled: invoiceType !== null,
   });
   const items = query.data?.items ?? [];
+
+  if (!invoiceType) {
+    return <p className="text-sm text-muted-foreground">{t("pickTypeFirst")}</p>;
+  }
 
   if (!query.isLoading && items.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("noAssignable")}</p>;
@@ -85,7 +102,9 @@ export function InvoiceUploadDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("Cases.invoices");
+  const tCaseType = useTranslations("Cases.caseType");
   const invalidate = useInvoiceInvalidation(workspaceId);
+  const [invoiceType, setInvoiceType] = useState<InvoiceType | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +113,9 @@ export function InvoiceUploadDialog({
     mutationFn: async () => {
       if (!file) throw new Error(t("toast.noFile"));
       const form = new FormData();
+      if (!invoiceType) throw new Error(t("typePlaceholder"));
       form.set("file", file);
+      form.set("invoiceType", invoiceType);
       form.set("caseFileIds", JSON.stringify([...selected]));
       const response = await fetch(`/api/case-workspaces/${workspaceId}/invoices`, {
         method: "POST",
@@ -109,6 +130,7 @@ export function InvoiceUploadDialog({
       invalidate();
       toast.success(t("toast.uploaded"));
       setFile(null);
+      setInvoiceType(null);
       setSelected(new Set());
       onOpenChange(false);
     },
@@ -134,15 +156,41 @@ export function InvoiceUploadDialog({
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="invoice-type">{t("typeLabel")}</Label>
+            <Select
+              value={invoiceType ?? ""}
+              onValueChange={(value) => {
+                setInvoiceType(value as InvoiceType);
+                setSelected(new Set());
+              }}
+            >
+              <SelectTrigger id="invoice-type">
+                <SelectValue placeholder={t("typePlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {INVOICE_TYPES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {tCaseType(value)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>{t("patientsLabel")}</Label>
-            <CaseFilePicker workspaceId={workspaceId} selected={selected} onChange={setSelected} />
+            <CaseFilePicker
+              workspaceId={workspaceId}
+              invoiceType={invoiceType}
+              selected={selected}
+              onChange={setSelected}
+            />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
-          <Button onClick={() => upload.mutate()} disabled={!file || upload.isPending}>
+          <Button onClick={() => upload.mutate()} disabled={!file || !invoiceType || upload.isPending}>
             {upload.isPending ? t("uploading") : t("uploadSubmit")}
           </Button>
         </DialogFooter>
@@ -154,11 +202,13 @@ export function InvoiceUploadDialog({
 export function InvoiceAssignDialog({
   workspaceId,
   invoiceId,
+  invoiceType,
   open,
   onOpenChange,
 }: {
   workspaceId: string;
   invoiceId: string;
+  invoiceType: InvoiceType | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -188,7 +238,12 @@ export function InvoiceAssignDialog({
           <DialogTitle>{t("assignTitle")}</DialogTitle>
           <DialogDescription>{t("assignDescription")}</DialogDescription>
         </DialogHeader>
-        <CaseFilePicker workspaceId={workspaceId} selected={selected} onChange={setSelected} />
+        <CaseFilePicker
+          workspaceId={workspaceId}
+          invoiceType={invoiceType}
+          selected={selected}
+          onChange={setSelected}
+        />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}

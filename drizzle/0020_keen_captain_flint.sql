@@ -1,0 +1,1 @@
+ALTER TABLE `case_invoices` ADD `invoice_type` text;

@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { caseFiles, caseFileStatusHistory, caseInvoices } from "@/lib/db/schema";
 import { NotFoundError, ValidationError } from "@/lib/errors";
+import type { InvoiceType } from "@/lib/validators/case-invoice";
 import {
   deleteInvoiceFile,
   readInvoiceFile,
@@ -17,6 +18,7 @@ export type CaseInvoice = {
   workspaceId: string;
   originalFileName: string;
   sizeBytes: number;
+  invoiceType: InvoiceType | null;
   createdAt: Date;
   caseFiles: InvoiceCaseFile[];
 };
@@ -48,6 +50,7 @@ async function hydrateInvoices(
     workspaceId: row.workspaceId,
     originalFileName: row.originalFileName,
     sizeBytes: row.sizeBytes,
+    invoiceType: row.invoiceType,
     createdAt: row.createdAt,
     caseFiles: linked
       .filter((file) => file.invoiceId === row.id)
@@ -80,7 +83,10 @@ export async function getInvoice(workspaceId: string, invoiceId: string) {
   return invoice;
 }
 
-export async function listAssignableCaseFiles(workspaceId: string): Promise<InvoiceCaseFile[]> {
+export async function listAssignableCaseFiles(
+  workspaceId: string,
+  invoiceType?: InvoiceType
+): Promise<InvoiceCaseFile[]> {
   return db
     .select({
       id: caseFiles.id,
@@ -92,7 +98,8 @@ export async function listAssignableCaseFiles(workspaceId: string): Promise<Invo
       and(
         eq(caseFiles.workspaceId, workspaceId),
         eq(caseFiles.status, "awaiting_invoice"),
-        eq(caseFiles.isArchived, false)
+        eq(caseFiles.isArchived, false),
+        invoiceType ? eq(caseFiles.caseType, invoiceType) : undefined
       )
     )
     .orderBy(asc(caseFiles.patientName));
@@ -103,15 +110,20 @@ function assignInTx(
   tx: Tx,
   workspaceId: string,
   invoiceId: string,
+  invoiceType: InvoiceType | null,
   caseFileIds: string[],
   actorUserId: string
 ) {
   const ids = [...new Set(caseFileIds)];
   if (ids.length === 0) return;
+  if (!invoiceType) {
+    throw new ValidationError("Set an invoice type before assigning case files");
+  }
 
   const rows = tx
     .select({
       id: caseFiles.id,
+      caseType: caseFiles.caseType,
       status: caseFiles.status,
       invoiceId: caseFiles.invoiceId,
       isArchived: caseFiles.isArchived,
@@ -130,6 +142,10 @@ function assignInTx(
     throw new ValidationError(
       "Only active case files with status 'awaiting_invoice' and no invoice can be assigned"
     );
+  }
+
+  if (rows.some((row) => row.caseType !== invoiceType)) {
+    throw new ValidationError("Case files must match the invoice type");
   }
 
   tx.update(caseFiles)
@@ -186,6 +202,7 @@ function unassignInTx(
 export async function uploadInvoice(
   workspaceId: string,
   file: { name: string; bytes: Buffer },
+  invoiceType: InvoiceType,
   caseFileIds: string[],
   actorUserId: string
 ) {
@@ -207,10 +224,11 @@ export async function uploadInvoice(
           workspaceId,
           originalFileName: file.name.slice(0, 255) || "invoice.pdf",
           sizeBytes: file.bytes.length,
+          invoiceType,
           uploadedByUserId: actorUserId,
         })
         .run();
-      assignInTx(tx, workspaceId, invoiceId, caseFileIds, actorUserId);
+      assignInTx(tx, workspaceId, invoiceId, invoiceType, caseFileIds, actorUserId);
     });
   } catch (error) {
     await deleteInvoiceFile(workspaceId, invoiceId);
@@ -226,8 +244,33 @@ export async function assignCaseFiles(
   caseFileIds: string[],
   actorUserId: string
 ) {
-  await loadInvoiceRow(workspaceId, invoiceId);
-  db.transaction((tx) => assignInTx(tx, workspaceId, invoiceId, caseFileIds, actorUserId));
+  const invoice = await loadInvoiceRow(workspaceId, invoiceId);
+  db.transaction((tx) =>
+    assignInTx(tx, workspaceId, invoiceId, invoice.invoiceType, caseFileIds, actorUserId)
+  );
+  return getInvoice(workspaceId, invoiceId);
+}
+
+export async function setInvoiceType(
+  workspaceId: string,
+  invoiceId: string,
+  invoiceType: InvoiceType
+) {
+  const invoice = await loadInvoiceRow(workspaceId, invoiceId);
+  if (invoice.invoiceType) throw new ValidationError("Invoice already has a type");
+
+  const linked = await db
+    .select({ caseType: caseFiles.caseType })
+    .from(caseFiles)
+    .where(eq(caseFiles.invoiceId, invoiceId));
+  if (linked.some((row) => row.caseType !== invoiceType)) {
+    throw new ValidationError("Assigned case files do not match this type");
+  }
+
+  await db
+    .update(caseInvoices)
+    .set({ invoiceType, updatedAt: new Date() })
+    .where(eq(caseInvoices.id, invoiceId));
   return getInvoice(workspaceId, invoiceId);
 }
 
