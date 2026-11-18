@@ -3,7 +3,7 @@ import type { PathologyEntry, PathologyListSummary } from "@/lib/services/pathol
 import type { PathologyTreatmentType } from "@/lib/validators/pathology";
 
 export const PATHOLOGY_TREATMENT_LABELS: Record<PathologyTreatmentType, string> = {
-  stat: "Stat.",
+  stat: "Stationär",
   hybrid: "Hybrid",
   aop: "AOP",
 };
@@ -31,8 +31,8 @@ const COLUMN_WIDTHS = {
   liquid: 24,
   sender: 62,
   material: 156,
-  treatment: 48,
-  answer: 190,
+  treatment: 56,
+  answer: 182,
 };
 
 const TABLE_WIDTH = Object.values(COLUMN_WIDTHS).reduce((sum, width) => sum + width, 0);

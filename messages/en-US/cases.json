@@ -574,7 +574,8 @@
       "missing": "Missing",
       "insurerPlaceholder": "e.g. AOK Rhld.",
       "numberPlaceholder": "Insurance number",
-      "notePlaceholder": "optional"
+      "notePlaceholder": "optional",
+      "delete": "Delete"
     },
     "exportWarning": {
       "title": "Cancer registry rows incomplete",
@@ -589,7 +590,15 @@
       "saveFailed": "Saving failed",
       "archived": "List archived",
       "unarchived": "List restored",
-      "archiveFailed": "Archiving failed"
+      "archiveFailed": "Archiving failed",
+      "deleted": "List deleted",
+      "deleteFailed": "Deleting failed"
+    },
+    "deleteDialog": {
+      "title": "Delete list?",
+      "description": "The list with {count} rows and all entries will be permanently deleted. This cannot be undone.",
+      "confirm": "Delete permanently",
+      "cancel": "Cancel"
     }
   }
 }

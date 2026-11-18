@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, ArrowLeft, Download } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Download, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -208,6 +209,8 @@ export function PathologyListClient({
   const t = useTranslations("Cases.pathology");
   const locale = useLocale();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [exportWarningOpen, setExportWarningOpen] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
@@ -280,6 +283,17 @@ export function PathologyListClient({
     onError: (error) => toast.error(error instanceof Error ? error.message : t("toast.archiveFailed")),
   });
 
+  const remove = useMutation({
+    mutationFn: () => fetchJson(`${base}/${listId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pathology-lists", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["pathology-insurers", workspaceId] });
+      toast.success(t("toast.deleted"));
+      router.push(`/cases/${workspaceId}/pathology`);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("toast.deleteFailed")),
+  });
+
   if (!list) return null;
 
   const entries = list.entries;
@@ -323,6 +337,12 @@ export function PathologyListClient({
                   <Archive className="h-4 w-4" />
                 )}
                 {list.isArchived ? t("list.unarchive") : t("list.archive")}
+              </Button>
+            ) : null}
+            {canArchive ? (
+              <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+                {t("list.delete")}
               </Button>
             ) : null}
             <Button
@@ -373,6 +393,23 @@ export function PathologyListClient({
           </tbody>
         </table>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("deleteDialog.description", { count: entries.length })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("deleteDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction disabled={remove.isPending} onClick={() => remove.mutate()}>
+              {t("deleteDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={exportWarningOpen} onOpenChange={setExportWarningOpen}>
         <AlertDialogContent>

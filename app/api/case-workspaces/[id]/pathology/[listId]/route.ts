@@ -3,7 +3,11 @@ import {
   requireCaseWorkspaceReadAccess,
 } from "@/lib/auth/case-workspace-guards";
 import { getRequestAuditContext, logAuditEvent } from "@/lib/audit-log";
-import { getPathologyList, setPathologyListArchived } from "@/lib/services/pathology-service";
+import {
+  deletePathologyList,
+  getPathologyList,
+  setPathologyListArchived,
+} from "@/lib/services/pathology-service";
 import { archiveListSchema } from "@/lib/validators/pathology";
 import { mapServiceError, ok, parseRequestJson } from "@/lib/http";
 
@@ -40,6 +44,29 @@ export async function PATCH(request: Request, context: Context) {
     });
 
     return ok({ item });
+  } catch (error) {
+    return mapServiceError(error);
+  }
+}
+
+export async function DELETE(request: Request, context: Context) {
+  const { id, listId } = await context.params;
+  const access = await requireCaseWorkspaceContentCreateAccess(request.headers, id);
+  if (access.response) return access.response;
+
+  try {
+    const { entryCount } = await deletePathologyList(id, listId);
+
+    await logAuditEvent({
+      actorUserId: access.user!.id,
+      action: "pathology_list_deleted",
+      resourceType: "pathology_list",
+      resourceId: listId,
+      metadata: { entryCount },
+      ...(await getRequestAuditContext()),
+    });
+
+    return ok({ success: true });
   } catch (error) {
     return mapServiceError(error);
   }

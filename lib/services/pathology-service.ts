@@ -147,6 +147,20 @@ export async function setPathologyListArchived(
   return summary;
 }
 
+export async function deletePathologyList(
+  workspaceId: string,
+  listId: string
+): Promise<{ entryCount: number }> {
+  await loadListRow(workspaceId, listId);
+  const [{ entryCount }] = await db
+    .select({ entryCount: sql<number>`count(*)` })
+    .from(pathologyListEntries)
+    .where(eq(pathologyListEntries.listId, listId));
+  // Entries go with the list via ON DELETE CASCADE.
+  await db.delete(pathologyLists).where(eq(pathologyLists.id, listId));
+  return { entryCount };
+}
+
 export async function listInsurerSuggestions(workspaceId: string): Promise<string[]> {
   const rows = await db
     .select({ insurer: pathologyListEntries.insurer, uses: sql<number>`count(*)` })

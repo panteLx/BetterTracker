@@ -567,14 +567,15 @@
       },
       "treatment": {
         "none": "–",
-        "stat": "Stat.",
+        "stat": "Stationär",
         "hybrid": "Hybrid",
         "aop": "AOP"
       },
       "missing": "Fehlt",
       "insurerPlaceholder": "z. B. AOK Rhld.",
       "numberPlaceholder": "Versichertennummer",
-      "notePlaceholder": "optional"
+      "notePlaceholder": "optional",
+      "delete": "Löschen"
     },
     "exportWarning": {
       "title": "Krebsregister-Zeilen unvollständig",
@@ -589,7 +590,15 @@
       "saveFailed": "Speichern fehlgeschlagen",
       "archived": "Liste archiviert",
       "unarchived": "Liste wiederhergestellt",
-      "archiveFailed": "Archivieren fehlgeschlagen"
+      "archiveFailed": "Archivieren fehlgeschlagen",
+      "deleted": "Liste gelöscht",
+      "deleteFailed": "Löschen fehlgeschlagen"
+    },
+    "deleteDialog": {
+      "title": "Liste löschen?",
+      "description": "Die Liste mit {count} Zeilen und allen Eingaben wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.",
+      "confirm": "Endgültig löschen",
+      "cancel": "Abbrechen"
     }
   }
 }
